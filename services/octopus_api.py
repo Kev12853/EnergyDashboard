@@ -10,7 +10,10 @@ load_dotenv()
 # -----------------------
 # CONFIG
 # -----------------------
-API_KEY = os.getenv("OCTOPUS_API_KEY")
+API_KEY = st.secrets.get(
+    "OCTOPUS_API_KEY",
+    os.getenv("OCTOPUS_API_KEY")
+)
 ACCOUNT_ID = os.getenv("OCTOPUS_ACCOUNT_NUMBER")
 
 IMPORT_MPAN = os.getenv("IMPORT_MPAN")
