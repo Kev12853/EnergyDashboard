@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+
+# Secrets
+.env
+.streamlit/secrets.toml
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
