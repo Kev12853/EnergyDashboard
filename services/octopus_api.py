@@ -10,23 +10,24 @@ load_dotenv()
 # -----------------------
 # CONFIG
 # -----------------------
-API_KEY = st.secrets.get(
-    "OCTOPUS_API_KEY",
-    os.getenv("OCTOPUS_API_KEY")
-)
-ACCOUNT_ID = os.getenv("OCTOPUS_ACCOUNT_NUMBER")
+def get_secret(key):
+    return st.secrets.get(
+        key,
+        os.getenv(key)
+    )
 
-IMPORT_MPAN = os.getenv("IMPORT_MPAN")
-EXPORT_MPAN = os.getenv("EXPORT_MPAN")
 
-SERIAL = os.getenv("METER_SERIAL")
+API_KEY = get_secret("OCTOPUS_API_KEY")
+IMPORT_MPAN = get_secret("IMPORT_MPAN")
+EXPORT_MPAN = get_secret("EXPORT_MPAN")
+METER_SERIAL = get_secret("METER_SERIAL")
+PRODUCT_CODE = get_secret("PRODUCT_CODE")
+TARIFF_CODE = get_secret("TARIFF_CODE")
+ACCOUNT_ID = get_secret("ACCOUNT_ID")
 
-PRODUCT_CODE = os.getenv("PRODUCT_CODE")
-TARIFF_CODE = os.getenv("TARIFF_CODE")
-
-BASE_URL = "https://api.octopus.energy"
+BASE_URL = "https://api.octopus.energy/v1"
+GRAPHQL_URL = "https://api.octopus.energy/v1/graphql/"
 TIMEZONE = "Europe/London"
-
 
 # -----------------------
 # HELPERS
@@ -35,7 +36,7 @@ TIMEZONE = "Europe/London"
 @st.cache_data(ttl=300)
 def get_graphql_token():
 
-    url = f"{BASE_URL}/v1/graphql/"
+    url = GRAPHQL_URL
 
     query = """
     mutation {
@@ -113,8 +114,8 @@ def fetch_all_pages(url, params):
 
 def get_meter_data(mpan, column_name, period_from=None, period_to=None):
     url = (
-        f"{BASE_URL}/v1/electricity-meter-points/"
-        f"{mpan}/meters/{SERIAL}/consumption/"
+        f"{BASE_URL}/electricity-meter-points/"
+        f"{mpan}/meters/{METER_SERIAL}/consumption/"
     )
 
     params = {"page_size": 25000}
@@ -146,7 +147,7 @@ def get_meter_data(mpan, column_name, period_from=None, period_to=None):
 def get_tariffs(period_from=None, period_to=None):
 
     url = (
-        f"{BASE_URL}/v1/products/{PRODUCT_CODE}/"
+        f"{BASE_URL}/products/{PRODUCT_CODE}/"
         f"electricity-tariffs/{TARIFF_CODE}/"
         f"standard-unit-rates/"
     )
@@ -215,13 +216,14 @@ def get_consumption(period_from=None, period_to=None):
     return df.sort_values("datetime")
 
 
+
 # -----------------------
 # INTELLIGENT DISPATCHES
 # -----------------------
 @st.cache_data(ttl=300)
 def get_intelligent_dispatches():
 
-    url = "https://api.octopus.energy/v1/graphql/"
+    url = GRAPHQL_URL
 
     query = """
     query getDispatches($accountNumber: String!) {
