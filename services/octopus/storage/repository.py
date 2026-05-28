@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from services.db import (
+from services.solax.storage.db import (
     get_connection,
 )
 

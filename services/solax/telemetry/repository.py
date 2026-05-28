@@ -3,8 +3,8 @@ import sqlite3
 
 from pathlib import Path
 
-from services.solax.local_probe.models import (
-    SolaxTelemetrySnapshot,
+from services.solax.telemetry.models import (
+    PowerFlowSnapshot,
 )
 
 
@@ -65,7 +65,7 @@ class TelemetryRepository:
     def save_snapshot(
 
         self,
-        snapshot: SolaxTelemetrySnapshot,
+        snapshot: PowerFlowSnapshot,
 
     ):
 
@@ -94,19 +94,14 @@ class TelemetryRepository:
             """,
             (
                 snapshot.timestamp.isoformat(),
-
-                snapshot.solar_w,
-                snapshot.inverter_w,
-
-                snapshot.battery_w,
+                snapshot.pv_power_w,
+                snapshot.ac_power_w,
+                snapshot.battery_power_w,
                 snapshot.battery_soc_pct,
-
-                snapshot.grid_w,
-                snapshot.consumption_w,
-
-                snapshot.pv1_w,
-                snapshot.pv2_w,
-
+                snapshot.grid_power_w,
+                snapshot.consumption_power_w,
+                snapshot.pv1_power_w,
+                snapshot.pv2_power_w,
                 json.dumps(
                     snapshot.raw_registers
                 ),

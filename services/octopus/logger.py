@@ -1,7 +1,7 @@
 import logging
 import time
 
-from services.db import (
+from services.solax.storage.db import (
     get_connection,
 )
 

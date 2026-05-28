@@ -27,7 +27,7 @@ Schema creation is idempotent.
 Safe to run multiple times.
 """
 
-from services.db import (
+from services.solax.storage.db import (
     get_connection,
 )
 

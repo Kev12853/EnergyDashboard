@@ -1,6 +1,6 @@
 import time
 
-from services.solax.cloud_api.client import (
+from services.solax.cloud_api.cloud_client import (
     SolaxCloudClient,
 )
 from services.solax.constants import (

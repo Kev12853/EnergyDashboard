@@ -2,7 +2,7 @@ import sqlite3
 
 import pandas as pd
 
-from services.db import get_connection
+from services.solax.storage.db import get_connection
 
 
 def create_dispatches_table(

@@ -10,7 +10,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from services.db import (
+from services.solax.storage.db import (
     get_connection,
 )
 

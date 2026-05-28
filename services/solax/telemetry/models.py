@@ -1,14 +1,10 @@
+# telemetry/models.py
+
 from dataclasses import dataclass
 
 from datetime import datetime
 
-# battery_power_w
-# +ve = charging
-# -ve = discharging
 
-# grid_power_w
-# +ve = export
-# -ve = import
 @dataclass
 class PowerFlowSnapshot:
 
@@ -36,6 +32,8 @@ class PowerFlowSnapshot:
 
     battery_soc_pct: float | None = None
 
+    # +ve = charging
+    # -ve = discharging
     battery_power_w: float | None = None
 
     battery_status: str | None = None
@@ -44,7 +42,15 @@ class PowerFlowSnapshot:
     # GRID
     # =====================================================
 
+    # +ve = export
+    # -ve = import
     grid_power_w: float | None = None
+
+    # =====================================================
+    # CONSUMPTION
+    # =====================================================
+
+    consumption_power_w: float | None = None
 
     # =====================================================
     # INVERTER
@@ -55,3 +61,9 @@ class PowerFlowSnapshot:
     inverter_status: str | None = None
 
     inverter_serial: str | None = None
+
+    # =====================================================
+    # RAW DEBUG DATA
+    # =====================================================
+
+    raw_registers: dict[int, int] | None = None

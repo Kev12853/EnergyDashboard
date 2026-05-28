@@ -40,7 +40,7 @@ from services.solax.models import (
     PowerFlowSnapshot,
 )
 
-from services.db import (
+from services.solax.storage.db import (
     get_connection,
 )
 

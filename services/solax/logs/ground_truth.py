@@ -1,4 +1,4 @@
-# services/solax/local_probe/ground_truth.py
+# services/solax/telemetry/ground_truth.py
 
 from datetime import (
     datetime,
@@ -9,7 +9,7 @@ from pathlib import Path
 import csv
 import time
 
-from services.solax.cloud_api.client import (
+from services.solax.cloud_api.cloud_client import (
     SolaxCloudClient,
 )
 
@@ -25,7 +25,7 @@ from services.solax.constants import (
 
 OUTPUT_FILE = Path(
 
-    "services/solax/local_probe/ground_truth.csv"
+    "services/solax/telemetry/ground_truth.csv"
 
 )
 
