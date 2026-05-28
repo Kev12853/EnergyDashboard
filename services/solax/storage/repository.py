@@ -1,283 +1,176 @@
-# =========================================================
-# FILE
-# =========================================================
-#
-# services/charts/storage/repository.py
-#
-# =========================================================
+import json
+import sqlite3
 
-"""
-Telemetry Repository
-====================
+from pathlib import Path
 
-Purpose
--------
-Encapsulates telemetry database access.
-
-This module acts as the persistence abstraction layer
-between application logic and SQLite storage.
-
-Responsibilities
-----------------
-- insert telemetry
-- retrieve telemetry
-- query historical ranges
-- retrieve latest snapshots
-
-Design Notes
-------------
-Higher-level code should NOT directly execute SQL.
-
-All database interaction should flow through
-repository functions.
-"""
-
-from services.solax.analytics.calculations import (
-    calculate_house_load_w,
-)
-
-from services.solax.models import (
+from services.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
 
-from services.solax.storage.db import (
-    get_connection,
+
+DB_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "data"
+    / "telemetry.db"
 )
 
-# =========================================================
-# INSERT SNAPSHOT
-# =========================================================
 
+class TelemetryRepository:
 
-def insert_snapshot(
-    snapshot: PowerFlowSnapshot,
-):
-    """
-    Insert telemetry snapshot into database.
+    def __init__(self):
 
-    Duplicate upload_time rows are ignored.
-    """
-
-    connection = get_connection()
-
-    cursor = connection.cursor()
-
-    # =====================================================
-    # DERIVED METRICS
-    # =====================================================
-
-    house_load_w = calculate_house_load_w(
-        pv_power_w=snapshot.pv_power_w,
-        grid_power_w=snapshot.grid_power_w,
-        battery_power_w=snapshot.battery_power_w,
-    )
-
-    # =====================================================
-    # INSERT
-    # =====================================================
-
-    cursor.execute(
-        """
-        INSERT OR IGNORE INTO telemetry (
-
-            upload_time,
-            timestamp,
-
-            pv_power_w,
-            pv1_power_w,
-            pv2_power_w,
-
-            battery_soc_pct,
-            battery_power_w,
-            battery_status,
-
-            grid_power_w,
-
-            ac_power_w,
-
-            house_load_w,
-
-            inverter_status,
-            inverter_serial
-
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            snapshot.upload_time,
-            snapshot.timestamp.isoformat(),
-
-            snapshot.pv_power_w,
-            snapshot.pv1_power_w,
-            snapshot.pv2_power_w,
-
-            snapshot.battery_soc_pct,
-            snapshot.battery_power_w,
-            snapshot.battery_status,
-
-            snapshot.grid_power_w,
-
-            snapshot.ac_power_w,
-
-            house_load_w,
-
-            snapshot.inverter_status,
-            snapshot.inverter_serial,
-        ),
-    )
-
-    connection.commit()
-
-    connection.close()
-
-
-# =========================================================
-# GET LATEST SNAPSHOT
-# =========================================================
-
-
-def get_latest_snapshot():
-    """
-    Retrieve most recent telemetry row.
-    """
-
-    connection = get_connection()
-
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT *
-        FROM telemetry
-        ORDER BY upload_time DESC
-        LIMIT 1
-        """
-    )
-
-    row = cursor.fetchone()
-
-    connection.close()
-
-    return row
-
-
-# =========================================================
-# GET SNAPSHOTS BETWEEN
-# =========================================================
-
-
-def get_snapshots_between(
-    start_time,
-    end_time,
-):
-    """
-    Retrieve telemetry rows between timestamps.
-    """
-
-    connection = get_connection()
-
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT *
-        FROM telemetry
-        WHERE upload_time BETWEEN ? AND ?
-        ORDER BY upload_time
-        """,
-        (
-            start_time,
-            end_time,
-        ),
-    )
-
-    rows = cursor.fetchall()
-
-    connection.close()
-
-    return rows
-
-
-# =========================================================
-# LOAD TELEMETRY DATAFRAME
-# =========================================================
-
-import pandas as pd
-
-
-def get_telemetry_dataframe():
-
-    connection = get_connection()
-
-    df = pd.read_sql_query(
-        """
-        SELECT *
-        FROM telemetry
-        ORDER BY upload_time
-        """,
-        connection,
-    )
-
-    connection.close()
-
-    df["upload_time"] = pd.to_datetime(
-        df["upload_time"]
-    )
-
-    return df
-
-# =========================================================
-# GET LATEST SNAPSHOT DATAFRAME ROW
-# =========================================================
-
-def get_latest_snapshot_row():
-
-    connection = get_connection()
-
-    df = pd.read_sql_query(
-        """
-        SELECT *
-        FROM telemetry
-        ORDER BY upload_time DESC
-        LIMIT 1
-        """,
-        connection,
-    )
-
-    connection.close()
-
-    df["upload_time"] = pd.to_datetime(
-        df["upload_time"]
-    )
-
-    return df.iloc[0]
-
-# =========================================================
-# LOAD RECENT TELEMETRY
-# =========================================================
-
-def get_recent_telemetry_dataframe(
-    hours: int,
-):
-
-    connection = get_connection()
-
-    df = pd.read_sql_query(
-        f"""
-        SELECT *
-        FROM telemetry
-        WHERE upload_time >= datetime(
-            'now',
-            '-{hours} hours'
+        DB_PATH.parent.mkdir(
+            parents=True,
+            exist_ok=True,
         )
-        ORDER BY upload_time
-        """,
-        connection,
-    )
 
-    connection.close()
+        self.connection = sqlite3.connect(
+            DB_PATH,
+            check_same_thread=False,
+        )
 
-    df["upload_time"] = pd.to_datetime(
-        df["upload_time"]
-    )
+        self.connection.row_factory = (
+            sqlite3.Row
+        )
 
-    return df
+        self.create_tables()
+
+    def create_tables(self):
+
+        self.connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS telemetry_snapshots (
+
+                timestamp TEXT PRIMARY KEY,
+
+                solar_w INTEGER,
+                inverter_w INTEGER,
+
+                battery_w INTEGER,
+                battery_soc_pct REAL,
+
+                grid_w INTEGER,
+                consumption_w INTEGER,
+
+                pv1_w INTEGER,
+                pv2_w INTEGER,
+
+                raw_json TEXT
+            )
+            """
+        )
+
+        self.connection.commit()
+
+    def save_snapshot(
+
+        self,
+        snapshot: PowerFlowSnapshot,
+
+    ):
+
+        self.connection.execute(
+            """
+            INSERT INTO telemetry_snapshots (
+
+                timestamp,
+
+                solar_w,
+                inverter_w,
+
+                battery_w,
+                battery_soc_pct,
+
+                grid_w,
+                consumption_w,
+
+                pv1_w,
+                pv2_w,
+
+                raw_json
+
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                snapshot.timestamp.isoformat(),
+                snapshot.pv_power_w,
+                snapshot.ac_power_w,
+                snapshot.battery_power_w,
+                snapshot.battery_soc_pct,
+                snapshot.grid_power_w,
+                snapshot.consumption_power_w,
+                snapshot.pv1_power_w,
+                snapshot.pv2_power_w,
+                json.dumps(
+                    snapshot.raw_registers
+                ),
+            ),
+        )
+
+        self.connection.commit()
+
+    def get_latest_snapshot(self):
+
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM telemetry_snapshots
+            ORDER BY timestamp DESC
+            LIMIT 1
+            """
+        )
+
+        return cursor.fetchone()
+
+    def get_1m_history(
+
+            self,
+            start: str,
+            end: str,
+
+    ):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+
+            FROM telemetry_1m
+
+            WHERE bucket_start
+                      BETWEEN ? AND ?
+
+            ORDER BY bucket_start
+            """,
+            (
+                start,
+                end,
+            ),
+        )
+
+        return cursor.fetchall()
+
+    def get_30m_history(
+
+            self,
+            start: str,
+            end: str,
+
+    ):
+        cursor = self.connection.execute(
+            """
+            SELECT *
+
+            FROM telemetry_30m
+
+            WHERE bucket_start
+                      BETWEEN ? AND ?
+
+            ORDER BY bucket_start
+            """,
+            (
+                start,
+                end,
+            ),
+        )
+
+        return cursor.fetchall()

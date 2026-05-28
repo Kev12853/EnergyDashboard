@@ -5,7 +5,7 @@ from services.solax.telemetry.modbus_client import (
     SolaxModbusClient,
 )
 
-from services.solax.telemetry.repository import (
+from services.solax.storage.repository import (
     TelemetryRepository,
 )
 
