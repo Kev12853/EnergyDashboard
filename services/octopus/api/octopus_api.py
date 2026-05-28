@@ -1,9 +1,8 @@
-import os
-
 import pandas as pd
 import requests
-import streamlit as st
-from dotenv import load_dotenv
+#import streamlit as st
+from pandas import DataFrame
+
 from services.config import (
     API_KEY,
     ACCOUNT_ID,
@@ -16,6 +15,7 @@ from services.config import (
     GRAPHQL_URL,
     TIMEZONE
 )
+
 
 # -----------------------
 # CONFIG
@@ -43,7 +43,6 @@ from services.config import (
 # HELPERS
 # -----------------------
 
-@st.cache_data(ttl=300)
 def get_graphql_token():
 
     url = GRAPHQL_URL
@@ -89,7 +88,6 @@ def to_local_time(series):
         .dt.tz_localize(None)
     )
 
-
 def fetch_all_pages(url, params):
     results = []
 
@@ -112,15 +110,23 @@ def fetch_all_pages(url, params):
             params = None
 
         except requests.HTTPError as e:
-            st.error(f"Octopus API Error: {e}")
-            return []
+
+            raise RuntimeError(
+
+            f"Octopus API Error: {e}"
+
+        ) from e
+
 
         except Exception as e:
-            st.error(f"Connection Error: {e}")
-            return []
+
+         raise RuntimeError(
+
+            f"Connection Error: {e}"
+
+        ) from e
 
     return results
-
 
 def get_meter_data(mpan, column_name, period_from=None, period_to=None):
     url = (
@@ -149,46 +155,54 @@ def get_meter_data(mpan, column_name, period_from=None, period_to=None):
 
     return df[["datetime", column_name]].sort_values("datetime")
 
+def get_tariffs(
+    tariff_code,
+    period_from=None,
+    period_to=None,
+):
+    parts = tariff_code.split(
+        "-"
+    )
 
-# -----------------------
-# TARIFFS
-# -----------------------
-@st.cache_data(ttl=1800)
-def get_tariffs(period_from=None, period_to=None):
+    product_code = (
+        "-".join(
+            parts[2:-1]
+        )
+    )
 
     url = (
-        f"{BASE_URL}/products/{PRODUCT_CODE}/"
-        f"electricity-tariffs/{TARIFF_CODE}/"
+        f"{BASE_URL}"
+        f"/products/"
+        f"{product_code}/"
+        f"electricity-tariffs/"
+        f"{tariff_code}/"
         f"standard-unit-rates/"
     )
 
-    params = {"page_size": 25000}
+    params = {
+        "page_size": 25000
+    }
 
     if period_from:
-        params["period_from"] = period_from
+        params["period_from"] = (
+            period_from
+        )
 
     if period_to:
-        params["period_to"] = period_to
+        params["period_to"] = (
+            period_to
+        )
 
-    data = fetch_all_pages(url, params)
+    data = fetch_all_pages(
+        url,
+        params,
+    )
 
-    df = pd.DataFrame(data)
-
-    if df.empty:
-        return pd.DataFrame(columns=["datetime", "unit_rate"])
-
-    df["datetime"] = to_local_time(df["valid_from"])
-
-    # Convert pence → pounds
-    df["unit_rate"] = df["value_inc_vat"] / 100
-
-    return df[["datetime", "unit_rate"]].sort_values("datetime")
-
+    return pd.DataFrame(data)
 
 # -----------------------
 # CONSUMPTION + EXPORT
 # -----------------------
-@st.cache_data(ttl=1800)
 def get_consumption(period_from=None, period_to=None):
 
     df_import = get_meter_data(
@@ -225,13 +239,226 @@ def get_consumption(period_from=None, period_to=None):
 
     return df.sort_values("datetime")
 
+def get_octopus_accounts():
 
+    token = get_graphql_token()
 
+    query = """
+    query {
+
+      viewer {
+
+        accounts {
+
+          number
+
+        }
+
+      }
+
+    }
+    """
+
+    response = requests.post(
+        GRAPHQL_URL,
+        json={
+            "query": query
+        },
+        headers={
+            "Authorization": token,
+            "Content-Type":
+                "application/json",
+        },
+        timeout=15,
+    )
+
+    response.raise_for_status()
+
+    data = (
+        response.json()
+        ["data"]
+        ["viewer"]
+        ["accounts"]
+    )
+
+    return data
+
+def get_octopus_agreements():
+
+    token = (
+        get_graphql_token()
+    )
+
+    query = """
+    query {
+
+      viewer {
+
+        accounts {
+
+          number
+
+          ... on AccountType {
+
+            electricityAgreements {
+
+              validFrom
+
+              validTo
+
+              meterPoint {
+
+                mpan
+
+              }
+
+              tariff {
+
+                __typename
+
+                ... on TariffType {
+
+                  productCode
+
+                  tariffCode
+
+                }
+
+                ... on HalfHourlyTariff {
+
+                  productCode
+
+                  tariffCode
+
+                }
+
+                ... on DayNightTariff {
+
+                  productCode
+
+                  tariffCode
+
+                }
+
+                ... on StandardTariff {
+
+                  productCode
+
+                  tariffCode
+
+                }
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+    """
+
+    response = requests.post(
+
+        GRAPHQL_URL,
+
+        json={
+            "query": query
+        },
+
+        headers={
+
+            "Authorization":
+                token,
+
+            "Content-Type":
+                "application/json",
+
+        },
+
+        timeout=15,
+
+    )
+
+    response.raise_for_status()
+
+    data = (
+        response.json()
+        ["data"]
+        ["viewer"]
+        ["accounts"]
+    )
+
+    results = []
+
+    for account in data:
+
+        for agreement in (
+            account[
+                "electricityAgreements"
+            ]
+        ):
+
+            tariff = (
+                agreement[
+                    "tariff"
+                ]
+            )
+
+            results.append(
+
+                {
+
+                    "account_number":
+                    account[
+                        "number"
+                    ],
+
+                    "mpan":
+                    agreement[
+                        "meterPoint"
+                    ][
+                        "mpan"
+                    ],
+
+                    "valid_from":
+                    agreement[
+                        "validFrom"
+                    ],
+
+                    "valid_to":
+                    agreement[
+                        "validTo"
+                    ],
+
+                    "tariff_type":
+                    tariff[
+                        "__typename"
+                    ],
+
+                    "product_code":
+                    tariff[
+                        "productCode"
+                    ],
+
+                    "tariff_code":
+                    tariff[
+                        "tariffCode"
+                    ],
+
+                }
+
+            )
+
+    return results
 # -----------------------
 # INTELLIGENT DISPATCHES
 # -----------------------
-@st.cache_data(ttl=300)
-def get_intelligent_dispatches():
+
+def get_intelligent_dispatches() -> DataFrame:
 
     url = GRAPHQL_URL
 
@@ -304,5 +531,9 @@ def get_intelligent_dispatches():
         return df
 
     except Exception as e:
-        st.error(f"Dispatch API Error: {e}")
-        return pd.DataFrame()
+
+        raise RuntimeError(
+
+            f"Dispatch API Error: {e}"
+
+        ) from e

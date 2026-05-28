@@ -1,5 +1,3 @@
-import pandas as pd
-
 def aggregate_data(df, freq):
     """
     freq:

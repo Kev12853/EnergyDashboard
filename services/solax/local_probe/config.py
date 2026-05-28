@@ -1,0 +1,16 @@
+HOST = "192.168.1.66"   # your actual dongle IP
+
+PORT = 502
+
+DEVICE_ID = 1
+
+START_REGISTER = 0
+END_REGISTER = 800
+
+BLOCK_SIZE = 1
+
+REQUEST_DELAY = 0.50
+
+SCAN_INTERVAL = 30
+
+OUTPUT = "scan.csv"
