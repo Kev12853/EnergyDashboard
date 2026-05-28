@@ -1,0 +1,129 @@
+import json
+import sqlite3
+
+from pathlib import Path
+
+from services.solax.local_probe.models import (
+    SolaxTelemetrySnapshot,
+)
+
+
+DB_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "data"
+    / "telemetry.db"
+)
+
+
+class TelemetryRepository:
+
+    def __init__(self):
+
+        DB_PATH.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self.connection = sqlite3.connect(
+            DB_PATH,
+            check_same_thread=False,
+        )
+
+        self.connection.row_factory = (
+            sqlite3.Row
+        )
+
+        self.create_tables()
+
+    def create_tables(self):
+
+        self.connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS telemetry_snapshots (
+
+                timestamp TEXT PRIMARY KEY,
+
+                solar_w INTEGER,
+                inverter_w INTEGER,
+
+                battery_w INTEGER,
+                battery_soc_pct REAL,
+
+                grid_w INTEGER,
+                consumption_w INTEGER,
+
+                pv1_w INTEGER,
+                pv2_w INTEGER,
+
+                raw_json TEXT
+            )
+            """
+        )
+
+        self.connection.commit()
+
+    def save_snapshot(
+
+        self,
+        snapshot: SolaxTelemetrySnapshot,
+
+    ):
+
+        self.connection.execute(
+            """
+            INSERT INTO telemetry_snapshots (
+
+                timestamp,
+
+                solar_w,
+                inverter_w,
+
+                battery_w,
+                battery_soc_pct,
+
+                grid_w,
+                consumption_w,
+
+                pv1_w,
+                pv2_w,
+
+                raw_json
+
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                snapshot.timestamp.isoformat(),
+
+                snapshot.solar_w,
+                snapshot.inverter_w,
+
+                snapshot.battery_w,
+                snapshot.battery_soc_pct,
+
+                snapshot.grid_w,
+                snapshot.consumption_w,
+
+                snapshot.pv1_w,
+                snapshot.pv2_w,
+
+                json.dumps(
+                    snapshot.raw_registers
+                ),
+            ),
+        )
+
+        self.connection.commit()
+
+    def get_latest_snapshot(self):
+
+        cursor = self.connection.execute(
+            """
+            SELECT *
+            FROM telemetry_snapshots
+            ORDER BY timestamp DESC
+            LIMIT 1
+            """
+        )
+
+        return cursor.fetchone()
