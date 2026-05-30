@@ -75,7 +75,8 @@ def create_tariffs_table(
 
     conn.commit()
 
-from datetime import datetime
+from datetime import datetime, UTC
+
 
 def upsert_tariffs(
         tariff_df: pd.DataFrame,
@@ -86,7 +87,7 @@ def upsert_tariffs(
 
     conn = get_connection()
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(UTC).isoformat()
 
     for _, row in tariff_df.iterrows():
         conn.execute(

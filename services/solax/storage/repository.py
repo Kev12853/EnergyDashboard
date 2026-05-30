@@ -3,6 +3,8 @@ import sqlite3
 
 from pathlib import Path
 
+import pandas as pd
+
 from services.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
@@ -124,12 +126,18 @@ class TelemetryRepository:
         return cursor.fetchone()
 
     def get_1m_history(
-
             self,
-            start: str,
-            end: str,
-
+            start,
+            end,
     ):
+        start = start.strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        end = end.strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
         cursor = self.connection.execute(
             """
             SELECT *

@@ -1,6 +1,7 @@
 # telemetry/modbus_client.py
 
 from datetime import datetime
+import time
 from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
@@ -44,7 +45,10 @@ class SolaxModbusClient:
             port=self.port,
         )
 
-        self.client.connect()
+        if not self.client.connect():
+            raise ConnectionError(
+                f"Unable to connect to {host}"
+            )
 
     @staticmethod
     def signed16(value: int) -> int:
@@ -73,20 +77,42 @@ class SolaxModbusClient:
 
     def read_register_block(self) -> dict[int, int]:
 
-        result = (
-            self.client.read_input_registers(
+        try:
 
-                address=REGISTER_BLOCK_START,
+            result = (
+                self.client.read_input_registers(
+                    address=REGISTER_BLOCK_START,
+                    count=REGISTER_BLOCK_SIZE,
+                    device_id=self.slave_id,
+                )
+            )
 
-                count=REGISTER_BLOCK_SIZE,
+        except Exception:
 
-                device_id=self.slave_id,
+            try:
+                self.client.close()
+            except Exception:
+                pass
+
+            time.sleep(10)
+
+            self.reconnect()
+
+            result = (
+
+                self.client.read_input_registers(
+
+                    address=REGISTER_BLOCK_START,
+
+                    count=REGISTER_BLOCK_SIZE,
+
+                    device_id=self.slave_id,
+
+                )
 
             )
-        )
 
         if result.isError():
-
             raise RuntimeError(
                 f"Modbus read failed: {result}"
             )
@@ -202,3 +228,20 @@ class SolaxModbusClient:
             raw_registers=registers,
 
         )
+
+    def reconnect(self):
+
+        try:
+            self.client.close()
+        except Exception:
+            pass
+
+        self.client = ModbusTcpClient(
+            host=self.host,
+            port=self.port,
+        )
+
+        if not self.client.connect():
+            raise ConnectionError(
+                f"Unable to connect to {self.host}"
+            )

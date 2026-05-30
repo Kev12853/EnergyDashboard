@@ -81,10 +81,11 @@ class TelemetryAggregator:
 
             SELECT
 
-                strftime(
-                    '%Y-%m-%d %H:%M:00',
-                    timestamp
-                ) AS bucket_start,
+               strftime(
+    '%Y-%m-%d %H:%M:00',
+    timestamp,
+    'localtime'
+) AS bucket_start,
 
                 AVG(solar_w),
                 MAX(solar_w),
@@ -122,7 +123,8 @@ class TelemetryAggregator:
 
                 strftime(
                     '%Y-%m-%d %H:',
-                    timestamp
+                    timestamp,
+                    'localtime'
                 )
                 ||
                 CASE

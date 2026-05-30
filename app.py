@@ -1,39 +1,44 @@
 import pandas as pd
 import streamlit as st
 
+from datetime import timedelta
+
 from streamlit_autorefresh import (
     st_autorefresh,
 )
 
 # =========================================================
-# DATABASE
-# =========================================================
-
-from services.solax.storage.db import (
-    get_connection,
-)
-
-from services.octopus.storage.schema import (
-    create_dispatches_table, create_tariffs_table, create_agreements_table, create_accounts_table,
-)
-
-# =========================================================
-# SOLAX DATA
+# SOLAX REPOSITORY
 # =========================================================
 
 from services.solax.storage.repository import (
-    get_latest_snapshot_row,
-    get_recent_telemetry_dataframe,
+    TelemetryRepository,
 )
 
+# =========================================================
+# OCTOPUS STORAGE
+# =========================================================
+
+from services.octopus.storage.schema import (
+    create_dispatches_table,
+    create_tariffs_table,
+    create_agreements_table,
+    create_accounts_table,
+)
 
 from services.octopus.storage.repository import (
     get_recent_tariffs,
+    get_all_tariffs,
+    get_dispatch_history,
 )
 
 # =========================================================
 # SOLAX ANALYTICS
 # =========================================================
+
+from services.solax.analytics.settlement import (
+    calculate_half_hour_energy,
+)
 
 from services.solax.analytics.summary import (
     calculate_daily_summary,
@@ -42,14 +47,6 @@ from services.solax.analytics.summary import (
 from services.solax.analytics.energy import (
     calculate_daily_energy_summary,
 )
-
-from services.solax.analytics.settlement import (
-    calculate_half_hour_energy,
-)
-
-# =========================================================
-# OCTOPUS API
-# =========================================================
 
 # =========================================================
 # OCTOPUS ANALYTICS
@@ -63,53 +60,30 @@ from services.octopus.analytics.costs import (
     apply_import_costs,
 )
 
-from services.octopus.storage.repository import (
-    get_all_tariffs,
+# =========================================================
+# PAGE IMPORTS
+# =========================================================
+
+from ui.pages import (
+    overview,
+    energy_costs,
+    octopus,
+    energy_data,
+    diagnostics,
 )
 
 # =========================================================
-# OCTOPUS STORAGE
+# STARTUP
 # =========================================================
 
-from services.octopus.storage.repository import (
-    get_dispatch_history,
+from services.startup import (
+    start_services,
 )
 
-# =========================================================
-# SOLAX COMPONENTS
-# =========================================================
-
-from components.solax.charts.solax_charts import (
-    render_solar_chart,
-    render_battery_chart,
+from services.solax.storage.db import (
+    get_connection,
 )
 
-from components.solax.kpis.solax_kpis import (
-    render_kpi_row,
-    render_settlement_kpis,
-)
-
-from components.solax.tables.solax_tables import (
-    render_daily_summary_table,
-    render_daily_energy_summary_table,
-    render_settlement_table,
-    render_raw_data_table,
-)
-
-# =========================================================
-# OCTOPUS COMPONENTS
-# =========================================================
-
-from components.octopus.charts.octopus_dispatch_charts import (
-    render_dispatch_timeline,
-)
-
-from components.octopus.tables.octopus_tables import (
-    render_tariff_table,
-    render_dispatch_history_table,
-)
-
-# region ** config **
 # =========================================================
 # APP CONFIG
 # =========================================================
@@ -123,11 +97,9 @@ st_autorefresh(
     interval=30_000,
     key="dashboard_refresh",
 )
-# endregion ** config **
 
-# region ** CSS **
 # =========================================================
-# CUSTOM STYLING
+# CUSTOM CSS
 # =========================================================
 
 st.markdown(
@@ -139,7 +111,7 @@ st.markdown(
     }
 
     section[data-testid="stSidebar"] > div {
-        width: 300 !important;
+        width: 300px !important;
     }
 
     .sidebar-heading {
@@ -157,7 +129,6 @@ st.markdown(
         cursor: pointer !important;
     }
 
-    /* Selectbox sizing */
     div[data-baseweb="select"] {
         width: 160px !important;
     }
@@ -165,51 +136,45 @@ st.markdown(
     div[data-baseweb="popover"] {
         width: 160px !important;
     }
-    
+
     .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 1rem;
-    padding-left: 2rem;
-    padding-right: 2rem;
+        padding-top: 1.5rem;
+        padding-bottom: 1rem;
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
-    
+
     .kpi-card {
 
-    background: #0E1B2A;
+        background: #0E1B2A;
 
-    border: 1px solid rgba(
-        0,
-        212,
-        255,
-        0.15
-    );
-
-    border-radius: 12px;
-
-    padding: 18px;
-
-    box-shadow:
-        0 0 10px rgba(
+        border: 1px solid rgba(
             0,
             212,
             255,
-            0.05
+            0.15
         );
-}
-    
-    
-    
+
+        border-radius: 12px;
+
+        padding: 18px;
+
+        box-shadow:
+            0 0 10px rgba(
+                0,
+                212,
+                255,
+                0.05
+            );
+    }
 
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-#endregion ** CSS **
-
-#region ** Navigation **
 # =========================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # =========================================================
 
 with st.sidebar:
@@ -250,16 +215,10 @@ with st.sidebar:
         key="time_window_selector",
         format_func=lambda x: f"{x} Hours",
     )
-# endregion ** Navigation **
 
-#region ** Initialisation **
 # =========================================================
 # DATABASE INITIALISATION
 # =========================================================
-
-from services.startup import (
-    start_services,
-)
 
 connection = get_connection()
 
@@ -279,28 +238,52 @@ create_accounts_table(
     connection
 )
 
+@st.cache_resource
+def initialise_services():
 
-start_services()
+    start_services()
+
+    return True
 
 
-#endregion ** Initialisation **
+initialise_services()
 
-# region ** SOLAX Data **
+# =========================================================
+# REPOSITORY
+# =========================================================
+
+repository = TelemetryRepository()
+
 # =========================================================
 # LOAD SOLAX DATA
 # =========================================================
 
-df = get_recent_telemetry_dataframe(
+from zoneinfo import ZoneInfo
+
+end = pd.Timestamp.now(
+    tz=ZoneInfo("Europe/London")
+)
+
+start = end - timedelta(
     hours=hours
 )
 
-latest = get_latest_snapshot_row()
+latest = repository.get_latest_snapshot()
+latest = dict(latest)
 
+latest["pv_power_w"] = latest["solar_w"]
+latest["battery_power_w"] = latest["battery_w"]
+latest["grid_power_w"] = latest["grid_w"]
+latest["consumption_power_w"] = latest["consumption_w"]
+
+latest["pv1_power_w"] = latest["pv1_w"]
+latest["pv2_power_w"] = latest["pv2_w"]
+latest["house_load_w"] = latest["consumption_w"]
 # =========================================================
 # EMPTY STATE
 # =========================================================
 
-if latest is None or df.empty:
+if latest is None:
 
     st.warning(
         "No telemetry data available."
@@ -309,25 +292,70 @@ if latest is None or df.empty:
     st.stop()
 
 # =========================================================
+# LOAD HISTORY
+# =========================================================
+
+try:
+    history_1m = repository.get_1m_history(
+        start=start,
+        end=end,
+    )
+
+    df = pd.DataFrame(
+        [dict(row) for row in history_1m]
+    )
+    if not df.empty:
+        df["upload_time"] = pd.to_datetime(
+            df["bucket_start"]
+        )
+
+        df["timestamp"] = df["upload_time"]
+
+        df["pv_power_w"] = (
+            df["avg_solar_w"]
+        )
+
+        df["house_load_w"] = (
+            df["avg_consumption_w"]
+        )
+
+        df["consumption_power_w"] = (
+            df["avg_consumption_w"]
+        )
+
+        df["grid_power_w"] = (
+            df["avg_grid_w"]
+        )
+
+        df["battery_power_w"] = (
+            df["avg_battery_w"]
+        )
+
+except Exception:
+
+    #
+    # Temporary fallback until
+    # aggregation pipeline fully wired
+    #
+
+    df = pd.DataFrame()
+
+# =========================================================
 # DATA FRESHNESS
 # =========================================================
 
-latest_upload_time = latest[
-    "upload_time"
+latest_timestamp = latest[
+    "timestamp"
 ]
 
 data_age_minutes = (
-    pd.Timestamp.now()
-    - latest_upload_time
+    pd.Timestamp.now("UTC")
+    - pd.Timestamp(latest_timestamp)
 ).total_seconds() / 60
 
-# endregion ** SOLAX Data **
-
-# region ** OCTOPUS Data **
 # =========================================================
 # LOAD OCTOPUS DATA
 # =========================================================
-
 
 tariff_df = (
     get_recent_tariffs()
@@ -340,226 +368,77 @@ dispatch_history_df = (
 )
 
 # =========================================================
-# Energy Costs ANALYTICS
+# ENERGY COST ANALYTICS
 # =========================================================
 
-settlement_df = (
-    calculate_half_hour_energy(df)
-)
+if not df.empty:
 
-full_tariff_df = (
-    get_all_tariffs()
-)
-
-settlement_df = (
-    apply_import_costs(
-        settlement_df,
-        full_tariff_df,
+    settlement_df = (
+        calculate_half_hour_energy(df)
     )
-)
 
-settlement_df = (
-    apply_dispatch_flags(
-        settlement_df,
-        dispatch_history_df,
+    full_tariff_df = (
+        get_all_tariffs()
     )
-)
-# endregion ** OCTOPUS Data **
 
-#region ** Overview **
+    settlement_df = (
+        apply_import_costs(
+            settlement_df,
+            full_tariff_df,
+        )
+    )
+
+    settlement_df = (
+        apply_dispatch_flags(
+            settlement_df,
+            dispatch_history_df,
+        )
+    )
+
+else:
+
+    settlement_df = pd.DataFrame()
+
+
+
 # =========================================================
-# OVERVIEW
+# PAGE ROUTING
 # =========================================================
 
 if page == "Overview":
-
-    st.title(
-        "Energy Dashboard"
+    overview.render(
+        latest=latest,
+        df=df,
+        settlement_df=settlement_df,
+        latest_upload_time=latest_timestamp,
+        data_age_minutes=data_age_minutes,
     )
-
-    st.caption(
-        f"Latest inverter update: "
-        f"{latest_upload_time}"
-    )
-
-    st.caption(
-        f"Data age: "
-        f"{data_age_minutes:.1f} minutes"
-    )
-
-    with st.container(
-            border=True
-    ):
-        render_kpi_row(latest)
-
-    with st.container(
-        border=True):
-        render_solar_chart(df)
-
-    with st.container(
-            border=True):
-        render_battery_chart(df)
-
-    with st.container(
-            border=True):
-        render_settlement_kpis(
-            settlement_df
-        )
-#endregion ** Overview **
-
-#region ** Energy Costs **
-# =========================================================
-# ENERGY COSTS
-# =========================================================
 
 elif page == "Energy Costs":
 
-    st.title(
-        "Energy Costs"
+    energy_costs.render(
+        settlement_df=settlement_df,
     )
-
-
-    with st.container(
-            border=True
-    ):
-        render_settlement_kpis(
-            settlement_df
-        )
-
-    with st.container(
-            border=True
-    ):
-        render_settlement_table(
-            settlement_df
-        )
-
-    total_import_cost = (
-        settlement_df[
-            "import_cost_gbp"
-        ].sum()
-    )
-
-    st.metric(
-        "Import Cost",
-        f"£{total_import_cost:.2f}",
-    )
-
-#endregion ** Energy Costs **
-
-#region ** Octopus **
-# =========================================================
-# OCTOPUS
-# =========================================================
 
 elif page == "Octopus":
 
-    st.title(
-        "Octopus Energy"
+    octopus.render(
+        dispatch_history_df=dispatch_history_df,
+        tariff_df=tariff_df,
     )
-
-    render_dispatch_timeline(
-        dispatch_history_df
-    )
-
-    with st.container(
-            border=True
-    ):
-        with st.expander(
-                "Dispatch History",
-                expanded=False,
-        ):
-            render_dispatch_history_table(
-                dispatch_history_df
-            )
-
-        with st.expander(
-                "Tariffs",
-                expanded=False,
-        ):
-            render_tariff_table(
-                tariff_df
-            )
-#endregion ** Octopus **
-
-#region ** Energy Data **
-# =========================================================
-# Energy Data
-# =========================================================
 
 elif page == "Energy Data":
 
-    st.title(
-        "Energy Data"
+    energy_data.render(
+        df=df,
     )
-
-    summary_df = (
-        calculate_daily_summary(df)
-    )
-
-    with st.container(
-            border=True
-    ):
-        render_daily_summary_table(
-            summary_df
-        )
-
-    energy_summary_df = (
-        calculate_daily_energy_summary(df)
-    )
-
-    with st.container(
-            border=True
-    ):
-        render_daily_energy_summary_table(
-            energy_summary_df
-        )
-
-    with st.container(
-            border=True
-    ):
-        st.subheader("Data")
-
-        with st.expander(
-                "Raw Telemetry Data",
-                expanded=False,
-        ):
-            render_raw_data_table(df)
-
-#endregion ** Energy Data **
-
-#region ** Diagnostics **
-# =========================================================
-# DIAGNOSTICS
-# =========================================================
 
 elif page == "Diagnostics":
 
-    st.title(
-        "Diagnostics"
+    diagnostics.render(
+        latest_upload_time=latest_timestamp,
+        data_age_minutes=data_age_minutes,
+        df=df,
+        settlement_df=settlement_df,
+        dispatch_history_df=dispatch_history_df,
     )
-
-    st.write(
-        "Latest Upload Time",
-        latest_upload_time,
-    )
-
-    st.write(
-        "Data Age Minutes",
-        round(data_age_minutes, 2),
-    )
-
-    st.write(
-        "Telemetry Rows",
-        len(df),
-    )
-
-    st.write(
-        "Energy Costs Rows",
-        len(settlement_df),
-    )
-
-    st.write(
-        "Dispatch Rows",
-        len(dispatch_history_df),
-    )
-#endregion ** Diagnostics **

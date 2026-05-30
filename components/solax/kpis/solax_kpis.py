@@ -77,26 +77,37 @@ def render_settlement_kpis(
         ].sum()
     )
 
-    col1, col2, col3, col4 = (
-        st.columns(4)
+    total_grid_to_battery = (
+        settlement_df[
+            "grid_to_battery_kwh"
+        ].sum()
+    )
+
+    col1, col2, col3, col4, col5 = (
+        st.columns(5)
     )
 
     col1.metric(
-        "Import kWh",
-        f"{total_import:.2f}",
+        "Grid Import",
+        f"{total_import:.2f} kWh",
     )
 
     col2.metric(
-        "Export kWh",
-        f"{total_export:.2f}",
+        "Grid Export",
+        f"{total_export:.2f} kWh",
     )
 
     col3.metric(
-        "PV kWh",
-        f"{total_pv:.2f}",
+        "Solar Generated",
+        f"{total_pv:.2f} kWh",
     )
 
     col4.metric(
-        "House kWh",
-        f"{total_house:.2f}",
+        "House Consumption",
+        f"{total_house:.2f} kWh",
+    )
+
+    col5.metric(
+        "Grid → Battery",
+        f"{total_grid_to_battery:.2f} kWh",
     )

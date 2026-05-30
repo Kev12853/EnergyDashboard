@@ -81,6 +81,21 @@ def calculate_half_hour_energy(
         settlement_df.reset_index()
     )
 
+    settlement_df["slot_time"] = (
+        settlement_df["upload_time"]
+        .dt.strftime("%H:%M")
+    )
+
+    settlement_df["forced_charge_window"] = (
+            (
+                    settlement_df["slot_time"] >= "23:30"
+            )
+            |
+            (
+                    settlement_df["slot_time"] < "05:30"
+            )
+    )
+
     # =====================================================
     # SPLIT IMPORT / EXPORT
     # =====================================================
@@ -111,6 +126,8 @@ def calculate_half_hour_energy(
         .abs()
     )
 
+
+
     # =====================================================
     # CONVERT TO KWH
     # =====================================================
@@ -136,5 +153,26 @@ def calculate_half_hour_energy(
         settlement_df[kwh_column] = (
             settlement_df[column] / 1000
         )
+
+    # =====================================================
+    # GRID -> BATTERY ENERGY
+    # =====================================================
+
+    settlement_df["grid_to_battery_kwh"] = 0.0
+
+    mask = settlement_df[
+        "forced_charge_window"
+    ]
+
+    settlement_df.loc[
+        mask,
+        "grid_to_battery_kwh",
+    ] = settlement_df.loc[
+        mask,
+        [
+            "battery_charge_kwh",
+            "grid_import_kwh",
+        ],
+    ].min(axis=1)
 
     return settlement_df

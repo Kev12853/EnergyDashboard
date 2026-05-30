@@ -12,14 +12,49 @@ def calculate_interval_energy(
     if df.empty:
         return pd.DataFrame()
 
+    if "bucket_start" in df.columns:
+
+        result = df.copy()
+
+        result["upload_time"] = pd.to_datetime(
+            result["bucket_start"]
+        )
+
+        result["pv_energy_wh"] = (
+                result["avg_solar_w"] / 60
+        )
+
+        result["house_load_energy_wh"] = (
+                result["avg_consumption_w"] / 60
+        )
+
+        result["grid_energy_wh"] = (
+                result["avg_grid_w"] / 60
+        )
+
+        result["battery_energy_wh"] = (
+                result["avg_battery_w"] / 60
+        )
+
+        return result
+
+
+# raw telemetry path below
+
     result = df.copy()
+
+    result = result.sort_values(
+
+        "timestamp"
+
+    )
 
     # =====================================================
     # SORT BY TIME
     # =====================================================
 
     result = result.sort_values(
-        "upload_time"
+        "timestamp"
     )
 
     # =====================================================

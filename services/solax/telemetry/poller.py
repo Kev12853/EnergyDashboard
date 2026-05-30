@@ -34,7 +34,9 @@ while True:
             snapshot
         )
 
-        # logger.info(snapshot)
+        logger.info(
+            "Poll OK"
+        )
 
     except Exception:
 
@@ -42,4 +44,4 @@ while True:
             "Poll failed"
         )
 
-    time.sleep(2)
+    time.sleep(5)
