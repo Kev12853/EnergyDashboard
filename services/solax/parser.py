@@ -1,4 +1,4 @@
-from services.solax.models import PowerFlowSnapshot
+from services.solax.telemetry.models import PowerFlowSnapshot
 
 
 class SolaxParser:

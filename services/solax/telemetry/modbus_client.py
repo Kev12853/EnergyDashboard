@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
 
+from services.solax.analytics.decoders import parse_schedule
 from services.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
@@ -245,3 +246,29 @@ class SolaxModbusClient:
             raise ConnectionError(
                 f"Unable to connect to {self.host}"
             )
+
+    def read_charge_schedule(self):
+
+        result = self.client.read_holding_registers(
+            address=0x0097,
+            count=9,
+            device_id=self.slave_id,
+        )
+
+        if result.isError():
+            raise RuntimeError(
+                f"Schedule read failed: {result}"
+            )
+
+        registers = {
+
+            0x0097 + index: value
+
+            for index, value
+            in enumerate(result.registers)
+
+        }
+
+        return parse_schedule(
+            registers
+        )

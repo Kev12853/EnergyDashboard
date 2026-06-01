@@ -29,6 +29,15 @@ class TelemetryRepository:
         self.connection = sqlite3.connect(
             DB_PATH,
             check_same_thread=False,
+            timeout=30,
+        )
+
+        self.connection.execute(
+            "PRAGMA journal_mode=WAL"
+        )
+
+        self.connection.execute(
+            "PRAGMA synchronous=NORMAL"
         )
 
         self.connection.row_factory = (
@@ -61,6 +70,51 @@ class TelemetryRepository:
             )
             """
         )
+
+        self.connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS automation_rules
+            (
+
+                id
+                INTEGER
+                PRIMARY
+                KEY,
+
+                name
+                TEXT
+                NOT
+                NULL,
+
+                enabled
+                INTEGER
+                NOT
+                NULL,
+
+                start_time
+                TEXT
+                NOT
+                NULL,
+
+                end_time
+                TEXT
+                NOT
+                NULL,
+
+                action
+                TEXT
+                NOT
+                NULL,
+
+                updated_at
+                TEXT
+                NOT
+                NULL
+
+            )
+            """
+        )
+
 
         self.connection.commit()
 

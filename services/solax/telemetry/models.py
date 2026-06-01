@@ -67,3 +67,20 @@ class PowerFlowSnapshot:
     # =====================================================
 
     raw_registers: dict[int, int] | None = None
+
+
+@dataclass(slots=True)
+class ChargeSchedule:
+    charge1_start: str
+    charge1_end: str
+
+    discharge1_start: str
+    discharge1_end: str
+
+    period2_enabled: bool
+
+    charge2_start: str | None = None
+    charge2_end: str | None = None
+
+    discharge2_start: str | None = None
+    discharge2_end: str | None = None

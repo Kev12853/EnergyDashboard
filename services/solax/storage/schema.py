@@ -77,6 +77,29 @@ def create_schema():
         """
     )
 
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS automation_rules (
+
+    id INTEGER PRIMARY KEY,
+
+    name TEXT NOT NULL,
+
+    enabled INTEGER NOT NULL,
+
+    start_time TEXT NOT NULL,
+
+    end_time TEXT NOT NULL,
+
+    action TEXT NOT NULL,
+
+    updated_at TEXT NOT NULL
+
+)
+        """
+    )
+
     connection.commit()
 
     connection.close()
@@ -91,3 +114,4 @@ if __name__ == "__main__":
     create_schema()
 
     print("Database schema created.")
+

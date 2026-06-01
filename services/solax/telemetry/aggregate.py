@@ -13,10 +13,18 @@ DB_PATH = (
 class TelemetryAggregator:
 
     def __init__(self):
-
         self.connection = sqlite3.connect(
             DB_PATH,
             check_same_thread=False,
+            timeout=30,
+        )
+
+        self.connection.execute(
+            "PRAGMA journal_mode=WAL"
+        )
+
+        self.connection.execute(
+            "PRAGMA synchronous=NORMAL"
         )
 
         self.create_tables()

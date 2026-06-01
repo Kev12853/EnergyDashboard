@@ -71,6 +71,7 @@ from ui.pages import (
     energy_data,
     diagnostics,
 )
+from app.pages import (automation)
 
 # =========================================================
 # STARTUP
@@ -202,6 +203,7 @@ with st.sidebar:
             "Octopus",
             "Energy Data",
             "Diagnostics",
+            "Automation",
         ],
         label_visibility="collapsed",
     )
@@ -253,6 +255,52 @@ initialise_services()
 # =========================================================
 
 repository = TelemetryRepository()
+
+from app.backend.automation.repository import (
+    AutomationRepository,
+)
+
+automation_repo = (
+    AutomationRepository(
+        connection
+    )
+)
+automation_rule = (
+    automation_repo.get_rule()
+)
+
+from datetime import datetime
+
+from app.backend.automation.models import (
+    AutomationRule,
+)
+
+from app.backend.automation.constants import (
+    ACTION_FORCE_DISCHARGE,
+)
+
+if automation_rule is None:
+
+    automation_rule = (
+        AutomationRule(
+
+            id=None,
+
+            name="New Rule",
+
+            enabled=False,
+
+            start_time="16:00",
+
+            end_time="19:00",
+
+            action=(
+                ACTION_FORCE_DISCHARGE
+            ),
+
+            updated_at=datetime.now(),
+        )
+    )
 
 # =========================================================
 # LOAD SOLAX DATA
@@ -441,4 +489,10 @@ elif page == "Diagnostics":
         df=df,
         settlement_df=settlement_df,
         dispatch_history_df=dispatch_history_df,
+    )
+elif page == "Automation":
+
+    automation.render(
+        rule=automation_rule,
+        repo=automation_repo,
     )

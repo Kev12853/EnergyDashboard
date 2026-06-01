@@ -36,7 +36,7 @@ while True:
         #     "Cleaning raw telemetry..."
         # )
         #
-        # # aggregator.cleanup_raw_telemetry()
+        aggregator.cleanup_raw_telemetry()
         #
         # logger.info(
         #     "Aggregation complete"
