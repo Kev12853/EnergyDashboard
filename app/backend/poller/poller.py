@@ -48,9 +48,9 @@ logger.info(
     "Starting to Poll"
 )
 
-schedule = client.read_charge_schedule()
-
-logger.info(schedule)
+# schedule = client.read_charge_schedule()
+#
+# logger.info(schedule)
 
 automation_repo = AutomationRepository(
     connection

@@ -3,14 +3,12 @@ import requests
 #import streamlit as st
 from pandas import DataFrame
 
-from services.config import (
+from app.config import (
     API_KEY,
     ACCOUNT_ID,
     IMPORT_MPAN,
     EXPORT_MPAN,
     METER_SERIAL,
-    PRODUCT_CODE,
-    TARIFF_CODE,
     BASE_URL,
     GRAPHQL_URL,
     TIMEZONE

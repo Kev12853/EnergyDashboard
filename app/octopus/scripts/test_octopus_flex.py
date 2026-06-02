@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from services.config import (
+from app.config import (
     API_KEY,
     GRAPHQL_URL,
 )

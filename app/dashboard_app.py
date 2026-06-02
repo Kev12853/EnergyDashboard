@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 import streamlit as st
 
@@ -11,9 +19,7 @@ from streamlit_autorefresh import (
 # SOLAX REPOSITORY
 # =========================================================
 
-from app.solax.storage.repository import (
-    TelemetryRepository,
-)
+from app.solax.storage.repository import (TelemetryRepository)
 
 # =========================================================
 # OCTOPUS STORAGE
@@ -56,7 +62,7 @@ from app.dashboard.pages import automation, octopus, energy_data, energy_costs, 
 # STARTUP
 # =========================================================
 
-from services.startup import (
+from app.backend.bootstrap import (
     start_services,
 )
 

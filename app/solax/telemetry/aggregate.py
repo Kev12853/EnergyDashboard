@@ -17,7 +17,7 @@ class TelemetryAggregator:
             "PRAGMA synchronous=NORMAL"
         )
 
-        self.create_tables()
+        #self.create_tables()
 
     def rebuild_1m(self):
 
