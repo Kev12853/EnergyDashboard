@@ -16,22 +16,22 @@ def start_services():
 
         (
             "Solax Logger",
-            "services.solax.logger",
+            "poller.solax.logger",
         ),
 
         (
             "Octopus Logger",
-            "services.octopus.logger",
+            "poller.octopus.logger",
         ),
 
         (
             "Account Sync",
-            "services.octopus.account_logger",
+            "poller.octopus.account_logger",
         ),
 
         (
             "Agreement Sync",
-            "services.octopus.agreement_logger",
+            "poller.octopus.agreement_logger",
         ),
 
     ]

@@ -1,4 +1,4 @@
-from analytics.decoders import parse_schedule
+from app.solax.analytics.decoders import parse_schedule
 
 
 def test_parse_schedule():
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     test_parse_schedule()
     print("Test passed")
 
-    from services.solax.telemetry.modbus_client import (
+    from app.solax.telemetry import (
         SolaxModbusClient,
     )
 

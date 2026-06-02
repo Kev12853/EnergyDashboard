@@ -13,7 +13,7 @@ connection = sqlite3.connect(
     "data/telemetry.db"
 )
 
-from services.solax.storage.repository import (
+from app.solax.storage.repository import (
     TelemetryRepository,
 )
 

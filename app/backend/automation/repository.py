@@ -1,10 +1,3 @@
-ACTION_FORCE_CHARGE = (
-    "FORCE_CHARGE"
-)
-
-ACTION_FORCE_DISCHARGE = (
-    "FORCE_DISCHARGE"
-)
 # app/backend/automation/repository.py
 
 from datetime import datetime

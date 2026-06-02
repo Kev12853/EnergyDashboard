@@ -1,4 +1,4 @@
-from services.solax.telemetry.modbus_client import (
+from app.solax.telemetry import (
     SolaxModbusClient,
 )
 
