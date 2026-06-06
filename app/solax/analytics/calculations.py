@@ -74,8 +74,4 @@ def calculate_house_load_w(
         Estimated house consumption load.
     """
 
-    return (
-        pv_power_w
-        - grid_power_w
-        - battery_power_w
-    )
+    return pv_power_w - grid_power_w - battery_power_w

@@ -42,13 +42,9 @@ connection.close()
 # PARSE TIMESTAMPS
 # =========================================================
 
-df["timestamp"] = pd.to_datetime(
-    df["timestamp"]
-)
+df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-df["upload_time"] = pd.to_datetime(
-    df["upload_time"]
-)
+df["upload_time"] = pd.to_datetime(df["upload_time"])
 
 # =========================================================
 # SUMMARY

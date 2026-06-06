@@ -4,19 +4,12 @@ import streamlit as st
 def render_sidebar():
 
     with st.sidebar:
-
-        st.title(
-            "⚡ Energy Dashboard"
-        )
+        st.title("⚡ Energy Dashboard")
 
         st.divider()
 
         st.markdown(
-            (
-                '<div class="sidebar-heading">'
-                'Navigation'
-                '</div>'
-            ),
+            ('<div class="sidebar-heading">Navigation</div>'),
             unsafe_allow_html=True,
         )
 
@@ -39,8 +32,7 @@ def render_sidebar():
             "Time Window",
             options=[1, 6, 12, 24, 48],
             index=3,
-            format_func=lambda x:
-                f"{x} Hours",
+            format_func=lambda x: f"{x} Hours",
         )
 
     return (

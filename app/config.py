@@ -14,46 +14,28 @@ load_dotenv()
 # OCTOPUS CONFIG
 # =====================================================
 
-API_KEY = os.getenv(
-    "OCTOPUS_API_KEY"
-)
+API_KEY = os.getenv("OCTOPUS_API_KEY")
 
-ACCOUNT_ID = os.getenv(
-    "ACCOUNT_ID"
-)
+ACCOUNT_ID = os.getenv("ACCOUNT_ID")
 
-IMPORT_MPAN = os.getenv(
-    "IMPORT_MPAN"
-)
+IMPORT_MPAN = os.getenv("IMPORT_MPAN")
 
-EXPORT_MPAN = os.getenv(
-    "EXPORT_MPAN"
-)
+EXPORT_MPAN = os.getenv("EXPORT_MPAN")
 
-METER_SERIAL = os.getenv(
-    "METER_SERIAL"
-)
+METER_SERIAL = os.getenv("METER_SERIAL")
 
-PRODUCT_CODE = os.getenv(
-    "PRODUCT_CODE"
-)
+PRODUCT_CODE = os.getenv("PRODUCT_CODE")
 
-TARIFF_CODE = os.getenv(
-    "TARIFF_CODE"
-)
+TARIFF_CODE = os.getenv("TARIFF_CODE")
 
 
 # =====================================================
 # URLS
 # =====================================================
 
-BASE_URL = (
-    "https://api.octopus.energy/v1"
-)
+BASE_URL = "https://api.octopus.energy/v1"
 
-GRAPHQL_URL = (
-    "https://api.octopus.energy/v1/graphql/"
-)
+GRAPHQL_URL = "https://api.octopus.energy/v1/graphql/"
 
 
 # =====================================================

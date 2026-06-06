@@ -25,12 +25,14 @@ def aggregate_data(df, freq):
         df = df.set_index("datetime")
     # --- FIX ENDS HERE ---
 
-    agg_df = df.resample(freq).agg({
-        "consumption_kwh": "sum",
-        "export_kwh": "sum",
-        "cost": "sum",
-        "revenue": "sum",
-        "net": "sum"
-    })
+    agg_df = df.resample(freq).agg(
+        {
+            "consumption_kwh": "sum",
+            "export_kwh": "sum",
+            "cost": "sum",
+            "revenue": "sum",
+            "net": "sum",
+        }
+    )
 
     return agg_df.reset_index()

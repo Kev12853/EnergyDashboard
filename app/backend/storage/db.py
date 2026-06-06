@@ -2,15 +2,9 @@ from pathlib import Path
 import sqlite3
 
 
-PROJECT_ROOT = (
-    Path(__file__).resolve().parents[3]
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-DB_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "energy_dashboard.db"
-)
+DB_PATH = PROJECT_ROOT / "data" / "energy_dashboard.db"
 
 
 def get_connection():
@@ -26,16 +20,10 @@ def get_connection():
         timeout=30,
     )
 
-    connection.execute(
-        "PRAGMA journal_mode=WAL"
-    )
+    connection.execute("PRAGMA journal_mode=WAL")
 
-    connection.execute(
-        "PRAGMA synchronous=NORMAL"
-    )
+    connection.execute("PRAGMA synchronous=NORMAL")
 
-    connection.row_factory = (
-        sqlite3.Row
-    )
+    connection.row_factory = sqlite3.Row
 
     return connection

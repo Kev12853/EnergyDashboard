@@ -8,10 +8,7 @@ def render_dispatch_timeline(
 ):
 
     if dispatch_df.empty:
-
-        st.info(
-            "No dispatch data available."
-        )
+        st.info("No dispatch data available.")
 
         return
 
@@ -21,22 +18,17 @@ def render_dispatch_timeline(
     ):
         timeline = (
             alt.Chart(dispatch_df)
-            .mark_bar(
-                cornerRadius=5
-            )
+            .mark_bar(cornerRadius=5)
             .encode(
                 x=alt.X(
                     "dispatch_start:T",
                     title="Time (London)",
                 ),
-
                 x2="dispatch_end:T",
-
                 y=alt.Y(
                     "status:N",
                     title=None,
                 ),
-
                 color=alt.Color(
                     "status:N",
                     scale=alt.Scale(
@@ -50,52 +42,33 @@ def render_dispatch_timeline(
                         ],
                     ),
                 ),
-
                 tooltip=[
-
                     alt.Tooltip(
                         "dispatch_start:T",
                         format="%H:%M",
                         title="Start",
                     ),
-
                     alt.Tooltip(
                         "dispatch_end:T",
                         format="%H:%M",
                         title="End",
                     ),
-
                     alt.Tooltip(
-                        (
-                            "scheduled_energy_kwh:Q"
-                        ),
+                        ("scheduled_energy_kwh:Q"),
                         title="Est. kWh",
                     ),
                 ],
             )
-            .properties(
-                height=120
-            )
+            .properties(height=120)
         )
 
-
         now_line = (
-            alt.Chart(
-                pd.DataFrame(
-                    {
-                        "now": [
-                            pd.Timestamp.now()
-                        ]
-                    }
-                )
-            )
+            alt.Chart(pd.DataFrame({"now": [pd.Timestamp.now()]}))
             .mark_rule(
                 color="red",
                 strokeDash=[4, 4],
             )
-            .encode(
-                x="now:T"
-            )
+            .encode(x="now:T")
         )
 
         st.altair_chart(

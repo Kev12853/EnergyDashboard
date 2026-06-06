@@ -75,11 +75,12 @@ def create_tariffs_table(
 
     conn.commit()
 
+
 from datetime import datetime, UTC
 
 
 def upsert_tariffs(
-        tariff_df: pd.DataFrame,
+    tariff_df: pd.DataFrame,
 ):
 
     if tariff_df.empty:
@@ -105,23 +106,15 @@ def upsert_tariffs(
             VALUES (?, ?, ?, ?)
             """,
             (
-                row[
-                    "valid_from"
-                ].isoformat(),
-
-                row[
-                    "valid_to"
-                ].isoformat(),
-
-                row[
-                    "import_rate_gbp_per_kwh"
-                ],
-
+                row["valid_from"].isoformat(),
+                row["valid_to"].isoformat(),
+                row["import_rate_gbp_per_kwh"],
                 now,
             ),
         )
 
     conn.commit()
+
 
 # def create_accounts_table(
 #     conn: sqlite3.Connection,
@@ -191,4 +184,3 @@ def upsert_tariffs(
 #     )
 #
 #     conn.commit()
-

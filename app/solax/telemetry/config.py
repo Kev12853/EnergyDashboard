@@ -1,4 +1,4 @@
-HOST = "192.168.1.66"   # your actual dongle IP
+HOST = "192.168.1.66"  # your actual dongle IP
 
 PORT = 502
 

@@ -10,7 +10,6 @@ DRY_RUN = True
 
 
 class Scheduler:
-
     def __init__(
         self,
         repository,
@@ -27,11 +26,7 @@ class Scheduler:
         self,
     ):
 
-        periods = [
-            p
-            for p in self.repository.get_periods()
-            if p.enabled
-        ]
+        periods = [p for p in self.repository.get_periods() if p.enabled]
 
         if not periods:
             return
@@ -39,11 +34,9 @@ class Scheduler:
         rule = periods[0]
 
         if rule is None:
-
             return
 
         if not rule.enabled:
-
             return
 
         should_run = self.is_in_window(
@@ -51,40 +44,21 @@ class Scheduler:
             rule.end_time,
         )
 
-
         #
         # Enter window
         #
 
-        if (
-            should_run
-            and not self.is_active
-        ):
-
-            print(
-                f"ENTER WINDOW: {rule.name}"
-            )
+        if should_run and not self.is_active:
+            print(f"ENTER WINDOW: {rule.name}")
 
             if DRY_RUN:
-
-                print(
-                    f"DRY RUN: Would execute "
-                    f"{rule.action}"
-                )
+                print(f"DRY RUN: Would execute {rule.action}")
 
             else:
-
-                if (
-                    rule.action
-                    == MODE_MANUAL_DISCHARGE
-                ):
-
+                if rule.action == MODE_MANUAL_DISCHARGE:
                     self.controller.force_discharge()
 
-                elif (
-                    rule.action
-                    == MODE_MANUAL_CHARGE                ):
-
+                elif rule.action == MODE_MANUAL_CHARGE:
                     self.controller.force_charge()
 
             self.is_active = True
@@ -95,24 +69,13 @@ class Scheduler:
         # Leave window
         #
 
-        if (
-            not should_run
-            and self.is_active
-        ):
-
-            print(
-                f"LEAVE WINDOW: {rule.name}"
-            )
+        if not should_run and self.is_active:
+            print(f"LEAVE WINDOW: {rule.name}")
 
             if DRY_RUN:
-
-                print(
-                    "DRY RUN: Would return "
-                    "to Self Use"
-                )
+                print("DRY RUN: Would return to Self Use")
 
             else:
-
                 self.controller.self_use()
 
             self.is_active = False
@@ -125,26 +88,22 @@ class Scheduler:
 
         self.is_active = False
 
-        print(
-            "Scheduler reset"
-        )
+        print("Scheduler reset")
 
     def is_in_window(
-            self,
-            start_time: str,
-            end_time: str,
-            current_time: str | None = None,
+        self,
+        start_time: str,
+        end_time: str,
+        current_time: str | None = None,
     ) -> bool:
 
         if current_time:
-
             now = datetime.strptime(
                 current_time,
                 "%H:%M",
             ).time()
 
         else:
-
             now = datetime.now().time()
 
         start = datetime.strptime(
@@ -158,13 +117,6 @@ class Scheduler:
         ).time()
 
         if start <= end:
-            return (
-                    start
-                    <= now
-                    < end
-            )
+            return start <= now < end
 
-        return (
-                now >= start
-                or now < end
-        )
+        return now >= start or now < end

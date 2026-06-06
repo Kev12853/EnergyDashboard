@@ -16,7 +16,7 @@ def date_input_range():
     dates = st.sidebar.date_input(
         "Select period",
         [st.session_state.start_date, st.session_state.end_date],
-        key="date_range"
+        key="date_range",
     )
 
     # Update session state when user changes input
@@ -35,14 +35,10 @@ def aggregation_selector():
     label = st.sidebar.selectbox(
         "View By",
         ["Half-Hourly", "Daily", "Weekly", "Monthly"],
-        key="aggregation_selector"
+        key="aggregation_selector",
     )
 
     if label == "Half-Hourly":
         return None
 
-    return {
-        "Daily": "D",
-        "Weekly": "W",
-        "Monthly": "ME"
-    }[label]
+    return {"Daily": "D", "Weekly": "W", "Monthly": "ME"}[label]

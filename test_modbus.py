@@ -1,8 +1,6 @@
 from pymodbus.client import ModbusTcpClient
 
-client = ModbusTcpClient(
-    host="192.168.1.66"
-)
+client = ModbusTcpClient(host="192.168.1.66")
 
 print(client.connect())
 

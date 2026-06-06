@@ -14,18 +14,12 @@ def save_accounts():
 
     accounts = get_octopus_accounts()
 
-    created_at = (
-        datetime.now()
-        .isoformat()
-    )
+    created_at = datetime.now().isoformat()
 
     rows_added = 0
 
     for account in accounts:
-
-        account_number = (
-            account["number"]
-        )
+        account_number = account["number"]
 
         result = conn.execute(
             """
@@ -47,19 +41,14 @@ def save_accounts():
         )
 
         if result.rowcount:
-
             rows_added += 1
 
     conn.commit()
 
     conn.close()
 
-    print(
-        f"Accounts added: "
-        f"{rows_added}"
-    )
+    print(f"Accounts added: {rows_added}")
 
 
 if __name__ == "__main__":
-
     save_accounts()

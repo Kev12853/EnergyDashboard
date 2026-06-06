@@ -8,22 +8,18 @@ from app.backend.storage.db import (
     get_connection,
 )
 
-class TelemetryRepository:
 
+class TelemetryRepository:
     def __init__(
         self,
         connection,
     ):
 
-        self.connection = (
-            connection
-        )
+        self.connection = connection
 
     def save_snapshot(
-
         self,
         snapshot: PowerFlowSnapshot,
-
     ):
 
         self.connection.execute(
@@ -59,9 +55,7 @@ class TelemetryRepository:
                 snapshot.consumption_power_w,
                 snapshot.pv1_power_w,
                 snapshot.pv2_power_w,
-                json.dumps(
-                    snapshot.raw_registers
-                ),
+                json.dumps(snapshot.raw_registers),
             ),
         )
 
@@ -81,17 +75,13 @@ class TelemetryRepository:
         return cursor.fetchone()
 
     def get_1m_history(
-            self,
-            start,
-            end,
+        self,
+        start,
+        end,
     ):
-        start = start.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        start = start.strftime("%Y-%m-%d %H:%M:%S")
 
-        end = end.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        end = end.strftime("%Y-%m-%d %H:%M:%S")
 
         cursor = self.connection.execute(
             """
@@ -113,11 +103,9 @@ class TelemetryRepository:
         return cursor.fetchall()
 
     def get_30m_history(
-
-            self,
-            start: str,
-            end: str,
-
+        self,
+        start: str,
+        end: str,
     ):
         cursor = self.connection.execute(
             """

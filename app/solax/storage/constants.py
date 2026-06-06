@@ -35,10 +35,9 @@ LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 CSV_PATH = (
-    LOG_DIR
-    / f"registers_"
-      f"{RUNTIME_BLOCK_START}_"
-      f"{RUNTIME_BLOCK_START + RUNTIME_BLOCK_COUNT - 1}.csv"
+    LOG_DIR / f"registers_"
+    f"{RUNTIME_BLOCK_START}_"
+    f"{RUNTIME_BLOCK_START + RUNTIME_BLOCK_COUNT - 1}.csv"
 )
 
 # =========================================================

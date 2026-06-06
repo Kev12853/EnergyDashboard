@@ -77,7 +77,6 @@ def create_schema():
         """
     )
 
-
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS automation_rules (
@@ -110,8 +109,6 @@ def create_schema():
 # =========================================================
 
 if __name__ == "__main__":
-
     create_schema()
 
     print("Database schema created.")
-

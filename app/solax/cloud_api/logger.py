@@ -65,11 +65,8 @@ print("Starting SolaX cloud logger...")
 last_upload_time = None
 
 try:
-
     while True:
-
         try:
-
             snapshot = client.get_snapshot()
 
             # =============================================
@@ -77,30 +74,17 @@ try:
             # =============================================
 
             if snapshot.upload_time != last_upload_time:
-
                 insert_snapshot(snapshot)
 
-                last_upload_time = (
-                    snapshot.upload_time
-                )
+                last_upload_time = snapshot.upload_time
 
-                print(
-                    f"Logged: "
-                    f"{snapshot.upload_time}"
-                )
+                print(f"Logged: {snapshot.upload_time}")
 
             else:
-
-                print(
-                    "No new inverter update"
-                )
+                print("No new inverter update")
 
         except Exception as e:
-
-            print(
-                f"[{datetime.datetime.now()}] "
-                f"Logger error: {e}"
-            )
+            print(f"[{datetime.datetime.now()}] Logger error: {e}")
 
         #
         # Poll interval
@@ -109,7 +93,4 @@ try:
         time.sleep(30)
 
 except KeyboardInterrupt:
-
-    print(
-        "\nStopping logger..."
-    )
+    print("\nStopping logger...")

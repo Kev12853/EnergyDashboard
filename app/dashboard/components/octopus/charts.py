@@ -17,23 +17,12 @@ def energy_chart(df, freq):
 
     # X axis
     if freq is None:
-
-        x = alt.X(
-            "datetime:T",
-            title="Date / Time"
-        )
+        x = alt.X("datetime:T", title="Date / Time")
 
     else:
+        df["date_label"] = df["datetime"].dt.strftime("%d %b")
 
-        df["date_label"] = (
-            df["datetime"]
-            .dt.strftime("%d %b")
-        )
-
-        x = alt.X(
-            "date_label:N",
-            title="Date"
-        )
+        x = alt.X("date_label:N", title="Date")
 
     # -----------------------
     # SEPARATE DATASETS
@@ -49,34 +38,19 @@ def energy_chart(df, freq):
     # -----------------------
     consumption = (
         alt.Chart(df_consumption)
-        .mark_bar(
-            color="#3498db",
-            opacity=0.7
-        )
+        .mark_bar(color="#3498db", opacity=0.7)
         .encode(
             x=x,
-            xOffset=alt.XOffset(
-                "series:N"
-            ),
+            xOffset=alt.XOffset("series:N"),
             y=alt.Y(
                 "consumption_kwh:Q",
                 title="Consumption (kWh)",
-                axis=alt.Axis(
-                    titleColor="#3498db",
-                    orient="left"
-                )
+                axis=alt.Axis(titleColor="#3498db", orient="left"),
             ),
             tooltip=[
-                alt.Tooltip(
-                    "datetime:T",
-                    title="Time"
-                ),
-                alt.Tooltip(
-                    "consumption_kwh:Q",
-                    title="Consumption",
-                    format=".3f"
-                )
-            ]
+                alt.Tooltip("datetime:T", title="Time"),
+                alt.Tooltip("consumption_kwh:Q", title="Consumption", format=".3f"),
+            ],
         )
     )
 
@@ -85,52 +59,29 @@ def energy_chart(df, freq):
     # -----------------------
     export = (
         alt.Chart(df_export)
-        .mark_bar(
-            color="#2ecc71",
-            opacity=0.7
-        )
+        .mark_bar(color="#2ecc71", opacity=0.7)
         .encode(
             x=x,
-            xOffset=alt.XOffset(
-                "series:N"
-            ),
+            xOffset=alt.XOffset("series:N"),
             y=alt.Y(
                 "export_kwh:Q",
                 title="Export (kWh)",
-                axis=alt.Axis(
-                    titleColor="#2ecc71",
-                    orient="right"
-                )
+                axis=alt.Axis(titleColor="#2ecc71", orient="right"),
             ),
             tooltip=[
-                alt.Tooltip(
-                    "datetime:T",
-                    title="Time",
-                    format=time_format
-                ),
-                alt.Tooltip(
-                    "export_kwh:Q",
-                    title="Export",
-                    format=".3f"
-                )
-            ]
+                alt.Tooltip("datetime:T", title="Time", format=time_format),
+                alt.Tooltip("export_kwh:Q", title="Export", format=".3f"),
+            ],
         )
     )
 
     chart = (
-        alt.layer(
-            consumption,
-            export
-        )
-        .resolve_scale(
-            y="independent"
-        )
+        alt.layer(consumption, export)
+        .resolve_scale(y="independent")
         .properties(height=400)
     )
 
-    st.altair_chart(
-        chart,
-        width="stretch"    )
+    st.altair_chart(chart, width="stretch")
 
 
 # -----------------------
@@ -146,25 +97,14 @@ def financial_chart(df, freq):
     # X AXIS
     # -----------------------
     if freq is None:
-
-        x = alt.X(
-            "datetime:T",
-            title="Date / Time"
-        )
+        x = alt.X("datetime:T", title="Date / Time")
 
         time_format = "%d %b %Y %H:%M"
 
     else:
+        df["date_label"] = df["datetime"].dt.strftime("%d %b")
 
-        df["date_label"] = (
-            df["datetime"]
-            .dt.strftime("%d %b")
-        )
-
-        x = alt.X(
-            "date_label:N",
-            title="Date"
-        )
+        x = alt.X("date_label:N", title="Date")
 
         time_format = "%d %b %Y"
 
@@ -173,79 +113,38 @@ def financial_chart(df, freq):
     # -----------------------
     chart_df = df.melt(
         id_vars=["datetime"],
-        value_vars=[
-            "revenue",
-            "net"
-        ],
+        value_vars=["revenue", "net"],
         var_name="series",
-        value_name="value"
+        value_name="value",
     )
 
-    chart_df["series"] = (
-        chart_df["series"]
-        .str.capitalize()
-    )
+    chart_df["series"] = chart_df["series"].str.capitalize()
 
     # Add labels for aggregated views
     if freq is not None:
-
-        chart_df["date_label"] = (
-            chart_df["datetime"]
-            .dt.strftime("%d %b")
-        )
+        chart_df["date_label"] = chart_df["datetime"].dt.strftime("%d %b")
 
     # -----------------------
     # CHART
     # -----------------------
     chart = (
         alt.Chart(chart_df)
-        .mark_line(
-            strokeWidth=3,
-            point={
-                "size": 10,
-                "filled": True
-            }
-        )
+        .mark_line(strokeWidth=3, point={"size": 10, "filled": True})
         .encode(
             x=x,
-
-            y=alt.Y(
-                "value:Q",
-                title="Financial (£)"
-            ),
-
+            y=alt.Y("value:Q", title="Financial (£)"),
             color=alt.Color(
                 "series:N",
                 title="Series",
-                scale=alt.Scale(
-                    domain=["Revenue", "Net"],
-                    range=["green", "orange"]
-                )
+                scale=alt.Scale(domain=["Revenue", "Net"], range=["green", "orange"]),
             ),
-
             tooltip=[
-                alt.Tooltip(
-                    "datetime:T",
-                    title="Time",
-                    format=time_format
-                ),
-
-                alt.Tooltip(
-                    "series:N",
-                    title="Series"
-                ),
-
-                alt.Tooltip(
-                    "value:Q",
-                    title="Value (£)",
-                    format=".2f"
-                )
-            ]
+                alt.Tooltip("datetime:T", title="Time", format=time_format),
+                alt.Tooltip("series:N", title="Series"),
+                alt.Tooltip("value:Q", title="Value (£)", format=".2f"),
+            ],
         )
         .properties(height=400)
     )
 
-    st.altair_chart(
-        chart,
-        width="stretch"
-    )
+    st.altair_chart(chart, width="stretch")

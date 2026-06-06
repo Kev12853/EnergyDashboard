@@ -8,7 +8,6 @@ from app.backend.automation.models import (
 
 
 class AutomationRepository:
-
     def __init__(
         self,
         connection,
@@ -21,7 +20,6 @@ class AutomationRepository:
     ):
 
         if period.id is None:
-
             cursor = self.connection.execute(
                 """
                 INSERT INTO schedule_periods (
@@ -53,7 +51,6 @@ class AutomationRepository:
             period.id = cursor.lastrowid
 
         else:
-
             self.connection.execute(
                 """
                 UPDATE schedule_periods
@@ -87,8 +84,8 @@ class AutomationRepository:
         self.connection.commit()
 
     def get_period(
-            self,
-            period_id: int,
+        self,
+        period_id: int,
     ) -> SchedulePeriod | None:
 
         row = self.connection.execute(
@@ -105,9 +102,8 @@ class AutomationRepository:
         if row is None:
             return None
 
-        return self._row_to_period(
-            row
-        )
+        return self._row_to_period(row)
+
     def get_periods(
         self,
     ) -> list[SchedulePeriod]:
@@ -123,10 +119,7 @@ class AutomationRepository:
             """
         ).fetchall()
 
-        return [
-            self._row_to_period(row)
-            for row in rows
-        ]
+        return [self._row_to_period(row) for row in rows]
 
     def delete_period(
         self,
@@ -150,32 +143,19 @@ class AutomationRepository:
     ) -> SchedulePeriod:
 
         return SchedulePeriod(
-
             id=row["id"],
-
             name=row["name"],
-
             source=row["source"],
-
-            enabled=bool(
-                row["enabled"]
-            ),
-
+            enabled=bool(row["enabled"]),
             start_time=row["start_time"],
-
             end_time=row["end_time"],
-
             mode=row["mode"],
-
             priority=row["priority"],
-
-            updated_at=datetime.fromisoformat(
-                row["updated_at"]
-            ),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
         )
 
     def get_rule(
-            self,
+        self,
     ) -> SchedulePeriod | None:
 
         periods = self.get_periods()

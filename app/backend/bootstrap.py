@@ -13,40 +13,31 @@ def start_services():
     #     return
 
     services = [
-
         (
             "Solax Logger",
             "poller.solax.logger",
         ),
-
         (
             "Octopus Logger",
             "poller.octopus.logger",
         ),
-
         (
             "Account Sync",
             "poller.octopus.account_logger",
         ),
-
         (
             "Agreement Sync",
             "poller.octopus.agreement_logger",
         ),
-
     ]
 
-    print(
-        "\n=== STARTING SERVICES ==="
-    )
+    print("\n=== STARTING SERVICES ===")
 
     for (
         service_name,
         module,
     ) in services:
-
         try:
-
             subprocess.Popen(
                 [
                     sys.executable,
@@ -57,20 +48,12 @@ def start_services():
                 stderr=subprocess.DEVNULL,
             )
 
-            print(
-                f"✓ {service_name}"
-            )
+            print(f"✓ {service_name}")
 
         except Exception as e:
+            print(f"✗ {service_name} : {e}")
 
-            print(
-                f"✗ {service_name}"
-                f" : {e}"
-            )
-
-    print(
-        "=========================\n"
-    )
+    print("=========================\n")
 
     # st.session_state[
     #     "services_started"

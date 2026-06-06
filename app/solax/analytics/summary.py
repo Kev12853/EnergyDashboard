@@ -6,12 +6,11 @@
 # DAILY SUMMARY
 # =========================================================
 
+
 def calculate_daily_summary(df):
 
     summary_df = (
-        df.groupby(
-            df["upload_time"].dt.date
-        )
+        df.groupby(df["upload_time"].dt.date)
         .agg(
             avg_house_load_w=(
                 "house_load_w",

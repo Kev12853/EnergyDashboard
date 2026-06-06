@@ -19,7 +19,7 @@ from streamlit_autorefresh import (
 # SOLAX REPOSITORY
 # =========================================================
 
-from app.solax.storage.repository import (TelemetryRepository)
+from app.solax.storage.repository import TelemetryRepository
 
 # =========================================================
 # OCTOPUS STORAGE
@@ -56,7 +56,14 @@ from app.octopus.analytics.costs import (
 # PAGE IMPORTS
 # =========================================================
 
-from app.dashboard.pages import automation, octopus, energy_data, energy_costs, diagnostics, overview
+from app.dashboard.pages import (
+    automation,
+    octopus,
+    energy_data,
+    energy_costs,
+    diagnostics,
+    overview,
+)
 from app.dashboard.components.sidebar import (
     render_sidebar,
 )
@@ -158,13 +165,10 @@ st.markdown(
 )
 
 
-
 # =========================================================
 # SIDEBAR
 # =========================================================
-page, hours = (
-    render_sidebar()
-)
+page, hours = render_sidebar()
 
 
 #
@@ -217,9 +221,8 @@ from app.backend.storage.schema import (
     create_all_tables,
 )
 
-create_all_tables(
-    connection
-)
+create_all_tables(connection)
+
 
 @st.cache_resource
 def initialise_services():
@@ -233,25 +236,15 @@ initialise_services()
 # REPOSITORY
 # =========================================================
 
-repository = (
-    TelemetryRepository(
-        connection
-    )
-)
+repository = TelemetryRepository(connection)
 
 from app.backend.automation.repository import (
     AutomationRepository,
 )
 
-automation_repo = (
-    AutomationRepository(
-        connection
-    )
-)
+automation_repo = AutomationRepository(connection)
 
-automation_rule = (
-    automation_repo.get_periods()
-)
+automation_rule = automation_repo.get_periods()
 
 from datetime import datetime
 
@@ -260,19 +253,16 @@ from app.backend.automation.models import (
 )
 
 if automation_rule is None:
-
-    automation_rule = (
-        SchedulePeriod(
-            id=None,
-            name="New Period",
-            source="MANUAL",
-            enabled=False,
-            start_time="16:00",
-            end_time="19:00",
-            mode="SELF_USE",
-            priority=10,
-            updated_at=datetime.now(),
-        )
+    automation_rule = SchedulePeriod(
+        id=None,
+        name="New Period",
+        source="MANUAL",
+        enabled=False,
+        start_time="16:00",
+        end_time="19:00",
+        mode="SELF_USE",
+        priority=10,
+        updated_at=datetime.now(),
     )
 
 # =========================================================
@@ -281,20 +271,13 @@ if automation_rule is None:
 
 from zoneinfo import ZoneInfo
 
-end = pd.Timestamp.now(
-    tz=ZoneInfo("Europe/London")
-)
+end = pd.Timestamp.now(tz=ZoneInfo("Europe/London"))
 
-start = end - timedelta(
-    hours=hours
-)
+start = end - timedelta(hours=hours)
 
 latest = repository.get_latest_snapshot()
 if latest is None:
-
-    st.warning(
-        "No telemetry data available."
-    )
+    st.warning("No telemetry data available.")
 
     st.stop()
 
@@ -313,7 +296,6 @@ latest["house_load_w"] = latest["consumption_w"]
 # =========================================================
 
 
-
 # =========================================================
 # LOAD HISTORY
 # =========================================================
@@ -324,43 +306,27 @@ try:
         end=end,
     )
 
-    df = pd.DataFrame(
-        [dict(row) for row in history_1m]
-    )
+    df = pd.DataFrame([dict(row) for row in history_1m])
     if not df.empty:
-
-        df["upload_time"] = pd.to_datetime(
-            df["bucket_start"]
-        )
+        df["upload_time"] = pd.to_datetime(df["bucket_start"])
 
         df["timestamp"] = df["upload_time"]
 
-        df["pv_power_w"] = (
-            df["avg_solar_w"]
-        )
+        df["pv_power_w"] = df["avg_solar_w"]
 
-        df["house_load_w"] = (
-            df["avg_consumption_w"]
-        )
+        df["house_load_w"] = df["avg_consumption_w"]
 
-        df["consumption_power_w"] = (
-            df["avg_consumption_w"]
-        )
+        df["consumption_power_w"] = df["avg_consumption_w"]
 
-        df["grid_power_w"] = (
-            df["avg_grid_w"]
-        )
+        df["grid_power_w"] = df["avg_grid_w"]
 
-        df["battery_power_w"] = (
-            df["avg_battery_w"]
-        )
+        df["battery_power_w"] = df["avg_battery_w"]
         df.drop(
             columns=["bucket_start"],
             inplace=True,
         )
 
 except Exception:
-
     #
     # Temporary fallback until
     # aggregation pipeline fully wired
@@ -372,57 +338,38 @@ except Exception:
 # DATA FRESHNESS
 # =========================================================
 
-latest_timestamp = latest[
-    "timestamp"
-]
+latest_timestamp = latest["timestamp"]
 
 data_age_minutes = (
-    pd.Timestamp.now("UTC")
-    - pd.Timestamp(latest_timestamp)
+    pd.Timestamp.now("UTC") - pd.Timestamp(latest_timestamp)
 ).total_seconds() / 60
 
 # =========================================================
 # LOAD OCTOPUS DATA
 # =========================================================
 
-tariff_df = (
-    get_recent_tariffs()
-)
-dispatch_history_df = (
-    get_dispatch_history(
-        days=7
-    )
-)
+tariff_df = get_recent_tariffs()
+dispatch_history_df = get_dispatch_history(days=7)
 # =========================================================
 # ENERGY COST ANALYTICS
 # =========================================================
 
 if not df.empty:
+    settlement_df = calculate_half_hour_energy(df)
 
-    settlement_df = (
-        calculate_half_hour_energy(df)
+    full_tariff_df = get_all_tariffs()
+
+    settlement_df = apply_import_costs(
+        settlement_df,
+        full_tariff_df,
     )
 
-    full_tariff_df = (
-        get_all_tariffs()
-    )
-
-    settlement_df = (
-        apply_import_costs(
-            settlement_df,
-            full_tariff_df,
-        )
-    )
-
-    settlement_df = (
-        apply_dispatch_flags(
-            settlement_df,
-            dispatch_history_df,
-        )
+    settlement_df = apply_dispatch_flags(
+        settlement_df,
+        dispatch_history_df,
     )
 
 else:
-
     settlement_df = pd.DataFrame()
 
 # =========================================================

@@ -29,24 +29,14 @@ mutation {{
 
 response = requests.post(
     GRAPHQL_URL,
-    json={
-        "query": token_query
-    },
-    headers={
-        "Content-Type":
-            "application/json"
-    },
+    json={"query": token_query},
+    headers={"Content-Type": "application/json"},
     timeout=10,
 )
 
 response.raise_for_status()
 
-token = (
-    response.json()
-    ["data"]
-    ["obtainKrakenToken"]
-    ["token"]
-)
+token = response.json()["data"]["obtainKrakenToken"]["token"]
 
 print("\nTOKEN OK\n")
 
@@ -118,13 +108,10 @@ query {
 
 response = requests.post(
     GRAPHQL_URL,
-    json={
-        "query": query
-    },
+    json={"query": query},
     headers={
         "Authorization": token,
-        "Content-Type":
-            "application/json",
+        "Content-Type": "application/json",
     },
     timeout=10,
 )
@@ -156,4 +143,4 @@ print(
 # TEST 2
 # TRY FLEX QUERY
 # =====================================================
-#?
+# ?

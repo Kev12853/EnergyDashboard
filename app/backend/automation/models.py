@@ -4,7 +4,6 @@ from datetime import datetime
 
 @dataclass
 class SchedulePeriod:
-
     id: int | None
 
     name: str

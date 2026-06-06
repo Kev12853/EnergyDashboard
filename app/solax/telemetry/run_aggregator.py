@@ -17,9 +17,7 @@ aggregator = TelemetryAggregator()
 
 
 while True:
-
     try:
-
         # logger.info(
         #     "Rebuilding 1m aggregates..."
         # )
@@ -43,9 +41,6 @@ while True:
         # )
 
     except Exception:
-
-        logger.exception(
-            "Aggregation failed"
-        )
+        logger.exception("Aggregation failed")
 
     time.sleep(300)

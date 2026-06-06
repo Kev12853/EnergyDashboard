@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
-#import streamlit as st
+
+# import streamlit as st
 from pandas import DataFrame
 
 from app.config import (
@@ -11,7 +12,7 @@ from app.config import (
     METER_SERIAL,
     BASE_URL,
     GRAPHQL_URL,
-    TIMEZONE
+    TIMEZONE,
 )
 
 
@@ -41,11 +42,13 @@ from app.config import (
 # HELPERS
 # -----------------------
 
+
 def get_graphql_token():
 
     url = GRAPHQL_URL
 
-    query = """
+    query = (
+        """
     mutation {
       obtainKrakenToken(input: {
         APIKey: "%s"
@@ -53,15 +56,15 @@ def get_graphql_token():
         token
       }
     }
-    """ % API_KEY
+    """
+        % API_KEY
+    )
 
     response = requests.post(
         url,
         json={"query": query},
-        headers={
-            "Content-Type": "application/json"
-        },
-        timeout=10
+        headers={"Content-Type": "application/json"},
+        timeout=10,
     )
 
     response.raise_for_status()
@@ -73,30 +76,19 @@ def get_graphql_token():
     if errors:
         raise Exception(errors)
 
-    return (
-        data["data"]
-        ["obtainKrakenToken"]
-        ["token"]
-    )
+    return data["data"]["obtainKrakenToken"]["token"]
+
 
 def to_local_time(series):
-    return (
-        pd.to_datetime(series, utc=True)
-        .dt.tz_convert(TIMEZONE)
-        .dt.tz_localize(None)
-    )
+    return pd.to_datetime(series, utc=True).dt.tz_convert(TIMEZONE).dt.tz_localize(None)
+
 
 def fetch_all_pages(url, params):
     results = []
 
     while url:
         try:
-            response = requests.get(
-                url,
-                params=params,
-                auth=(API_KEY, ""),
-                timeout=10
-            )
+            response = requests.get(url, params=params, auth=(API_KEY, ""), timeout=10)
 
             response.raise_for_status()
 
@@ -108,28 +100,17 @@ def fetch_all_pages(url, params):
             params = None
 
         except requests.HTTPError as e:
-
-            raise RuntimeError(
-
-            f"Octopus API Error: {e}"
-
-        ) from e
-
+            raise RuntimeError(f"Octopus API Error: {e}") from e
 
         except Exception as e:
-
-         raise RuntimeError(
-
-            f"Connection Error: {e}"
-
-        ) from e
+            raise RuntimeError(f"Connection Error: {e}") from e
 
     return results
 
+
 def get_meter_data(mpan, column_name, period_from=None, period_to=None):
     url = (
-        f"{BASE_URL}/electricity-meter-points/"
-        f"{mpan}/meters/{METER_SERIAL}/consumption/"
+        f"{BASE_URL}/electricity-meter-points/{mpan}/meters/{METER_SERIAL}/consumption/"
     )
 
     params = {"page_size": 25000}
@@ -153,20 +134,15 @@ def get_meter_data(mpan, column_name, period_from=None, period_to=None):
 
     return df[["datetime", column_name]].sort_values("datetime")
 
+
 def get_tariffs(
     tariff_code,
     period_from=None,
     period_to=None,
 ):
-    parts = tariff_code.split(
-        "-"
-    )
+    parts = tariff_code.split("-")
 
-    product_code = (
-        "-".join(
-            parts[2:-1]
-        )
-    )
+    product_code = "-".join(parts[2:-1])
 
     url = (
         f"{BASE_URL}"
@@ -177,19 +153,13 @@ def get_tariffs(
         f"standard-unit-rates/"
     )
 
-    params = {
-        "page_size": 25000
-    }
+    params = {"page_size": 25000}
 
     if period_from:
-        params["period_from"] = (
-            period_from
-        )
+        params["period_from"] = period_from
 
     if period_to:
-        params["period_to"] = (
-            period_to
-        )
+        params["period_to"] = period_to
 
     data = fetch_all_pages(
         url,
@@ -198,44 +168,25 @@ def get_tariffs(
 
     return pd.DataFrame(data)
 
+
 # -----------------------
 # CONSUMPTION + EXPORT
 # -----------------------
 def get_consumption(period_from=None, period_to=None):
 
-    df_import = get_meter_data(
-        IMPORT_MPAN,
-        "consumption_kwh",
-        period_from,
-        period_to
-    )
+    df_import = get_meter_data(IMPORT_MPAN, "consumption_kwh", period_from, period_to)
 
     if df_import.empty:
-        return pd.DataFrame(
-            columns=[
-                "datetime",
-                "consumption_kwh",
-                "export_kwh"
-            ]
-        )
+        return pd.DataFrame(columns=["datetime", "consumption_kwh", "export_kwh"])
 
-    df_export = get_meter_data(
-        EXPORT_MPAN,
-        "export_kwh",
-        period_from,
-        period_to
-    )
+    df_export = get_meter_data(EXPORT_MPAN, "export_kwh", period_from, period_to)
 
-    df = pd.merge(
-        df_import,
-        df_export,
-        on="datetime",
-        how="left"
-    )
+    df = pd.merge(df_import, df_export, on="datetime", how="left")
 
     df["export_kwh"] = df["export_kwh"].fillna(0)
 
     return df.sort_values("datetime")
+
 
 def get_octopus_accounts():
 
@@ -259,33 +210,24 @@ def get_octopus_accounts():
 
     response = requests.post(
         GRAPHQL_URL,
-        json={
-            "query": query
-        },
+        json={"query": query},
         headers={
             "Authorization": token,
-            "Content-Type":
-                "application/json",
+            "Content-Type": "application/json",
         },
         timeout=15,
     )
 
     response.raise_for_status()
 
-    data = (
-        response.json()
-        ["data"]
-        ["viewer"]
-        ["accounts"]
-    )
+    data = response.json()["data"]["viewer"]["accounts"]
 
     return data
 
+
 def get_octopus_agreements():
 
-    token = (
-        get_graphql_token()
-    )
+    token = get_graphql_token()
 
     query = """
     query {
@@ -360,101 +302,44 @@ def get_octopus_agreements():
     """
 
     response = requests.post(
-
         GRAPHQL_URL,
-
-        json={
-            "query": query
-        },
-
+        json={"query": query},
         headers={
-
-            "Authorization":
-                token,
-
-            "Content-Type":
-                "application/json",
-
+            "Authorization": token,
+            "Content-Type": "application/json",
         },
-
         timeout=15,
-
     )
 
     response.raise_for_status()
 
-    data = (
-        response.json()
-        ["data"]
-        ["viewer"]
-        ["accounts"]
-    )
+    data = response.json()["data"]["viewer"]["accounts"]
 
     results = []
 
     for account in data:
-
-        for agreement in (
-            account[
-                "electricityAgreements"
-            ]
-        ):
-
-            tariff = (
-                agreement[
-                    "tariff"
-                ]
-            )
+        for agreement in account["electricityAgreements"]:
+            tariff = agreement["tariff"]
 
             results.append(
-
                 {
-
-                    "account_number":
-                    account[
-                        "number"
-                    ],
-
-                    "mpan":
-                    agreement[
-                        "meterPoint"
-                    ][
-                        "mpan"
-                    ],
-
-                    "valid_from":
-                    agreement[
-                        "validFrom"
-                    ],
-
-                    "valid_to":
-                    agreement[
-                        "validTo"
-                    ],
-
-                    "tariff_type":
-                    tariff[
-                        "__typename"
-                    ],
-
-                    "product_code":
-                    tariff[
-                        "productCode"
-                    ],
-
-                    "tariff_code":
-                    tariff[
-                        "tariffCode"
-                    ],
-
+                    "account_number": account["number"],
+                    "mpan": agreement["meterPoint"]["mpan"],
+                    "valid_from": agreement["validFrom"],
+                    "valid_to": agreement["validTo"],
+                    "tariff_type": tariff["__typename"],
+                    "product_code": tariff["productCode"],
+                    "tariff_code": tariff["tariffCode"],
                 }
-
             )
 
     return results
+
+
 # -----------------------
 # INTELLIGENT DISPATCHES
 # -----------------------
+
 
 def get_intelligent_dispatches() -> DataFrame:
 
@@ -480,34 +365,22 @@ def get_intelligent_dispatches() -> DataFrame:
     try:
         token = get_graphql_token()
 
-        headers = {
-            "Authorization": token,
-            "Content-Type": "application/json"
-        }
+        headers = {"Authorization": token, "Content-Type": "application/json"}
 
         response = requests.post(
             url,
-            json={
-                "query": query,
-                "variables": {
-                    "accountNumber": ACCOUNT_ID
-                }
-            },
+            json={"query": query, "variables": {"accountNumber": ACCOUNT_ID}},
             headers=headers,
-            timeout=10
+            timeout=10,
         )
 
         response.raise_for_status()
 
         data = response.json().get("data", {})
 
-        planned = pd.DataFrame(
-            data.get("plannedDispatches") or []
-        )
+        planned = pd.DataFrame(data.get("plannedDispatches") or [])
 
-        completed = pd.DataFrame(
-            data.get("completedDispatches") or []
-        )
+        completed = pd.DataFrame(data.get("completedDispatches") or [])
 
         if not planned.empty:
             planned["status"] = "Planned"
@@ -515,13 +388,9 @@ def get_intelligent_dispatches() -> DataFrame:
         if not completed.empty:
             completed["status"] = "Completed"
 
-        df = pd.concat(
-            [planned, completed],
-            ignore_index=True
-        )
+        df = pd.concat([planned, completed], ignore_index=True)
 
         if not df.empty:
-
             df["startDt"] = to_local_time(df["startDt"])
 
             df["endDt"] = to_local_time(df["endDt"])
@@ -529,9 +398,4 @@ def get_intelligent_dispatches() -> DataFrame:
         return df
 
     except Exception as e:
-
-        raise RuntimeError(
-
-            f"Dispatch API Error: {e}"
-
-        ) from e
+        raise RuntimeError(f"Dispatch API Error: {e}") from e

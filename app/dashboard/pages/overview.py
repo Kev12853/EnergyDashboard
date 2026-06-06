@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 from app.dashboard.components.solax.charts.solax_charts import (
@@ -20,20 +19,11 @@ def render(
     data_age_minutes,
 ):
 
-    st.title(
-        "Energy Dashboard"
-    )
+    st.title("Energy Dashboard")
 
-    st.caption(
-        f"Latest inverter update: "
-        f"{latest_upload_time}"
-    )
+    st.caption(f"Latest inverter update: {latest_upload_time}")
 
-    st.caption(
-        f"Data age: "
-        f"{data_age_minutes:.1f} minutes"
-    )
-
+    st.caption(f"Data age: {data_age_minutes:.1f} minutes")
 
     with st.container(border=True):
         render_kpi_row(latest)
@@ -45,6 +35,4 @@ def render(
         render_battery_chart(df)
 
     with st.container(border=True):
-        render_settlement_kpis(
-            settlement_df
-        )
+        render_settlement_kpis(settlement_df)

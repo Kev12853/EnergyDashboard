@@ -10,17 +10,13 @@ def render(
     dispatch_history_df: pd.DataFrame,
 ):
 
-    st.title(
-        "Diagnostics"
-    )
+    st.title("Diagnostics")
 
     # =====================================================
     # SYSTEM STATUS
     # =====================================================
 
-    st.subheader(
-        "System Status"
-    )
+    st.subheader("System Status")
 
     col1, col2, col3 = st.columns(3)
 
@@ -37,7 +33,6 @@ def render(
         )
 
     with col3:
-
         if data_age_minutes < 5:
             status = "Healthy"
         elif data_age_minutes < 30:
@@ -56,9 +51,7 @@ def render(
     # DATA COUNTS
     # =====================================================
 
-    st.subheader(
-        "Data Volumes"
-    )
+    st.subheader("Data Volumes")
 
     col1, col2, col3 = st.columns(3)
 
@@ -90,19 +83,14 @@ def render(
         "Telemetry Data",
         expanded=False,
     ):
+        st.write("Columns:")
 
-        st.write(
-            "Columns:"
-        )
-
-        st.code(
-            "\n".join(df.columns)
-        )
+        st.code("\n".join(df.columns))
 
         st.write("Telemetry")
         st.dataframe(
             df.tail(50),
-            width='stretch',
+            width="stretch",
         )
 
     # =====================================================
@@ -113,20 +101,13 @@ def render(
         "Settlement Data",
         expanded=False,
     ):
+        st.write("Columns:")
 
-        st.write(
-            "Columns:"
-        )
-
-        st.code(
-            "\n".join(
-                settlement_df.columns
-            )
-        )
+        st.code("\n".join(settlement_df.columns))
         st.write("Settlement")
         st.dataframe(
             settlement_df.tail(50),
-            width='stretch',
+            width="stretch",
         )
 
     # =====================================================
@@ -140,7 +121,7 @@ def render(
         st.write("Dispatch")
         st.dataframe(
             dispatch_history_df.tail(50),
-            width='stretch',
+            width="stretch",
         )
 
     # =====================================================

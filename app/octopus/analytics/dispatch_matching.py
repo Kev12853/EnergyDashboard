@@ -17,17 +17,8 @@ def apply_dispatch_flags(
         return result
 
     for _, dispatch in dispatch_df.iterrows():
-
-        mask = (
-            (
-                result["upload_time"]
-                >= dispatch["dispatch_start"]
-            )
-            &
-            (
-                result["upload_time"]
-                < dispatch["dispatch_end"]
-            )
+        mask = (result["upload_time"] >= dispatch["dispatch_start"]) & (
+            result["upload_time"] < dispatch["dispatch_end"]
         )
 
         result.loc[

@@ -2,22 +2,16 @@ from app.backend.storage.db import (
     get_connection,
 )
 
+
 class TelemetryAggregator:
-
     def __init__(self):
-        self.connection = (
-            get_connection()
-        )
+        self.connection = get_connection()
 
-        self.connection.execute(
-            "PRAGMA journal_mode=WAL"
-        )
+        self.connection.execute("PRAGMA journal_mode=WAL")
 
-        self.connection.execute(
-            "PRAGMA synchronous=NORMAL"
-        )
+        self.connection.execute("PRAGMA synchronous=NORMAL")
 
-        #self.create_tables()
+        # self.create_tables()
 
     def rebuild_1m(self):
 

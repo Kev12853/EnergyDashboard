@@ -23,11 +23,7 @@ from app.solax.storage.constants import (
 # OUTPUT FILE
 # =====================================================
 
-OUTPUT_FILE = Path(
-
-    "poller/solax/telemetry/ground_truth.csv"
-
-)
+OUTPUT_FILE = Path("poller/solax/telemetry/ground_truth.csv")
 
 
 # =====================================================
@@ -56,23 +52,14 @@ OUTPUT_FILE = Path(
 # =====================================================
 
 FIELDNAMES = [
-
     "timestamp",
-
     "solar_w",
-
     "inverter_w",
-
     "battery_w",
-
     "battery_soc_pct",
-
     "consumption_w",
-
     "export_w",
-
     "upload_time",
-
 ]
 
 
@@ -81,11 +68,8 @@ FIELDNAMES = [
 # =====================================================
 
 client = SolaxCloudClient(
-
     token_id=SOLAX_TOKEN_ID,
-
     serial_number=SOLAX_SERIAL_NUMBER,
-
 )
 
 
@@ -93,10 +77,10 @@ client = SolaxCloudClient(
 # CAPTURE ONE GROUND TRUTH SAMPLE
 # =====================================================
 
+
 def capture_ground_truth():
 
     try:
-
         snapshot = client.get_snapshot()
 
         # =============================================
@@ -134,136 +118,68 @@ def capture_ground_truth():
         # =============================================
 
         consumption = (
-
-            snapshot.ac_power_w
-            - snapshot.grid_power_w
-            - snapshot.battery_power_w
-
+            snapshot.ac_power_w - snapshot.grid_power_w - snapshot.battery_power_w
         )
 
         row = {
-
             # =========================================
             # LOCAL POLL TIME
             # =========================================
-
-            "timestamp":
-
-                datetime.now()
-                .astimezone()
-                .strftime(
-
-                    "%Y-%m-%d %H:%M:%S"
-
-                ),
-
+            "timestamp": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
             # =========================================
             # SOLAR DC GENERATION
             # =========================================
-
-            "solar_w":
-
-                snapshot.pv_power_w,
-
+            "solar_w": snapshot.pv_power_w,
             # =========================================
             # INVERTER AC OUTPUT
             # =========================================
-
-            "inverter_w":
-
-                snapshot.ac_power_w,
-
+            "inverter_w": snapshot.ac_power_w,
             # =========================================
             # BATTERY POWER
             # =========================================
-
-            "battery_w":
-
-                snapshot.battery_power_w,
-
+            "battery_w": snapshot.battery_power_w,
             # =========================================
             # BATTERY SOC
             # =========================================
-
-            "battery_soc_pct":
-
-                snapshot.battery_soc_pct,
-
+            "battery_soc_pct": snapshot.battery_soc_pct,
             # =========================================
             # HOUSE CONSUMPTION
             # =========================================
-
-            "consumption_w":
-
-                round(
-
-                    consumption,
-
-                    1,
-
-                ),
-
+            "consumption_w": round(
+                consumption,
+                1,
+            ),
             # =========================================
             # GRID EXPORT / IMPORT
             # =========================================
-
-            "export_w":
-
-                snapshot.grid_power_w,
-
+            "export_w": snapshot.grid_power_w,
             # =========================================
             # CLOUD UPDATE TIME
             # =========================================
-
-            "upload_time":
-
-                snapshot.upload_time,
-
+            "upload_time": snapshot.upload_time,
         }
 
         file_exists = OUTPUT_FILE.exists()
 
         with open(
-
             OUTPUT_FILE,
-
             "a",
-
             newline="",
-
         ) as f:
-
             writer = csv.DictWriter(
-
                 f,
-
                 fieldnames=FIELDNAMES,
-
             )
 
             if not file_exists:
-
                 writer.writeheader()
 
-            writer.writerow(
+            writer.writerow(row)
 
-                row
-
-            )
-
-        print(
-
-            row
-
-        )
+        print(row)
 
     except Exception as e:
-
-        print(
-
-            f"Ground truth failed: {e}"
-
-        )
+        print(f"Ground truth failed: {e}")
 
 
 # =====================================================
@@ -271,13 +187,10 @@ def capture_ground_truth():
 # =====================================================
 
 if __name__ == "__main__":
-
     last_upload = None
 
     while True:
-
         try:
-
             snapshot = client.get_snapshot()
 
             # =========================================
@@ -285,34 +198,17 @@ if __name__ == "__main__":
             # =========================================
 
             if snapshot.upload_time != last_upload:
-
-                last_upload = (
-
-                    snapshot.upload_time
-
-                )
+                last_upload = snapshot.upload_time
 
                 capture_ground_truth()
 
             else:
-
                 print(
-
                     f"[{datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S')}] "
                     "No cloud update"
-
                 )
 
         except Exception as e:
+            print(e)
 
-            print(
-
-                e
-
-            )
-
-        time.sleep(
-
-            60
-
-        )
+        time.sleep(60)

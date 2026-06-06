@@ -23,40 +23,25 @@ from app.backend.storage.schema import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "%(asctime)s "
-        "%(levelname)s "
-        "%(name)s: "
-        "%(message)s"
-    ),
+    format=("%(asctime)s %(levelname)s %(name)s: %(message)s"),
 )
 
 logger = logging.getLogger(__name__)
 
 connection = get_connection()
 
-create_all_tables(
-    connection
-)
+create_all_tables(connection)
 client = SolaxModbusClient(
     host="192.168.1.66",
 )
 
-repository = TelemetryRepository(
-    connection
-)
+repository = TelemetryRepository(connection)
 
-logger.info(
-    "Starting to Poll"
-)
+logger.info("Starting to Poll")
 
-automation_repo = AutomationRepository(
-    connection
-)
+automation_repo = AutomationRepository(connection)
 
-controller = InverterController(
-    client
-)
+controller = InverterController(client)
 
 scheduler = Scheduler(
     automation_repo,
@@ -64,39 +49,24 @@ scheduler = Scheduler(
 )
 
 while True:
-
     try:
-
         snapshot = client.poll_once()
 
-        repository.save_snapshot(
-            snapshot
-        )
+        repository.save_snapshot(snapshot)
 
         scheduler.evaluate()
 
     except Exception:
-
-        logger.exception(
-            "Poll failed"
-        )
+        logger.exception("Poll failed")
 
         try:
-
-            logger.warning(
-                "Attempting reconnect"
-            )
+            logger.warning("Attempting reconnect")
 
             client.reconnect()
 
-            logger.info(
-                "Reconnect successful"
-            )
+            logger.info("Reconnect successful")
 
         except Exception:
-
-            logger.exception(
-                "Reconnect failed"
-            )
+            logger.exception("Reconnect failed")
 
     time.sleep(5)

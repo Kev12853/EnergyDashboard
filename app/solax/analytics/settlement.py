@@ -17,15 +17,13 @@ def calculate_half_hour_energy(
     if df.empty:
         return pd.DataFrame()
 
-    energy_df = calculate_interval_energy(
-        df
-    )
+    energy_df = calculate_interval_energy(df)
 
     # =====================================================
     # TIMESTAMP INDEX
     # =====================================================
 
-    #debug
+    # debug
     # print(
     #     energy_df[
     #         [
@@ -43,17 +41,15 @@ def calculate_half_hour_energy(
     #         ]
     #     ].tail(20)
     # )
-    #end debug
+    # end debug
 
-    energy_df = energy_df.set_index(
-        "upload_time"
-    )
+    energy_df = energy_df.set_index("upload_time")
 
     # =====================================================
     # RESAMPLE TO 30 MINUTES
     # =====================================================
 
-    #debug
+    # debug
     # print(
     #     energy_df.index.min()
     # )
@@ -61,39 +57,23 @@ def calculate_half_hour_energy(
     # print(
     #     energy_df.index.max()
     # )
-    #end debug
+    # end debug
 
-    settlement_df = (
-        energy_df.resample(
-            "30min"
-        )
-        .agg(
-            {
-                "pv_energy_wh": "sum",
-                "house_load_energy_wh": "sum",
-                "grid_energy_wh": "sum",
-                "battery_energy_wh": "sum",
-            }
-        )
+    settlement_df = energy_df.resample("30min").agg(
+        {
+            "pv_energy_wh": "sum",
+            "house_load_energy_wh": "sum",
+            "grid_energy_wh": "sum",
+            "battery_energy_wh": "sum",
+        }
     )
 
-    settlement_df = (
-        settlement_df.reset_index()
-    )
+    settlement_df = settlement_df.reset_index()
 
-    settlement_df["slot_time"] = (
-        settlement_df["upload_time"]
-        .dt.strftime("%H:%M")
-    )
+    settlement_df["slot_time"] = settlement_df["upload_time"].dt.strftime("%H:%M")
 
-    settlement_df["forced_charge_window"] = (
-            (
-                    settlement_df["slot_time"] >= "23:30"
-            )
-            |
-            (
-                    settlement_df["slot_time"] < "05:30"
-            )
+    settlement_df["forced_charge_window"] = (settlement_df["slot_time"] >= "23:30") | (
+        settlement_df["slot_time"] < "05:30"
     )
 
     # =====================================================
@@ -101,32 +81,22 @@ def calculate_half_hour_energy(
     # =====================================================
 
     settlement_df["grid_import_wh"] = (
-        settlement_df["grid_energy_wh"]
-        .clip(upper=0)
-        .abs()
+        settlement_df["grid_energy_wh"].clip(upper=0).abs()
     )
 
-    settlement_df["grid_export_wh"] = (
-        settlement_df["grid_energy_wh"]
-        .clip(lower=0)
-    )
+    settlement_df["grid_export_wh"] = settlement_df["grid_energy_wh"].clip(lower=0)
 
     # =====================================================
     # SPLIT BATTERY FLOWS
     # =====================================================
 
-    settlement_df["battery_charge_wh"] = (
-        settlement_df["battery_energy_wh"]
-        .clip(lower=0)
+    settlement_df["battery_charge_wh"] = settlement_df["battery_energy_wh"].clip(
+        lower=0
     )
 
     settlement_df["battery_discharge_wh"] = (
-        settlement_df["battery_energy_wh"]
-        .clip(upper=0)
-        .abs()
+        settlement_df["battery_energy_wh"].clip(upper=0).abs()
     )
-
-
 
     # =====================================================
     # CONVERT TO KWH
@@ -142,17 +112,12 @@ def calculate_half_hour_energy(
     ]
 
     for column in wh_columns:
-
-        kwh_column = (
-            column.replace(
-                "_wh",
-                "_kwh",
-            )
+        kwh_column = column.replace(
+            "_wh",
+            "_kwh",
         )
 
-        settlement_df[kwh_column] = (
-            settlement_df[column] / 1000
-        )
+        settlement_df[kwh_column] = settlement_df[column] / 1000
 
     # =====================================================
     # GRID -> BATTERY ENERGY
@@ -160,9 +125,7 @@ def calculate_half_hour_energy(
 
     settlement_df["grid_to_battery_kwh"] = 0.0
 
-    mask = settlement_df[
-        "forced_charge_window"
-    ]
+    mask = settlement_df["forced_charge_window"]
 
     settlement_df.loc[
         mask,

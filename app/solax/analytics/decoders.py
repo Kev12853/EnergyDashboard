@@ -32,31 +32,11 @@ def parse_schedule(registers: dict[int, int]) -> ChargeSchedule:
     return ChargeSchedule(
         charge1_start=decode_time(registers[0x0097]),
         charge1_end=decode_time(registers[0x0098]),
-
         discharge1_start=decode_time(registers[0x0099]),
         discharge1_end=decode_time(registers[0x009A]),
-
         period2_enabled=period2_enabled,
-
-        charge2_start=(
-            decode_time(registers[0x009C])
-            if period2_enabled
-            else None
-        ),
-        charge2_end=(
-            decode_time(registers[0x009D])
-            if period2_enabled
-            else None
-        ),
-
-        discharge2_start=(
-            decode_time(registers[0x009E])
-            if period2_enabled
-            else None
-        ),
-        discharge2_end=(
-            decode_time(registers[0x009F])
-            if period2_enabled
-            else None
-        ),
+        charge2_start=(decode_time(registers[0x009C]) if period2_enabled else None),
+        charge2_end=(decode_time(registers[0x009D]) if period2_enabled else None),
+        discharge2_start=(decode_time(registers[0x009E]) if period2_enabled else None),
+        discharge2_end=(decode_time(registers[0x009F]) if period2_enabled else None),
     )

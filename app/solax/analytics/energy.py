@@ -13,71 +13,41 @@ def calculate_interval_energy(
         return pd.DataFrame()
 
     if "bucket_start" in df.columns:
-
         result = df.copy()
 
-        result["upload_time"] = pd.to_datetime(
-            result["bucket_start"]
-        )
+        result["upload_time"] = pd.to_datetime(result["bucket_start"])
 
-        result["pv_energy_wh"] = (
-                result["avg_solar_w"] / 60
-        )
+        result["pv_energy_wh"] = result["avg_solar_w"] / 60
 
-        result["house_load_energy_wh"] = (
-                result["avg_consumption_w"] / 60
-        )
+        result["house_load_energy_wh"] = result["avg_consumption_w"] / 60
 
-        result["grid_energy_wh"] = (
-                result["avg_grid_w"] / 60
-        )
+        result["grid_energy_wh"] = result["avg_grid_w"] / 60
 
-        result["battery_energy_wh"] = (
-                result["avg_battery_w"] / 60
-        )
+        result["battery_energy_wh"] = result["avg_battery_w"] / 60
 
         return result
 
-
-# raw telemetry path below
+    # raw telemetry path below
 
     result = df.copy()
 
-    result = result.sort_values(
-
-        "timestamp"
-
-    )
+    result = result.sort_values("timestamp")
 
     # =====================================================
     # SORT BY TIME
     # =====================================================
 
-    result = result.sort_values(
-        "timestamp"
-    )
+    result = result.sort_values("timestamp")
 
     # =====================================================
     # TIME DELTAS
     # =====================================================
 
-    result["delta_seconds"] = (
-        result["upload_time"]
-        .diff()
-        .dt.total_seconds()
-        .fillna(0)
-    )
+    result["delta_seconds"] = result["upload_time"].diff().dt.total_seconds().fillna(0)
     MAX_INTERVAL_SECONDS = 600
-    result["delta_seconds"] = (
-        result["delta_seconds"]
-        .clip(
-            upper=MAX_INTERVAL_SECONDS
-        )
-    )
+    result["delta_seconds"] = result["delta_seconds"].clip(upper=MAX_INTERVAL_SECONDS)
 
-    result["delta_hours"] = (
-        result["delta_seconds"] / 3600
-    )
+    result["delta_hours"] = result["delta_seconds"] / 3600
 
     # =====================================================
     # ENERGY COLUMN MAPPING
@@ -95,30 +65,18 @@ def calculate_interval_energy(
     # =====================================================
 
     missing_columns = [
-        column
-        for column in energy_column_map
-        if column not in result.columns
+        column for column in energy_column_map if column not in result.columns
     ]
 
     if missing_columns:
-
-        raise ValueError(
-            "Missing required columns: "
-            f"{missing_columns}"
-        )
+        raise ValueError(f"Missing required columns: {missing_columns}")
 
     # =====================================================
     # ENERGY CALCULATIONS
     # =====================================================
 
-    for power_column, energy_column in (
-        energy_column_map.items()
-    ):
-
-        result[energy_column] = (
-            result[power_column]
-            * result["delta_hours"]
-        )
+    for power_column, energy_column in energy_column_map.items():
+        result[energy_column] = result[power_column] * result["delta_hours"]
 
     return result
 
@@ -133,38 +91,24 @@ def calculate_daily_energy_summary(
     if df.empty:
         return pd.DataFrame()
 
-    energy_df = calculate_interval_energy(
-        df
-    )
+    energy_df = calculate_interval_energy(df)
 
     # =====================================================
     # GRID IMPORT / EXPORT
     # =====================================================
 
-    energy_df["grid_import_wh"] = (
-        energy_df["grid_energy_wh"]
-        .clip(upper=0)
-        .abs()
-    )
+    energy_df["grid_import_wh"] = energy_df["grid_energy_wh"].clip(upper=0).abs()
 
-    energy_df["grid_export_wh"] = (
-        energy_df["grid_energy_wh"]
-        .clip(lower=0)
-    )
+    energy_df["grid_export_wh"] = energy_df["grid_energy_wh"].clip(lower=0)
 
     # =====================================================
     # BATTERY CHARGE / DISCHARGE
     # =====================================================
 
-    energy_df["battery_charge_wh"] = (
-        energy_df["battery_energy_wh"]
-        .clip(lower=0)
-    )
+    energy_df["battery_charge_wh"] = energy_df["battery_energy_wh"].clip(lower=0)
 
     energy_df["battery_discharge_wh"] = (
-        energy_df["battery_energy_wh"]
-        .clip(upper=0)
-        .abs()
+        energy_df["battery_energy_wh"].clip(upper=0).abs()
     )
 
     # =====================================================
@@ -172,9 +116,7 @@ def calculate_daily_energy_summary(
     # =====================================================
 
     summary_df = (
-        energy_df.groupby(
-            energy_df["upload_time"].dt.date
-        )
+        energy_df.groupby(energy_df["upload_time"].dt.date)
         .agg(
             pv_generation_wh=(
                 "pv_energy_wh",
@@ -217,17 +159,12 @@ def calculate_daily_energy_summary(
     ]
 
     for column in wh_columns:
-
-        kwh_column = (
-            column.replace(
-                "_wh",
-                "_kwh",
-            )
+        kwh_column = column.replace(
+            "_wh",
+            "_kwh",
         )
 
-        summary_df[kwh_column] = (
-            summary_df[column] / 1000
-        )
+        summary_df[kwh_column] = summary_df[column] / 1000
 
     # =====================================================
     # KEEP ONLY KWH COLUMNS

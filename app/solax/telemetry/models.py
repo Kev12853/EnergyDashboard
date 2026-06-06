@@ -7,7 +7,6 @@ from datetime import datetime
 
 @dataclass
 class PowerFlowSnapshot:
-
     # =====================================================
     # TIMESTAMP
     # =====================================================

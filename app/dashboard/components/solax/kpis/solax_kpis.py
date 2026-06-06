@@ -9,6 +9,7 @@ import streamlit as st
 # KPI ROW
 # =========================================================
 
+
 def render_kpi_row(latest):
 
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -40,52 +41,26 @@ def render_kpi_row(latest):
 
 
 def render_settlement_kpis(
-        settlement_df,
+    settlement_df,
 ):
-    st.subheader(
-        "Energy Summary"
-    )
+    st.subheader("Energy Summary")
 
-    if (
-            settlement_df is None
-            or settlement_df.empty
-    ):
-        st.info(
-            "No Energy Costs data available."
-        )
+    if settlement_df is None or settlement_df.empty:
+        st.info("No Energy Costs data available.")
 
         return
 
-    total_import = (
-        settlement_df["grid_import_kwh"]
-        .sum()
-    )
+    total_import = settlement_df["grid_import_kwh"].sum()
 
-    total_export = (
-        settlement_df["grid_export_kwh"]
-        .sum()
-    )
+    total_export = settlement_df["grid_export_kwh"].sum()
 
-    total_pv = (
-        settlement_df["pv_energy_kwh"]
-        .sum()
-    )
+    total_pv = settlement_df["pv_energy_kwh"].sum()
 
-    total_house = (
-        settlement_df[
-            "house_load_energy_kwh"
-        ].sum()
-    )
+    total_house = settlement_df["house_load_energy_kwh"].sum()
 
-    total_grid_to_battery = (
-        settlement_df[
-            "grid_to_battery_kwh"
-        ].sum()
-    )
+    total_grid_to_battery = settlement_df["grid_to_battery_kwh"].sum()
 
-    col1, col2, col3, col4, col5 = (
-        st.columns(5)
-    )
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     col1.metric(
         "Grid Import",

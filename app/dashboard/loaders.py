@@ -13,7 +13,7 @@ from app.solax.storage import repository
 # SOLAX REPOSITORY
 # =========================================================
 
-from app.solax.storage.repository import (TelemetryRepository)
+from app.solax.storage.repository import TelemetryRepository
 
 # =========================================================
 # SOLAX ANALYTICS
@@ -23,20 +23,13 @@ from app.solax.analytics.settlement import (
     calculate_half_hour_energy,
 )
 
-end = pd.Timestamp.now(
-    tz=ZoneInfo("Europe/London")
-)
+end = pd.Timestamp.now(tz=ZoneInfo("Europe/London"))
 
-start = end - timedelta(
-    hours=hours
-)
+start = end - timedelta(hours=hours)
 
 latest = repository.get_latest_snapshot()
 if latest is None:
-
-    st.warning(
-        "No telemetry data available."
-    )
+    st.warning("No telemetry data available.")
 
     st.stop()
 

@@ -5,14 +5,8 @@ def render(
     df,
 ):
 
-    st.title(
-        "Energy Data"
-    )
+    st.title("Energy Data")
 
-    st.info(
-        "Energy Data page not implemented yet."
-    )
+    st.info("Energy Data page not implemented yet.")
 
-    st.write(
-        f"Rows loaded: {len(df)}"
-    )
+    st.write(f"Rows loaded: {len(df)}")

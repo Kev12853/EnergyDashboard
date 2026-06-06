@@ -15,30 +15,19 @@ def render(
     tariff_df,
 ):
 
-    st.title(
-        "Octopus Energy"
-    )
+    st.title("Octopus Energy")
 
-    render_dispatch_timeline(
-        dispatch_history_df
-    )
+    render_dispatch_timeline(dispatch_history_df)
 
-    with st.container(
-            border=True
-    ):
+    with st.container(border=True):
+        with st.expander(
+            "Dispatch History",
+            expanded=False,
+        ):
+            render_dispatch_history_table(dispatch_history_df)
 
         with st.expander(
-                "Dispatch History",
-                expanded=False,
+            "Tariffs",
+            expanded=False,
         ):
-            render_dispatch_history_table(
-                dispatch_history_df
-            )
-
-        with st.expander(
-                "Tariffs",
-                expanded=False,
-        ):
-            render_tariff_table(
-                tariff_df
-            )
+            render_tariff_table(tariff_df)

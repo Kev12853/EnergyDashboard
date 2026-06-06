@@ -1,22 +1,23 @@
-import streamlit as st
-
 from datetime import (
     datetime,
     time,
 )
 
+import streamlit as st
+
+from app.backend.automation.constants import (
+    MODE_MANUAL_CHARGE,
+    MODE_MANUAL_DISCHARGE,
+    SELF_USE,
+)
 from app.backend.automation.models import (
     SchedulePeriod,
 )
 
-from app.backend.automation.constants import (
-    MODE_MANUAL_DISCHARGE,
-    MODE_MANUAL_CHARGE,
-    SELF_USE,
-)
 # from app.dashboard_app import repository
 
-st.markdown("""
+st.markdown(
+    """
 <style>
 
 .period-card {
@@ -46,10 +47,13 @@ st.markdown("""
 }
 
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 def render(
-        repo,
+    repo,
 ):
     # ==========================================
     # Load periods
@@ -63,128 +67,82 @@ def render(
 
     periods = repo.get_periods()
 
-    selected_id = st.session_state.get(
-        "selected_period_id"
-    )
+    selected_id = st.session_state.get("selected_period_id")
 
     selected_period = None
 
     if selected_id is not None:
-        selected_period = repo.get_period(
-            selected_id
-        )
+        selected_period = repo.get_period(selected_id)
 
     if st.session_state.get(
-            "new_period",
-            False,
+        "new_period",
+        False,
     ):
-
         selected_period = SchedulePeriod(
-
             id=None,
-
             name="New Period",
-
             source="MANUAL",
-
             enabled=True,
-
             start_time="00:00",
-
             end_time="01:00",
-
             mode=SELF_USE,
-
             priority=10,
-
             updated_at=datetime.now(),
         )
 
     elif selected_period is None and periods:
-
         selected_period = periods[0]
 
     if selected_period is None:
-        st.info(
-            "No periods configured."
-        )
+        st.info("No periods configured.")
 
         return
 
     # ========================================
     # Title
     # ======================================
-    st.title(
-        "Automation"
-    )
+    st.title("Automation")
 
-    list_col, editor_col = st.columns(
-        [1, 2]
-    )
+    list_col, editor_col = st.columns([1, 2])
 
     with list_col:
-
         # ==========================================
         # Configured Periods
         # ==========================================
 
-        st.subheader(
-            "Configured Periods"
-        )
+        st.subheader("Configured Periods")
 
         if st.button(
-                "➕ New Period",
-                use_container_width=True,
+            "➕ New Period",
+            use_container_width=True,
         ):
             st.session_state.selected_period_id = None
             st.session_state.new_period = True
             st.rerun()
 
         for period in periods:
+            selected = st.session_state.get("selected_period_id") == period.id
             with st.container(border=True):
+                # if selected:
+                #     st.success("✏️ Currently Editing")
+                if selected:
+                    st.info("✏️ Editing")
 
-                selected = (
-                        st.session_state.get("selected_period_id")
-                        == period.id
-                )
+                st.markdown(f"### {period.name}")
 
-                card_class = (
-                    "period-card-selected"
-                    if selected
-                    else "period-card"
-                )
+                st.write(period.mode.replace("_", " ").title())
 
-                # st.markdown(
-                #     f'<div class="{card_class}">',
-                #     unsafe_allow_html=True,
-                # )
-                #
-                # status = "🟢" if period.enabled else "🔴"
-                #
-                # st.markdown(
-                #     f'<div class="period-title">'
-                #     f'{status} {period.name}'
-                #     f'</div>',
-                #     unsafe_allow_html=True,
-                # )
+                st.write(f"Priority: {period.priority}")
 
-                st.caption(period.mode)
-
-                st.write(
-                    f"Priority: {period.priority}"
-                )
-
-                st.write(
-                    f"{period.start_time} → {period.end_time}"
-                )
+                st.write(f"{period.start_time} → {period.end_time}")
 
             col1, col2 = st.columns(2)
 
             with col1:
                 if st.button(
-                        "Edit",
-                        key=f"edit_{period.id}",
-                        use_container_width=True,
+                    "Edit",
+                    key=f"edit_{period.id}",
+                    use_container_width=True,
                 ):
                     st.session_state.selected_period_id = period.id
                     st.session_state.new_period = False
@@ -192,9 +150,9 @@ def render(
 
             with col2:
                 if st.button(
-                        "Delete",
-                        key=f"delete_{period.id}",
-                        use_container_width=True,
+                    "Delete",
+                    key=f"delete_{period.id}",
+                    use_container_width=True,
                 ):
                     repo.delete_period(period.id)
                     st.rerun()
@@ -204,126 +162,112 @@ def render(
                 unsafe_allow_html=True,
             )
 
-        st.divider()
+
 
     # ==================================================
     # Editor
     # ==================================================
     with editor_col:
+        st.subheader("Editor")
 
-        st.subheader(
-            "Editor"
-        )
-        name = st.text_input(
-            "Period Name",
-            value=selected_period.name,
-        )
+        with st.container(border=True):
+            if st.session_state.get(
+                "new_period",
+                False,
+            ):
+                st.subheader("➕ New Period")
+            else:
+                st.subheader(f"✏️ Editing: {selected_period.name}")
 
-        st.divider()
-
-        MODE_OPTIONS = {
-            "Self Use": SELF_USE,
-            "Force Charging": MODE_MANUAL_CHARGE,
-            "Force Discharging": MODE_MANUAL_DISCHARGE,
-        }
-
-        mode_col, priority_col, gap, enabled_col = st.columns(
-            [2, 1, .5, 3]
-        )
-
-        with mode_col:
-            display_mode = st.selectbox(
-                "Mode",
-                options=list(MODE_OPTIONS.keys()),
-                index=list(MODE_OPTIONS.values()).index(
-                    selected_period.mode
-                ),
+            name = st.text_input(
+                "Period Name",
+                value=selected_period.name,
             )
 
-            mode = MODE_OPTIONS[
-                display_mode
-            ]
+            st.divider()
 
-        with priority_col:
-            priority = st.number_input(
-                "Priority",
-                min_value=1,
-                max_value=100,
-                value=selected_period.priority,
-            )
 
-        with enabled_col:
-            enabled = st.checkbox(
-                "Enabled",
-                value=selected_period.enabled,
-            )
 
-        st.divider()
+            MODE_OPTIONS = {
+                "Self Use": SELF_USE,
+                "Force Charging": MODE_MANUAL_CHARGE,
+                "Force Discharging": MODE_MANUAL_DISCHARGE,
+            }
 
-        start_col, end_col, gap = st.columns(
-            [1, 1, 1]
-        )
+            mode_col, priority_col, gap, enabled_col = st.columns([2, 1, 0.5, 3])
 
-        with start_col:
-            start_time = st.time_input(
-                "Start Time",
-                value=datetime.strptime(
-                    selected_period.start_time,
-                    "%H:%M",
-                ).time(),
-            )
+            with mode_col:
+                display_mode = st.selectbox(
+                    "Mode",
+                    options=list(MODE_OPTIONS.keys()),
+                    index=list(MODE_OPTIONS.values()).index(selected_period.mode),
+                )
 
-        with end_col:
-            end_time = st.time_input(
-                "End Time",
-                value=datetime.strptime(
-                    selected_period.end_time,
-                    "%H:%M",
-                ).time(),
-            )
+                mode = MODE_OPTIONS[display_mode]
 
-        st.divider()
+            with priority_col:
+                priority = st.number_input(
+                    "Priority",
+                    min_value=1,
+                    max_value=100,
+                    value=selected_period.priority,
+                )
 
-        # ==================================================
-        # Action Buttons
-        # ==================================================
+            with enabled_col:
+                enabled = st.checkbox(
+                    "Enabled",
+                    value=selected_period.enabled,
+                )
 
-        save_col, new_col, spacer_col = st.columns(
-            [1, 1.5, 3]
-        )
+            st.divider()
 
-        with save_col:
-            save_clicked = st.button(
-                "Save",
-                key="save_period",
-            )
+            start_col, end_col, gap = st.columns([1, 1, 1])
+
+            with start_col:
+                start_time = st.time_input(
+                    "Start Time",
+                    value=datetime.strptime(
+                        selected_period.start_time,
+                        "%H:%M",
+                    ).time(),
+                )
+
+            with end_col:
+                end_time = st.time_input(
+                    "End Time",
+                    value=datetime.strptime(
+                        selected_period.end_time,
+                        "%H:%M",
+                    ).time(),
+                )
+
+            st.divider()
+
+            # ==================================================
+            # Action Buttons
+            # ==================================================
+
+            save_col, new_col, spacer_col = st.columns([1, 1.5, 3])
+
+            with save_col:
+                save_clicked = st.button(
+                    "Save",
+                    key="save_period",
+                )
 
     # ==================================================
     # Build Updated Period
     # ==================================================
 
     updated_period = SchedulePeriod(
-
         id=selected_period.id,
-
         name=name,
-
         source=selected_period.source,
-
         enabled=enabled,
-
-        start_time=start_time.strftime(
-            "%H:%M"
-        ),
-
-        end_time=end_time.strftime(
-            "%H:%M"
-        ),
-
+        start_time=start_time.strftime("%H:%M"),
+        end_time=end_time.strftime("%H:%M"),
         mode=mode,
-
         priority=priority,
-
         updated_at=datetime.now(),
     )
 
@@ -332,28 +276,17 @@ def render(
     # ==================================================
 
     if save_clicked:
-
         try:
-
-            repo.save_period(
-                updated_period
-            )
+            repo.save_period(updated_period)
 
             st.session_state.new_period = False
 
             if updated_period.id is not None:
-                st.session_state.selected_period_id = (
-                    updated_period.id
-                )
+                st.session_state.selected_period_id = updated_period.id
 
-            st.success(
-                f"Saved '{updated_period.name}'"
-            )
+            st.success(f"Saved '{updated_period.name}'")
 
             st.rerun()
 
         except Exception as ex:
-
-            st.error(
-                f"Save failed: {ex}"
-            )
+            st.error(f"Save failed: {ex}")

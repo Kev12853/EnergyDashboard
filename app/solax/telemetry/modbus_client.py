@@ -28,14 +28,11 @@ REGISTER_BLOCK_SIZE = 80
 
 
 class SolaxModbusClient:
-
     def __init__(
-
         self,
         host: str,
         port: int = 502,
         slave_id: int = 1,
-
     ):
 
         self.host = host
@@ -48,9 +45,7 @@ class SolaxModbusClient:
         )
 
         if not self.client.connect():
-            raise ConnectionError(
-                f"Unable to connect to {host}"
-            )
+            raise ConnectionError(f"Unable to connect to {host}")
 
     @staticmethod
     def signed16(value: int) -> int:
@@ -63,34 +58,23 @@ class SolaxModbusClient:
     @staticmethod
     def signed32(msb: int, lsb: int) -> int:
 
-        unsigned32 = (
-            (msb * 65536)
-            + lsb
-        )
+        unsigned32 = (msb * 65536) + lsb
 
         if unsigned32 > 2147483647:
-
-            return (
-                unsigned32
-                - 4294967296
-            )
+            return unsigned32 - 4294967296
 
         return unsigned32
 
     def read_register_block(self) -> dict[int, int]:
 
         try:
-
-            result = (
-                self.client.read_input_registers(
-                    address=REGISTER_BLOCK_START,
-                    count=REGISTER_BLOCK_SIZE,
-                    device_id=self.slave_id,
-                )
+            result = self.client.read_input_registers(
+                address=REGISTER_BLOCK_START,
+                count=REGISTER_BLOCK_SIZE,
+                device_id=self.slave_id,
             )
 
         except Exception:
-
             try:
                 self.client.close()
             except Exception:
@@ -100,149 +84,82 @@ class SolaxModbusClient:
 
             self.reconnect()
 
-            result = (
-
-                self.client.read_input_registers(
-
-                    address=REGISTER_BLOCK_START,
-
-                    count=REGISTER_BLOCK_SIZE,
-
-                    device_id=self.slave_id,
-
-                )
-
+            result = self.client.read_input_registers(
+                address=REGISTER_BLOCK_START,
+                count=REGISTER_BLOCK_SIZE,
+                device_id=self.slave_id,
             )
 
         if result.isError():
-            raise RuntimeError(
-                f"Modbus read failed: {result}"
-            )
+            raise RuntimeError(f"Modbus read failed: {result}")
 
         return {
-
             REGISTER_BLOCK_START + index: value
-
-            for index, value
-            in enumerate(result.registers)
-
+            for index, value in enumerate(result.registers)
         }
 
     def poll_once(self) -> PowerFlowSnapshot:
 
-        registers = (
-            self.read_register_block()
-        )
+        registers = self.read_register_block()
 
-        ac_power_w = self.signed16(
-            registers[
-                INVERTER_POWER
-            ]
-        )
+        ac_power_w = self.signed16(registers[INVERTER_POWER])
 
-        pv1_power_w = registers[
-            PV1_POWER
-        ]
+        pv1_power_w = registers[PV1_POWER]
 
-        pv2_power_w = registers[
-            PV2_POWER
-        ]
+        pv2_power_w = registers[PV2_POWER]
 
-        pv_power_w = (
-            pv1_power_w
-            + pv2_power_w
-        )
+        pv_power_w = pv1_power_w + pv2_power_w
 
-        battery_power_w = self.signed16(
-            registers[
-                BATTERY_POWER
-            ]
-        )
+        battery_power_w = self.signed16(registers[BATTERY_POWER])
 
-        battery_soc_pct = registers[
-            BATTERY_SOC
-        ]
+        battery_soc_pct = registers[BATTERY_SOC]
 
         grid_power_w = self.signed32(
-
-            msb=registers[
-                GRID_MSB
-            ],
-
-            lsb=registers[
-                GRID_LSB
-            ],
-
+            msb=registers[GRID_MSB],
+            lsb=registers[GRID_LSB],
         )
 
-        consumption_power_w = (
-            ac_power_w - grid_power_w
-        )
+        consumption_power_w = ac_power_w - grid_power_w
 
         return PowerFlowSnapshot(
-
-            timestamp=datetime.now(
-                ZoneInfo("Europe/London")
-            ),
-
+            timestamp=datetime.now(ZoneInfo("Europe/London")),
             # =============================================
             # SOLAR
             # =============================================
-
             pv_power_w=pv_power_w,
-
             pv1_power_w=pv1_power_w,
-
             pv2_power_w=pv2_power_w,
-
             # =============================================
             # BATTERY
             # =============================================
-
             battery_soc_pct=battery_soc_pct,
-
             battery_power_w=battery_power_w,
-
             # =============================================
             # GRID
             # =============================================
-
             grid_power_w=grid_power_w,
-
             # =============================================
             # CONSUMPTION
             # =============================================
-
-            consumption_power_w=(
-                consumption_power_w
-            ),
-
+            consumption_power_w=(consumption_power_w),
             # =============================================
             # INVERTER
             # =============================================
-
             ac_power_w=ac_power_w,
-
             # =============================================
             # RAW DEBUG DATA
             # =============================================
-
             raw_registers=registers,
-
         )
 
     def reconnect(self):
 
-        logger.warning(
-            f"Reconnecting to {self.host}"
-        )
+        logger.warning(f"Reconnecting to {self.host}")
 
         try:
-
             self.client.close()
 
         except Exception:
-
             pass
 
         self.client = ModbusTcpClient(
@@ -253,17 +170,11 @@ class SolaxModbusClient:
         connected = self.client.connect()
 
         if not connected:
-            logger.error(
-                f"Unable to connect to {self.host}"
-            )
+            logger.error(f"Unable to connect to {self.host}")
 
-            raise ConnectionError(
-                f"Unable to connect to {self.host}"
-            )
+            raise ConnectionError(f"Unable to connect to {self.host}")
 
-        logger.info(
-            f"Connected to {self.host}"
-        )
+        logger.info(f"Connected to {self.host}")
 
     def read_charge_schedule(self):
 
@@ -274,19 +185,10 @@ class SolaxModbusClient:
         )
 
         if result.isError():
-            raise RuntimeError(
-                f"Schedule read failed: {result}"
-            )
+            raise RuntimeError(f"Schedule read failed: {result}")
 
         registers = {
-
-            0x0097 + index: value
-
-            for index, value
-            in enumerate(result.registers)
-
+            0x0097 + index: value for index, value in enumerate(result.registers)
         }
 
-        return parse_schedule(
-            registers
-        )
+        return parse_schedule(registers)

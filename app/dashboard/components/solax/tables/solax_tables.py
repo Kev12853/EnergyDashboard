@@ -9,15 +9,10 @@ def render_daily_summary_table(
     summary_df,
 ):
 
-    st.subheader(
-        "Daily Summary"
-    )
+    st.subheader("Daily Summary")
 
     if summary_df is None or summary_df.empty:
-
-        st.info(
-            "No summary data available."
-        )
+        st.info("No summary data available.")
 
         return
 
@@ -25,7 +20,6 @@ def render_daily_summary_table(
         summary_df,
         datetime_format="date_only",
     )
-
 
     st.dataframe(
         display_df,
@@ -37,51 +31,36 @@ def render_raw_data_table(
     df,
 ):
 
-    st.subheader(
-        "Raw Telemetry"
-    )
+    st.subheader("Raw Telemetry")
 
     if df is None or df.empty:
-
-        st.info(
-            "No telemetry data available."
-        )
+        st.info("No telemetry data available.")
 
         return
 
-    display_df = (
-        format_dataframe_columns(df)
-    )
+    display_df = format_dataframe_columns(df)
 
     st.dataframe(
         display_df,
         width="content",
         hide_index=True,
     )
+
 
 def render_daily_energy_summary_table(
-        energy_summary_df,
+    energy_summary_df,
 ):
 
-    st.subheader(
-        "Daily Energy Summary"
-    )
+    st.subheader("Daily Energy Summary")
 
-    if (
-            energy_summary_df is None
-            or energy_summary_df.empty
-    ):
-        st.info(
-            "No energy summary available."
-        )
+    if energy_summary_df is None or energy_summary_df.empty:
+        st.info("No energy summary available.")
 
         return
 
-    display_df = (
-        format_dataframe_columns(
-            energy_summary_df,
-            datetime_format="date_only",
-        )
+    display_df = format_dataframe_columns(
+        energy_summary_df,
+        datetime_format="date_only",
     )
 
     st.dataframe(
@@ -90,29 +69,19 @@ def render_daily_energy_summary_table(
         hide_index=True,
     )
 
+
 def render_settlement_table(
-        settlement_df,
+    settlement_df,
 ):
 
-    st.subheader(
-        "30 Minute Energy Costs Periods"
-    )
+    st.subheader("30 Minute Energy Costs Periods")
 
-    if (
-            settlement_df is None
-            or settlement_df.empty
-    ):
-        st.info(
-            "No Energy Costs data available."
-        )
+    if settlement_df is None or settlement_df.empty:
+        st.info("No Energy Costs data available.")
 
         return
 
-    display_df = (
-        format_dataframe_columns(
-            settlement_df
-        )
-    )
+    display_df = format_dataframe_columns(settlement_df)
 
     st.dataframe(
         display_df,

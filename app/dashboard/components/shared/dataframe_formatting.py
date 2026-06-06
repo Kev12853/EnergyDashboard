@@ -16,20 +16,18 @@ ACRONYM_MAP = {
 }
 
 COLUMN_LABEL_OVERRIDES = {
-    "import_rate_gbp_per_kwh":
-        "Rate (£/kWh)",
+    "import_rate_gbp_per_kwh": "Rate (£/kWh)",
 }
+
 
 def ordinal(
     n: int,
 ) -> str:
 
     if 11 <= (n % 100) <= 13:
-
         suffix = "th"
 
     else:
-
         suffix = {
             1: "st",
             2: "nd",
@@ -50,52 +48,29 @@ def humanize_column_name(
     into human-readable UI labels.
     """
     if column in COLUMN_LABEL_OVERRIDES:
-        return COLUMN_LABEL_OVERRIDES[
-            column
-        ]
+        return COLUMN_LABEL_OVERRIDES[column]
     parts = column.split("_")
 
     formatted_parts = []
 
     for part in parts:
-
         lowercase_part = part.lower()
 
         if lowercase_part in ACRONYM_MAP:
-
-            formatted_parts.append(
-                ACRONYM_MAP[lowercase_part]
-            )
+            formatted_parts.append(ACRONYM_MAP[lowercase_part])
 
         else:
+            formatted_parts.append(part.capitalize())
 
-            formatted_parts.append(
-                part.capitalize()
-            )
+    label = " ".join(formatted_parts)
 
-    label = " ".join(
-        formatted_parts
-    )
+    label = label.replace(" Kwh", " (kWh)")
 
-    label = label.replace(
-        " Kwh",
-        " (kWh)"
-    )
+    label = label.replace(" Wh", " (Wh)")
 
-    label = label.replace(
-        " Wh",
-        " (Wh)"
-    )
+    label = label.replace(" W", " (W)")
 
-    label = label.replace(
-        " W",
-        " (W)"
-    )
-
-    label = label.replace(
-        " %",
-        " (%)"
-    )
+    label = label.replace(" %", " (%)")
 
     return label
 
@@ -120,10 +95,7 @@ def format_dataframe_columns(
     # HUMANIZE COLUMN NAMES
     # =====================================================
 
-    result.columns = [
-        humanize_column_name(column)
-        for column in result.columns
-    ]
+    result.columns = [humanize_column_name(column) for column in result.columns]
 
     # =====================================================
     # FORMAT DATETIME COLUMNS
@@ -137,19 +109,14 @@ def format_dataframe_columns(
         column
         for column in result.columns
         if (
-                (
-                        "Time" in column
-                        or "Date" in column
-                )
-                and column not in SKIP_DATETIME_FORMATTING
+            ("Time" in column or "Date" in column)
+            and column not in SKIP_DATETIME_FORMATTING
         )
     ]
 
     for column in datetime_columns:
         try:
-            if pd.api.types.is_datetime64_any_dtype(
-                    result[column]
-            ):
+            if pd.api.types.is_datetime64_any_dtype(result[column]):
                 dt_series = result[column]
             else:
                 dt_series = pd.to_datetime(
@@ -158,28 +125,18 @@ def format_dataframe_columns(
                 )
 
             if datetime_format == "date_only":
-
-                result[column] = (
-                    dt_series.apply(
-                        lambda dt:
-                        (
-                            f"{dt.strftime('%a')} "
-                            f"{ordinal(dt.day)} "
-                            f"{dt.strftime('%b %Y')}"
-                        )
+                result[column] = dt_series.apply(
+                    lambda dt: (
+                        f"{dt.strftime('%a')} {ordinal(dt.day)} {dt.strftime('%b %Y')}"
                     )
                 )
 
             else:
-
-                result[column] = (
-                    dt_series.apply(
-                        lambda dt:
-                        (
-                            f"{dt.strftime('%a')} "
-                            f"{ordinal(dt.day)} "
-                            f"{dt.strftime('%b %Y %H:%M')}"
-                        )
+                result[column] = dt_series.apply(
+                    lambda dt: (
+                        f"{dt.strftime('%a')} "
+                        f"{ordinal(dt.day)} "
+                        f"{dt.strftime('%b %Y %H:%M')}"
                     )
                 )
 
@@ -190,20 +147,9 @@ def format_dataframe_columns(
     # ROUND NUMERIC COLUMNS
     # =====================================================
 
-    numeric_columns = (
-        result.select_dtypes(
-            include="number"
-        ).columns
-    )
+    numeric_columns = result.select_dtypes(include="number").columns
 
     for column in numeric_columns:
-        result[column] = (
-            result[column]
-            .map(
-                lambda x:
-                f"{x:.2f}"
-            )
-        )
-
+        result[column] = result[column].map(lambda x: f"{x:.2f}")
 
     return result

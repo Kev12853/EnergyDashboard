@@ -9,7 +9,6 @@ from app.solax.storage.parser import SolaxParser
 
 
 class SolaxTelemetryService:
-
     def __init__(self, client):
 
         self.client = client
@@ -21,10 +20,7 @@ class SolaxTelemetryService:
         )
 
         if block is None:
-
-            return PowerFlowSnapshot(
-                timestamp=datetime.now()
-            )
+            return PowerFlowSnapshot(timestamp=datetime.now())
 
         parsed = SolaxParser.parse_runtime_block(block)
 

@@ -35,13 +35,9 @@ connection.close()
 # PARSE TIMESTAMPS
 # =========================================================
 
-df["timestamp"] = pd.to_datetime(
-    df["timestamp"]
-)
+df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-df["upload_time"] = pd.to_datetime(
-    df["upload_time"]
-)
+df["upload_time"] = pd.to_datetime(df["upload_time"])
 
 # =========================================================
 # BASIC INFO
@@ -60,13 +56,15 @@ print("SUMMARY STATS")
 print("=" * 80)
 
 print(
-    df[[
-        "pv_power_w",
-        "battery_soc_pct",
-        "battery_power_w",
-        "grid_power_w",
-        "house_load_w",
-    ]].describe()
+    df[
+        [
+            "pv_power_w",
+            "battery_soc_pct",
+            "battery_power_w",
+            "grid_power_w",
+            "house_load_w",
+        ]
+    ].describe()
 )
 
 # =========================================================
@@ -115,13 +113,9 @@ plt.xticks(rotation=45)
 
 ax = plt.gca()
 
-ax.xaxis.set_major_formatter(
-    mdates.DateFormatter("%H:%M")
-)
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
-ax.xaxis.set_major_locator(
-    mdates.AutoDateLocator()
-)
+ax.xaxis.set_major_locator(mdates.AutoDateLocator())
 
 plt.tight_layout()
 

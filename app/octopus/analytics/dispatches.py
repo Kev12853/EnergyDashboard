@@ -12,28 +12,15 @@ def normalize_dispatches(
 
     result = result.rename(
         columns={
-            "startDt":
-                "dispatch_start",
-
-            "endDt":
-                "dispatch_end",
-
-            "deltaKwh":
-                "scheduled_energy_kwh",
+            "startDt": "dispatch_start",
+            "endDt": "dispatch_end",
+            "deltaKwh": "scheduled_energy_kwh",
         }
     )
 
-    result["dispatch_start"] = (
-        pd.to_datetime(
-            result["dispatch_start"]
-        )
-    )
+    result["dispatch_start"] = pd.to_datetime(result["dispatch_start"])
 
-    result["dispatch_end"] = (
-        pd.to_datetime(
-            result["dispatch_end"]
-        )
-    )
+    result["dispatch_end"] = pd.to_datetime(result["dispatch_end"])
 
     result = result[
         [
@@ -44,12 +31,8 @@ def normalize_dispatches(
         ]
     ]
 
-    result = result.sort_values(
-        "dispatch_start"
-    )
+    result = result.sort_values("dispatch_start")
 
-    result = result.reset_index(
-        drop=True
-    )
+    result = result.reset_index(drop=True)
 
     return result

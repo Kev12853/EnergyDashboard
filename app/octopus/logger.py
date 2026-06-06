@@ -34,16 +34,10 @@ from app.octopus.analytics.tariffs import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "%(asctime)s "
-        "%(levelname)s "
-        "%(message)s"
-    ),
+    format=("%(asctime)s %(levelname)s %(message)s"),
 )
 
-logger = logging.getLogger(
-    __name__
-)
+logger = logging.getLogger(__name__)
 
 # =====================================================
 # INITIALISE DATABASE
@@ -51,23 +45,18 @@ logger = logging.getLogger(
 
 connection = get_connection()
 
-create_dispatches_table(
-    connection
-)
+create_dispatches_table(connection)
 
-create_tariffs_table(
-    connection
-)
+create_tariffs_table(connection)
 
 connection.close()
 
-logger.info(
-    "Octopus logger started"
-)
+logger.info("Octopus logger started")
 
 # =====================================================
 # HELPERS
 # =====================================================
+
 
 def get_active_tariffs():
 
@@ -92,13 +81,7 @@ def get_active_tariffs():
 
     conn.close()
 
-    return [
-
-        row["tariff_code"]
-
-        for row in rows
-
-    ]
+    return [row["tariff_code"] for row in rows]
 
 
 # =====================================================
@@ -108,30 +91,18 @@ def get_active_tariffs():
 last_tariff_refresh = None
 
 while True:
-
     try:
-
         # =============================================
         # DISPATCHES
         # =============================================
 
-        raw_dispatch_df = (
-            get_intelligent_dispatches()
-        )
+        raw_dispatch_df = get_intelligent_dispatches()
 
-        dispatch_df = (
-            normalize_dispatches(
-                raw_dispatch_df
-            )
-        )
+        dispatch_df = normalize_dispatches(raw_dispatch_df)
 
-        upsert_dispatches(
-            dispatch_df
-        )
+        upsert_dispatches(dispatch_df)
 
-        logger.info(
-            "Dispatches updated"
-        )
+        logger.info("Dispatches updated")
 
         # =============================================
         # TARIFFS
@@ -140,70 +111,34 @@ while True:
         current_time = time.time()
 
         should_refresh_tariffs = (
-
-            last_tariff_refresh
-            is None
-
-            or
-
-            (
-                current_time
-                - last_tariff_refresh
-            ) >= 86400
-
+            last_tariff_refresh is None or (current_time - last_tariff_refresh) >= 86400
         )
 
         if should_refresh_tariffs:
-
-            tariff_codes = (
-                get_active_tariffs()
-            )
+            tariff_codes = get_active_tariffs()
 
             total_rows = 0
 
             for tariff_code in tariff_codes:
+                raw_tariff_df = get_tariffs(tariff_code=tariff_code)
 
-                raw_tariff_df = (
-                    get_tariffs(
-                        tariff_code=
-                        tariff_code
-                    )
-                )
-
-                if (
-                    raw_tariff_df.empty
-                ):
-
+                if raw_tariff_df.empty:
                     continue
 
-                tariff_df = (
-                    normalize_import_tariffs(
-                        raw_tariff_df,
-                        tariff_code,
-                    )
+                tariff_df = normalize_import_tariffs(
+                    raw_tariff_df,
+                    tariff_code,
                 )
 
-                rows = (
-                    upsert_tariffs(
-                        tariff_df
-                    )
-                )
+                rows = upsert_tariffs(tariff_df)
 
                 total_rows += rows
 
-            last_tariff_refresh = (
-                current_time
-            )
+            last_tariff_refresh = current_time
 
-            logger.info(
-                f"Tariffs updated "
-                f"({total_rows} rows)"
-            )
+            logger.info(f"Tariffs updated ({total_rows} rows)")
 
     except Exception as e:
-
-        logger.exception(
-            f"Logger error: {e}"
-        )
+        logger.exception(f"Logger error: {e}")
 
     time.sleep(300)

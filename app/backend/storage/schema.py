@@ -1,6 +1,6 @@
 # app/backend/storage/schema.py
 
-#SOLAX TABLES
+# SOLAX TABLES
 def create_telemetry_tables(
     connection,
 ):
@@ -75,8 +75,9 @@ def create_telemetry_tables(
 
     connection.commit()
 
+
 def create_automation_tables(
-        connection,
+    connection,
 ):
     connection.execute(
         """
@@ -108,7 +109,7 @@ def create_automation_tables(
 
 # OCTOPUS TABLES
 def create_octopus_tables(
-        connection,
+    connection,
 ):
     connection.execute(
         """
@@ -290,16 +291,10 @@ def create_octopus_tables(
 
 
 def create_all_tables(
-        connection,
+    connection,
 ):
-    create_telemetry_tables(
-        connection
-    )
+    create_telemetry_tables(connection)
 
-    create_automation_tables(
-        connection
-    )
+    create_automation_tables(connection)
 
-    create_octopus_tables(
-        connection
-    )
+    create_octopus_tables(connection)

@@ -11,6 +11,7 @@ from app.backend.storage.db import (
 # DISPATCHES
 # =====================================================
 
+
 def upsert_dispatches(
     dispatch_df: pd.DataFrame,
 ):
@@ -20,15 +21,9 @@ def upsert_dispatches(
 
     conn = get_connection()
 
-    now = (
-        datetime.utcnow()
-        .isoformat()
-    )
+    now = datetime.utcnow().isoformat()
 
-    for _, row in (
-        dispatch_df.iterrows()
-    ):
-
+    for _, row in dispatch_df.iterrows():
         conn.execute(
             """
             INSERT INTO
@@ -65,25 +60,11 @@ def upsert_dispatches(
                     excluded.last_seen
             """,
             (
-
-                row[
-                    "dispatch_start"
-                ].isoformat(),
-
-                row[
-                    "dispatch_end"
-                ].isoformat(),
-
-                row[
-                    "scheduled_energy_kwh"
-                ],
-
-                row[
-                    "status"
-                ],
-
+                row["dispatch_start"].isoformat(),
+                row["dispatch_end"].isoformat(),
+                row["scheduled_energy_kwh"],
+                row["status"],
                 now,
-
             ),
         )
 
@@ -124,30 +105,11 @@ def get_dispatch_history(
     conn.close()
 
     if not df.empty:
+        df["dispatch_start"] = pd.to_datetime(df["dispatch_start"])
 
-        df[
-            "dispatch_start"
-        ] = pd.to_datetime(
-            df[
-                "dispatch_start"
-            ]
-        )
+        df["dispatch_end"] = pd.to_datetime(df["dispatch_end"])
 
-        df[
-            "dispatch_end"
-        ] = pd.to_datetime(
-            df[
-                "dispatch_end"
-            ]
-        )
-
-        df[
-            "last_seen"
-        ] = pd.to_datetime(
-            df[
-                "last_seen"
-            ]
-        )
+        df["last_seen"] = pd.to_datetime(df["last_seen"])
 
     return df
 
@@ -156,22 +118,19 @@ def get_dispatch_history(
 # TARIFFS
 # =====================================================
 
+
 def upsert_tariffs(
     tariff_df,
 ):
 
     if tariff_df.empty:
-
         return 0
 
     conn = get_connection()
 
     rows_added = 0
 
-    for _, row in (
-        tariff_df.iterrows()
-    ):
-
+    for _, row in tariff_df.iterrows():
         result = conn.execute(
             """
             INSERT OR IGNORE INTO
@@ -196,32 +155,15 @@ def upsert_tariffs(
             )
             """,
             (
-
-                row[
-                    "tariff_code"
-                ],
-
-                row[
-                    "slot_start"
-                ],
-
-                row[
-                    "slot_end"
-                ],
-
-                row[
-                    "unit_rate_gbp_per_kwh"
-                ],
-
-                row[
-                    "created_at"
-                ],
-
+                row["tariff_code"],
+                row["slot_start"],
+                row["slot_end"],
+                row["unit_rate_gbp_per_kwh"],
+                row["created_at"],
             ),
         )
 
         if result.rowcount:
-
             rows_added += 1
 
     conn.commit()

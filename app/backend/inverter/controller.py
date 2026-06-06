@@ -1,5 +1,4 @@
 class InverterController:
-
     def __init__(
         self,
         client,
@@ -8,7 +7,7 @@ class InverterController:
         self.client = client
 
     def force_charge(
-            self,
+        self,
     ):
         self.client.client.write_register(
             address=32,
@@ -23,7 +22,7 @@ class InverterController:
         )
 
     def force_discharge(
-            self,
+        self,
     ):
         self.client.client.write_register(
             address=32,
@@ -38,7 +37,7 @@ class InverterController:
         )
 
     def self_use(
-            self,
+        self,
     ):
         self.client.client.write_register(
             address=31,
