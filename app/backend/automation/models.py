@@ -3,11 +3,13 @@ from datetime import datetime
 
 
 @dataclass
-class AutomationRule:
+class SchedulePeriod:
 
     id: int | None
 
     name: str
+
+    source: str
 
     enabled: bool
 
@@ -15,6 +17,8 @@ class AutomationRule:
 
     end_time: str
 
-    action: str
+    mode: str
+
+    priority: int
 
     updated_at: datetime

@@ -80,45 +80,25 @@ def create_automation_tables(
 ):
     connection.execute(
         """
-        CREATE TABLE IF NOT EXISTS
-            automation_rules
-        (
+        CREATE TABLE IF NOT EXISTS schedule_periods (
 
-            id
-            INTEGER
-            PRIMARY
-            KEY,
-
-            name
-            TEXT
-            NOT
-            NULL,
-
-            enabled
-            INTEGER
-            NOT
-            NULL,
-
-            start_time
-            TEXT
-            NOT
-            NULL,
-
-            end_time
-            TEXT
-            NOT
-            NULL,
-
-            action
-            TEXT
-            NOT
-            NULL,
-
-            updated_at
-            TEXT
-            NOT
-            NULL
-
+            id INTEGER PRIMARY KEY,
+        
+            name TEXT NOT NULL,
+        
+            source TEXT NOT NULL,
+        
+            enabled INTEGER NOT NULL,
+        
+            start_time TEXT NOT NULL,
+        
+            end_time TEXT NOT NULL,
+        
+            mode TEXT NOT NULL,
+        
+            priority INTEGER NOT NULL DEFAULT 10,
+        
+            updated_at TEXT NOT NULL
         )
         """
     )

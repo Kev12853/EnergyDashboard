@@ -1,3 +1,4 @@
+import datetime
 import time
 import logging
 
@@ -22,6 +23,12 @@ from app.backend.storage.schema import (
 
 logging.basicConfig(
     level=logging.INFO,
+    format=(
+        "%(asctime)s "
+        "%(levelname)s "
+        "%(name)s: "
+        "%(message)s"
+    ),
 )
 
 logger = logging.getLogger(__name__)
@@ -38,19 +45,10 @@ client = SolaxModbusClient(
 repository = TelemetryRepository(
     connection
 )
-result = client.client.read_holding_registers(
-    address=139,
-    count=2,
-    device_id=client.slave_id,
-)
 
 logger.info(
     "Starting to Poll"
 )
-
-# schedule = client.read_charge_schedule()
-#
-# logger.info(schedule)
 
 automation_repo = AutomationRepository(
     connection
@@ -64,6 +62,7 @@ scheduler = Scheduler(
     automation_repo,
     controller,
 )
+
 while True:
 
     try:
@@ -74,16 +73,30 @@ while True:
             snapshot
         )
 
-        #scheduler.evaluate()
-
-        # logger.info(
-        #     "Poll OK"
-        # )
+        scheduler.evaluate()
 
     except Exception:
 
         logger.exception(
             "Poll failed"
         )
+
+        try:
+
+            logger.warning(
+                "Attempting reconnect"
+            )
+
+            client.reconnect()
+
+            logger.info(
+                "Reconnect successful"
+            )
+
+        except Exception:
+
+            logger.exception(
+                "Reconnect failed"
+            )
 
     time.sleep(5)

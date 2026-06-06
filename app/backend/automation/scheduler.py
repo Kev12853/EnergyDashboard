@@ -1,5 +1,10 @@
 from datetime import datetime
 
+from app.backend.automation.constants import (
+    MODE_MANUAL_DISCHARGE,
+    MODE_MANUAL_CHARGE,
+    SELF_USE,
+)
 
 DRY_RUN = True
 
@@ -22,7 +27,16 @@ class Scheduler:
         self,
     ):
 
-        rule = self.repository.get_rule()
+        periods = [
+            p
+            for p in self.repository.get_periods()
+            if p.enabled
+        ]
+
+        if not periods:
+            return
+
+        rule = periods[0]
 
         if rule is None:
 
@@ -37,10 +51,6 @@ class Scheduler:
             rule.end_time,
         )
 
-        print(
-            f"should_run={should_run} "
-            f"is_active={self.is_active}"
-        )
 
         #
         # Enter window
@@ -66,15 +76,14 @@ class Scheduler:
 
                 if (
                     rule.action
-                    == "FORCE_DISCHARGE"
+                    == MODE_MANUAL_DISCHARGE
                 ):
 
                     self.controller.force_discharge()
 
                 elif (
                     rule.action
-                    == "FORCE_CHARGE"
-                ):
+                    == MODE_MANUAL_CHARGE                ):
 
                     self.controller.force_charge()
 
@@ -119,10 +128,6 @@ class Scheduler:
         print(
             "Scheduler reset"
         )
-
-        from datetime import datetime
-
-    from datetime import datetime
 
     def is_in_window(
             self,

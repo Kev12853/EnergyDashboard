@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from app.backend.automation.models import (
-    AutomationRule,
+    SchedulePeriod,
 )
 
 
@@ -13,68 +13,149 @@ class AutomationRepository:
         self,
         connection,
     ):
-
         self.connection = connection
 
-    def save_rule(
+    def save_period(
         self,
-        rule: AutomationRule,
+        period: SchedulePeriod,
     ):
 
-        self.connection.execute(
-            """
-            DELETE FROM automation_rules
-            """
-        )
+        if period.id is None:
 
-        self.connection.execute(
-            """
-            INSERT INTO automation_rules (
+            cursor = self.connection.execute(
+                """
+                INSERT INTO schedule_periods (
 
-                name,
-                enabled,
-                start_time,
-                end_time,
-                action,
-                updated_at
+                    name,
+                    source,
+                    enabled,
+                    start_time,
+                    end_time,
+                    mode,
+                    priority,
+                    updated_at
 
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    period.name,
+                    period.source,
+                    int(period.enabled),
+                    period.start_time,
+                    period.end_time,
+                    period.mode,
+                    period.priority,
+                    period.updated_at.isoformat(),
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                rule.name,
-                int(rule.enabled),
-                rule.start_time,
-                rule.end_time,
-                rule.action,
-                rule.updated_at.isoformat(),
-            ),
-        )
+
+            period.id = cursor.lastrowid
+
+        else:
+
+            self.connection.execute(
+                """
+                UPDATE schedule_periods
+
+                SET
+
+                    name = ?,
+                    source = ?,
+                    enabled = ?,
+                    start_time = ?,
+                    end_time = ?,
+                    mode = ?,
+                    priority = ?,
+                    updated_at = ?
+
+                WHERE id = ?
+                """,
+                (
+                    period.name,
+                    period.source,
+                    int(period.enabled),
+                    period.start_time,
+                    period.end_time,
+                    period.mode,
+                    period.priority,
+                    period.updated_at.isoformat(),
+                    period.id,
+                ),
+            )
 
         self.connection.commit()
 
-    def get_rule(
-        self,
-    ) -> AutomationRule | None:
+    def get_period(
+            self,
+            period_id: int,
+    ) -> SchedulePeriod | None:
 
         row = self.connection.execute(
             """
             SELECT *
 
-            FROM automation_rules
+            FROM schedule_periods
 
-            LIMIT 1
-            """
+            WHERE id = ?
+            """,
+            (period_id,),
         ).fetchone()
 
         if row is None:
             return None
 
-        return AutomationRule(
+        return self._row_to_period(
+            row
+        )
+    def get_periods(
+        self,
+    ) -> list[SchedulePeriod]:
+
+        rows = self.connection.execute(
+            """
+            SELECT *
+
+            FROM schedule_periods
+
+            ORDER BY priority DESC,
+                     start_time
+            """
+        ).fetchall()
+
+        return [
+            self._row_to_period(row)
+            for row in rows
+        ]
+
+    def delete_period(
+        self,
+        period_id: int,
+    ):
+
+        self.connection.execute(
+            """
+            DELETE FROM schedule_periods
+
+            WHERE id = ?
+            """,
+            (period_id,),
+        )
+
+        self.connection.commit()
+
+    @staticmethod
+    def _row_to_period(
+        row,
+    ) -> SchedulePeriod:
+
+        return SchedulePeriod(
 
             id=row["id"],
 
             name=row["name"],
+
+            source=row["source"],
 
             enabled=bool(
                 row["enabled"]
@@ -84,11 +165,19 @@ class AutomationRepository:
 
             end_time=row["end_time"],
 
-            action=row["action"],
+            mode=row["mode"],
 
-            updated_at=(
-                datetime.fromisoformat(
-                    row["updated_at"]
-                )
+            priority=row["priority"],
+
+            updated_at=datetime.fromisoformat(
+                row["updated_at"]
             ),
         )
+
+    def get_rule(
+            self,
+    ) -> SchedulePeriod | None:
+
+        periods = self.get_periods()
+
+        return periods[0] if periods else None

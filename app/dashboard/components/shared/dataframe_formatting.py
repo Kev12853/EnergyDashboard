@@ -129,20 +129,33 @@ def format_dataframe_columns(
     # FORMAT DATETIME COLUMNS
     # =====================================================
 
+    SKIP_DATETIME_FORMATTING = {
+        "Slot Time",
+    }
+
     datetime_columns = [
         column
         for column in result.columns
-        if "Time" in column
-        or "Date" in column
+        if (
+                (
+                        "Time" in column
+                        or "Date" in column
+                )
+                and column not in SKIP_DATETIME_FORMATTING
+        )
     ]
 
     for column in datetime_columns:
-
         try:
-
-            dt_series = pd.to_datetime(
-                result[column]
-            )
+            if pd.api.types.is_datetime64_any_dtype(
+                    result[column]
+            ):
+                dt_series = result[column]
+            else:
+                dt_series = pd.to_datetime(
+                    result[column],
+                    errors="coerce",
+                )
 
             if datetime_format == "date_only":
 

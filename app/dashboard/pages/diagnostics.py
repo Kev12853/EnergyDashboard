@@ -99,6 +99,7 @@ def render(
             "\n".join(df.columns)
         )
 
+        st.write("Telemetry")
         st.dataframe(
             df.tail(50),
             width='stretch',
@@ -122,7 +123,7 @@ def render(
                 settlement_df.columns
             )
         )
-
+        st.write("Settlement")
         st.dataframe(
             settlement_df.tail(50),
             width='stretch',
@@ -136,7 +137,7 @@ def render(
         "Dispatch History",
         expanded=False,
     ):
-
+        st.write("Dispatch")
         st.dataframe(
             dispatch_history_df.tail(50),
             width='stretch',
@@ -147,15 +148,16 @@ def render(
     # =====================================================
 
     if not df.empty:
-
         with st.expander(
             "Telemetry Statistics",
             expanded=False,
         ):
+            st.write("Stats")
+            numeric_df = df.select_dtypes(
+                include="number",
+            )
 
             st.dataframe(
-                df.describe(
-                    include="all"
-                ),
-                width='stretch',
+                numeric_df.describe(),
+                width="stretch",
             )

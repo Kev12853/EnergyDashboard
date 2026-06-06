@@ -1,3 +1,4 @@
+
 import streamlit as st
 
 from app.dashboard.components.solax.charts.solax_charts import (

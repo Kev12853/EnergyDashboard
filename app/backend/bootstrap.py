@@ -5,12 +5,12 @@ import streamlit as st
 
 
 def start_services():
-
-    if (
-        "services_started"
-        in st.session_state
-    ):
-        return
+    print("START_SERVICES CALLED")
+    # if (
+    #     "services_started"
+    #     in st.session_state
+    # ):
+    #     return
 
     services = [
 
@@ -72,6 +72,6 @@ def start_services():
         "=========================\n"
     )
 
-    st.session_state[
-        "services_started"
-    ] = True
+    # st.session_state[
+    #     "services_started"
+    # ] = True

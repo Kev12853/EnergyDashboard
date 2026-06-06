@@ -5,6 +5,7 @@ import time
 from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
+from streamlit import logger
 
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
@@ -232,9 +233,16 @@ class SolaxModbusClient:
 
     def reconnect(self):
 
+        logger.warning(
+            f"Reconnecting to {self.host}"
+        )
+
         try:
+
             self.client.close()
+
         except Exception:
+
             pass
 
         self.client = ModbusTcpClient(
@@ -242,10 +250,20 @@ class SolaxModbusClient:
             port=self.port,
         )
 
-        if not self.client.connect():
+        connected = self.client.connect()
+
+        if not connected:
+            logger.error(
+                f"Unable to connect to {self.host}"
+            )
+
             raise ConnectionError(
                 f"Unable to connect to {self.host}"
             )
+
+        logger.info(
+            f"Connected to {self.host}"
+        )
 
     def read_charge_schedule(self):
 

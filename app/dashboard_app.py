@@ -79,10 +79,6 @@ st.set_page_config(
     layout="wide",
 )
 
-st_autorefresh(
-    interval=30_000,
-    key="dashboard_refresh",
-)
 
 # =========================================================
 # CUSTOM CSS
@@ -159,12 +155,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # =========================================================
 # SIDEBAR
 # =========================================================
 
 with st.sidebar:
-
     st.title(
         "⚡ Energy Dashboard"
     )
@@ -179,7 +175,6 @@ with st.sidebar:
         ),
         unsafe_allow_html=True,
     )
-
     page = st.radio(
         "Navigation Menu",
         [
@@ -193,15 +188,16 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
+
     st.divider()
 
     hours = st.selectbox(
         "Time Window",
         options=[1, 6, 12, 24, 48],
         index=3,
-        key="time_window_selector",
         format_func=lambda x: f"{x} Hours",
     )
+
 
 # =========================================================
 # DATABASE INITIALISATION
@@ -221,12 +217,10 @@ create_all_tables(
 def initialise_services():
 
     start_services()
-
     return True
 
 
 initialise_services()
-
 # =========================================================
 # REPOSITORY
 # =========================================================
@@ -246,39 +240,29 @@ automation_repo = (
         connection
     )
 )
+
 automation_rule = (
-    automation_repo.get_rule()
+    automation_repo.get_periods()
 )
 
 from datetime import datetime
 
 from app.backend.automation.models import (
-    AutomationRule,
-)
-
-from app.backend.automation.constants import (
-    ACTION_FORCE_DISCHARGE,
+    SchedulePeriod,
 )
 
 if automation_rule is None:
 
     automation_rule = (
-        AutomationRule(
-
+        SchedulePeriod(
             id=None,
-
-            name="New Rule",
-
+            name="New Period",
+            source="MANUAL",
             enabled=False,
-
             start_time="16:00",
-
             end_time="19:00",
-
-            action=(
-                ACTION_FORCE_DISCHARGE
-            ),
-
+            mode="SELF_USE",
+            priority=10,
             updated_at=datetime.now(),
         )
     )
@@ -298,6 +282,14 @@ start = end - timedelta(
 )
 
 latest = repository.get_latest_snapshot()
+if latest is None:
+
+    st.warning(
+        "No telemetry data available."
+    )
+
+    st.stop()
+
 latest = dict(latest)
 
 latest["pv_power_w"] = latest["solar_w"]
@@ -312,13 +304,7 @@ latest["house_load_w"] = latest["consumption_w"]
 # EMPTY STATE
 # =========================================================
 
-if latest is None:
 
-    st.warning(
-        "No telemetry data available."
-    )
-
-    st.stop()
 
 # =========================================================
 # LOAD HISTORY
@@ -334,6 +320,7 @@ try:
         [dict(row) for row in history_1m]
     )
     if not df.empty:
+
         df["upload_time"] = pd.to_datetime(
             df["bucket_start"]
         )
@@ -358,6 +345,10 @@ try:
 
         df["battery_power_w"] = (
             df["avg_battery_w"]
+        )
+        df.drop(
+            columns=["bucket_start"],
+            inplace=True,
         )
 
 except Exception:
@@ -389,13 +380,11 @@ data_age_minutes = (
 tariff_df = (
     get_recent_tariffs()
 )
-
 dispatch_history_df = (
     get_dispatch_history(
         days=7
     )
 )
-
 # =========================================================
 # ENERGY COST ANALYTICS
 # =========================================================
@@ -428,12 +417,9 @@ else:
 
     settlement_df = pd.DataFrame()
 
-
-
 # =========================================================
 # PAGE ROUTING
 # =========================================================
-
 if page == "Overview":
     overview.render(
         latest=latest,
@@ -444,26 +430,22 @@ if page == "Overview":
     )
 
 elif page == "Energy Costs":
-
     energy_costs.render(
         settlement_df=settlement_df,
     )
 
 elif page == "Octopus":
-
     octopus.render(
         dispatch_history_df=dispatch_history_df,
         tariff_df=tariff_df,
     )
 
 elif page == "Energy Data":
-
     energy_data.render(
         df=df,
     )
 
 elif page == "Diagnostics":
-
     diagnostics.render(
         latest_upload_time=latest_timestamp,
         data_age_minutes=data_age_minutes,
@@ -472,8 +454,6 @@ elif page == "Diagnostics":
         dispatch_history_df=dispatch_history_df,
     )
 elif page == "Automation":
-
     automation.render(
-        rule=automation_rule,
         repo=automation_repo,
     )
