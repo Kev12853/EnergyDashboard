@@ -5,7 +5,9 @@ import time
 from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
-from streamlit import logger
+import logging
+
+
 
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
@@ -26,6 +28,7 @@ from app.solax.telemetry.registers import (
 REGISTER_BLOCK_START = 0
 REGISTER_BLOCK_SIZE = 80
 
+logger = logging.getLogger(__name__)
 
 class SolaxModbusClient:
     def __init__(
@@ -67,36 +70,46 @@ class SolaxModbusClient:
 
     def read_register_block(self) -> dict[int, int]:
 
-        try:
-            result = self.client.read_input_registers(
-                address=REGISTER_BLOCK_START,
-                count=REGISTER_BLOCK_SIZE,
-                device_id=self.slave_id,
-            )
+        max_attempts = 3
 
-        except Exception:
+        for attempt in range(max_attempts):
             try:
-                self.client.close()
-            except Exception:
-                pass
+                result = self.client.read_input_registers(
+                    address=REGISTER_BLOCK_START,
+                    count=REGISTER_BLOCK_SIZE,
+                    device_id=self.slave_id,
+                )
 
-            time.sleep(10)
+                if result.isError():
+                    raise RuntimeError(f"Modbus read failed: {result}")
 
-            self.reconnect()
+                return {
+                    REGISTER_BLOCK_START + index: value
+                    for index, value in enumerate(result.registers)
+                }
 
-            result = self.client.read_input_registers(
-                address=REGISTER_BLOCK_START,
-                count=REGISTER_BLOCK_SIZE,
-                device_id=self.slave_id,
-            )
+            except Exception as exc:
+                logger.warning(
+                    f"Read attempt {attempt + 1}/{max_attempts} failed: {exc}"
+                )
 
-        if result.isError():
-            raise RuntimeError(f"Modbus read failed: {result}")
+                try:
+                    self.client.close()
 
-        return {
-            REGISTER_BLOCK_START + index: value
-            for index, value in enumerate(result.registers)
-        }
+                except Exception:
+                    pass
+
+                time.sleep(2)
+
+                try:
+                    self.reconnect()
+
+                except Exception as reconnect_exc:
+                    logger.warning(f"Reconnect failed: {reconnect_exc}")
+
+                time.sleep(2)
+
+        raise RuntimeError("Unable to read Modbus registers after multiple attempts.")
 
     def poll_once(self) -> PowerFlowSnapshot:
 

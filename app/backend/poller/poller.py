@@ -21,52 +21,70 @@ from app.backend.storage.schema import (
     create_all_tables,
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format=("%(asctime)s %(levelname)s %(name)s: %(message)s"),
-)
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format=("%(asctime)s %(levelname)s %(name)s: %(message)s"),
+    )
 
-logger = logging.getLogger(__name__)
+    import time
 
-connection = get_connection()
+    last_heartbeat = 0
 
-create_all_tables(connection)
-client = SolaxModbusClient(
-    host="192.168.1.66",
-)
+    logger = logging.getLogger(__name__)
 
-repository = TelemetryRepository(connection)
+    connection = get_connection()
 
-logger.info("Starting to Poll")
+    create_all_tables(connection)
+    client = SolaxModbusClient(
+        host="192.168.1.66",
+    )
 
-automation_repo = AutomationRepository(connection)
+    repository = TelemetryRepository(connection)
 
-controller = InverterController(client)
+    logger.info("Starting to Poll")
+    import os
 
-scheduler = Scheduler(
-    automation_repo,
-    controller,
-)
+    logger.info(
+        f"Starting poller PID={os.getpid()}"
+    )
+    automation_repo = AutomationRepository(connection)
 
-while True:
-    try:
-        snapshot = client.poll_once()
+    controller = InverterController(client)
 
-        repository.save_snapshot(snapshot)
+    scheduler = Scheduler(
+        automation_repo,
+        controller,
+    )
 
-        scheduler.evaluate()
-
-    except Exception:
-        logger.exception("Poll failed")
-
+    while True:
         try:
-            logger.warning("Attempting reconnect")
+            snapshot = client.poll_once()
 
-            client.reconnect()
+            repository.save_snapshot(snapshot)
 
-            logger.info("Reconnect successful")
+            scheduler.evaluate()
+
+            now = time.time()
+
+            if now - last_heartbeat >= 300:
+                logger.info(f"Poller healthy (PID={os.getpid()})")
+                last_heartbeat = now
 
         except Exception:
-            logger.exception("Reconnect failed")
+            logger.exception("Poll failed")
 
-    time.sleep(5)
+            try:
+                logger.warning("Attempting reconnect")
+
+                client.reconnect()
+
+                logger.info("Reconnect successful")
+
+            except Exception:
+                logger.exception("Reconnect failed")
+        time.sleep(5)
+
+
+if __name__ == "__main__":
+    main()

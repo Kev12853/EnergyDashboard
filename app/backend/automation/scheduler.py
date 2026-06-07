@@ -5,6 +5,7 @@ from app.backend.automation.constants import (
     MODE_MANUAL_CHARGE,
     SELF_USE,
 )
+from app.backend.automation.models import AutomationState
 
 DRY_RUN = True
 
@@ -21,6 +22,67 @@ class Scheduler:
         self.controller = controller
 
         self.is_active = False
+
+    def get_active_period(self):
+
+        periods = [p for p in self.repository.get_periods() if p.enabled]
+
+        if not periods:
+            return None
+
+        rule = periods[0]
+
+        if not self.is_in_window(
+            rule.start_time,
+            rule.end_time,
+        ):
+            return None
+
+        return rule
+
+    def get_state(self) -> AutomationState:
+
+        periods = [p for p in self.repository.get_periods() if p.enabled]
+
+        if not periods:
+            return AutomationState(
+                active=False,
+                actioned=False,
+                period_name=None,
+                mode=None,
+                start_time=None,
+                end_time=None,
+                status="Idle",
+                message="No active automation periods.",
+            )
+
+        rule = periods[0]
+
+        if not self.is_in_window(
+            rule.start_time,
+            rule.end_time,
+        ):
+            return AutomationState(
+                active=False,
+                actioned=False,
+                period_name=None,
+                mode=None,
+                start_time=None,
+                end_time=None,
+                status="Idle",
+                message="No active automation periods.",
+            )
+
+        return AutomationState(
+            active=True,
+            actioned=False,
+            period_name=rule.name,
+            mode=rule.mode,
+            start_time=rule.start_time,
+            end_time=rule.end_time,
+            status="Waiting",
+            message="Manual implementation available.",
+        )
 
     def evaluate(
         self,
