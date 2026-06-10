@@ -1,5 +1,25 @@
-from app.backend.automation import scheduler
+from app.backend.automation.engine import (
+    AutomationEngine,
+)
 
-state = scheduler.get_state()
+from app.backend.automation.repository import (
+    AutomationRepository,
+)
 
-print(state)
+from app.backend.storage.db import (
+    get_connection,
+)
+
+connection = get_connection()
+
+repo = AutomationRepository(
+    connection,
+)
+
+engine = AutomationEngine(
+    repo,
+)
+
+print(
+    engine.get_state()
+)

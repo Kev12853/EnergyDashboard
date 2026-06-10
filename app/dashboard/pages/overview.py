@@ -9,6 +9,7 @@ from app.dashboard.components.solax.kpis.solax_kpis import (
     render_kpi_row,
     render_settlement_kpis,
 )
+from app.dashboard.helpers.format_data import format_data_age
 
 
 def render(
@@ -21,9 +22,47 @@ def render(
 
     st.title("Energy Dashboard")
 
-    st.caption(f"Latest inverter update: {latest_upload_time}")
+    import pandas as pd
 
-    st.caption(f"Data age: {data_age_minutes:.1f} minutes")
+    if data_age_minutes < 5:
+        icon = "🟢"
+        status = "Healthy"
+
+    elif data_age_minutes < 30:
+        icon = "🟡"
+        status = "Delayed"
+
+    else:
+        icon = "🔴"
+        status = "Offline"
+
+    last_update = pd.Timestamp(latest_upload_time).strftime("%d %b %H:%M")
+    work_mode = latest["work_mode"]
+      
+    with st.container(border=True):
+        st.markdown(
+            f"""
+            <span style="font-size:1.4em; font-weight:bold;">
+                {icon} Telemetry {status}
+            </span>
+            
+            <span style="font-size:1.2em;">
+                &nbsp;&nbsp;
+                 | ⚡ {work_mode}
+            </span>
+            
+            <span style="font-size:1.2em;">
+                &nbsp;&nbsp;
+                Last Update: {last_update}
+         
+            </span>
+            
+
+""",
+            unsafe_allow_html=True,
+        )
+    # &nbsp;&nbsp;|&nbsp;&nbsp;
+    # Data Age: {format_data_age(data_age_minutes)}
 
     with st.container(border=True):
         render_kpi_row(latest)

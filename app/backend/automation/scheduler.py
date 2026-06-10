@@ -7,7 +7,7 @@ from app.backend.automation.constants import (
 )
 from app.backend.automation.models import AutomationState
 
-DRY_RUN = True
+DRY_RUN = False
 
 
 class Scheduler:

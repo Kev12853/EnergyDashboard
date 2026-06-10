@@ -61,6 +61,9 @@ class PowerFlowSnapshot:
 
     inverter_serial: str | None = None
 
+    work_mode: str = "Unknown"
+
+
     # =====================================================
     # RAW DEBUG DATA
     # =====================================================

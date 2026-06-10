@@ -39,11 +39,12 @@ class TelemetryRepository:
 
                 pv1_w,
                 pv2_w,
+                work_mode,
 
                 raw_json
 
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 snapshot.timestamp.isoformat(),
@@ -55,6 +56,7 @@ class TelemetryRepository:
                 snapshot.consumption_power_w,
                 snapshot.pv1_power_w,
                 snapshot.pv2_power_w,
+                snapshot.work_mode,
                 json.dumps(snapshot.raw_registers),
             ),
         )

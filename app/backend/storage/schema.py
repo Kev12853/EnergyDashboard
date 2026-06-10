@@ -24,7 +24,9 @@ def create_telemetry_tables(
             pv1_w INTEGER,
             pv2_w INTEGER,
 
-            raw_json TEXT
+            raw_json TEXT,
+            
+            work_mode TEXT
         )
         """
     )

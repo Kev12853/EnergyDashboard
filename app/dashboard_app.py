@@ -1,11 +1,6 @@
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 import pandas as pd
 import streamlit as st
 
@@ -88,6 +83,15 @@ st.set_page_config(
     layout="wide",
 )
 
+st_autorefresh(
+    interval=30 * 1000,  # 30 seconds
+    key="dashboard_refresh",
+)
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # =========================================================
 # CUSTOM CSS
@@ -237,7 +241,6 @@ start = end - timedelta(hours=hours)
 latest = repository.get_latest_snapshot()
 if latest is None:
     st.warning("No telemetry data available.")
-
     st.stop()
 
 latest = dict(latest)

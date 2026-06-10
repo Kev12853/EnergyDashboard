@@ -24,9 +24,10 @@ from app.solax.telemetry.registers import (
     GRID_MSB,
 )
 
+import app.solax.telemetry.registers as registers
 
 REGISTER_BLOCK_START = 0
-REGISTER_BLOCK_SIZE = 80
+REGISTER_BLOCK_SIZE = 10
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +69,13 @@ class SolaxModbusClient:
 
         return unsigned32
 
-    def read_register_block(self) -> dict[int, int]:
+    def read_register_block(
+        self,
+    ) -> dict[int, int]:
 
         max_attempts = 3
+
+        last_exception = None
 
         for attempt in range(max_attempts):
             try:
@@ -85,31 +90,24 @@ class SolaxModbusClient:
 
                 return {
                     REGISTER_BLOCK_START + index: value
-                    for index, value in enumerate(result.registers)
+                    for (
+                        index,
+                        value,
+                    ) in enumerate(result.registers)
                 }
 
             except Exception as exc:
+                last_exception = exc
+
                 logger.warning(
-                    f"Read attempt {attempt + 1}/{max_attempts} failed: {exc}"
+                    f"Register block read failed ({attempt + 1}/{max_attempts}): {exc}"
                 )
 
-                try:
-                    self.client.close()
+                time.sleep(1.0)
 
-                except Exception:
-                    pass
-
-                time.sleep(2)
-
-                try:
-                    self.reconnect()
-
-                except Exception as reconnect_exc:
-                    logger.warning(f"Reconnect failed: {reconnect_exc}")
-
-                time.sleep(2)
-
-        raise RuntimeError("Unable to read Modbus registers after multiple attempts.")
+        raise RuntimeError(
+            f"Unable to read Modbus registers after multiple attempts: {last_exception}"
+        )
 
     def poll_once(self) -> PowerFlowSnapshot:
 
@@ -205,3 +203,20 @@ class SolaxModbusClient:
         }
 
         return parse_schedule(registers)
+
+
+    def read_work_mode_registers(self):
+
+        result = self.client.read_holding_registers(
+            address=registers.WORK_MODE_REGISTER,
+            count=2,
+            device_id=self.slave_id,
+        )
+
+        if result.isError():
+            raise RuntimeError(f"Work mode read failed: {result}")
+
+        return {
+            registers.WORK_MODE_REGISTER: result.registers[0],
+            registers.MANUAL_MODE_REGISTER: result.registers[1],
+        }
