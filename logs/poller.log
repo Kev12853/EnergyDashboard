@@ -423,3 +423,177 @@ ConnectionError: Unable to connect to 192.168.1.66
 2026-06-12 09:41:29,172 INFO poller: Poller stopping
 2026-06-12 09:41:29,173 INFO poller: Poller stopping
 2026-06-12 09:41:29,178 INFO poller: Poller stopped
+2026-06-12 09:41:55,864 INFO poller: Poller starting
+2026-06-12 09:42:00,872 INFO poller: Starting to Poll
+2026-06-12 09:42:00,872 INFO poller: Starting poller PID=35600
+2026-06-12 09:42:06,421 INFO poller: Poller healthy (PID=35600)
+2026-06-12 09:42:06,421 INFO poller: Self Use
+2026-06-12 09:47:11,128 INFO poller: Poller healthy (PID=35600)
+2026-06-12 09:47:11,128 INFO poller: Self Use
+2026-06-12 09:47:58,376 INFO poller: Poller stopping
+2026-06-12 09:47:58,377 INFO poller: Poller stopping
+2026-06-12 09:47:58,378 INFO poller: Poller stopped
+2026-06-12 09:48:56,806 INFO poller: Poller starting
+2026-06-12 09:49:01,815 INFO poller: Starting to Poll
+2026-06-12 09:49:01,815 INFO poller: Starting poller PID=51632
+2026-06-12 09:49:07,329 INFO poller: Poller healthy (PID=51632)
+2026-06-12 09:49:07,329 INFO poller: Self Use
+2026-06-12 09:54:12,124 INFO poller: Poller healthy (PID=51632)
+2026-06-12 09:54:12,124 INFO poller: Self Use
+2026-06-12 09:59:17,124 INFO poller: Poller healthy (PID=51632)
+2026-06-12 09:59:17,124 INFO poller: Self Use
+2026-06-12 10:04:22,024 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:04:22,024 INFO poller: Self Use
+2026-06-12 10:09:27,020 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:09:27,021 INFO poller: Self Use
+2026-06-12 10:14:32,020 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:14:32,020 INFO poller: Self Use
+2026-06-12 10:19:37,120 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:19:37,120 INFO poller: Self Use
+2026-06-12 10:24:42,167 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:24:42,168 INFO poller: Self Use
+2026-06-12 10:30:03,868 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:30:03,869 INFO poller: Self Use
+2026-06-12 10:35:08,677 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:35:08,677 INFO poller: Self Use
+2026-06-12 10:40:12,892 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:40:12,893 INFO poller: Self Use
+2026-06-12 10:45:17,177 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:45:17,178 INFO poller: Self Use
+2026-06-12 10:50:21,424 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:50:21,424 INFO poller: Self Use
+2026-06-12 10:55:28,172 INFO poller: Poller healthy (PID=51632)
+2026-06-12 10:55:28,172 INFO poller: Self Use
+2026-06-12 11:00:24,190 INFO poller: Poller stopping
+2026-06-12 11:00:24,190 INFO poller: Poller stopping
+2026-06-12 11:00:24,192 INFO poller: Poller stopped
+2026-06-12 11:00:30,041 INFO poller: Poller starting
+2026-06-12 11:00:35,070 INFO poller: Starting to Poll
+2026-06-12 11:00:35,070 INFO poller: Starting poller PID=54332
+2026-06-12 11:00:40,578 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:00:40,578 INFO poller: Self Use
+2026-06-12 11:05:44,821 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:05:44,821 INFO poller: Self Use
+2026-06-12 11:10:49,029 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:10:49,030 INFO poller: Self Use
+2026-06-12 11:15:53,229 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:15:53,230 INFO poller: Self Use
+2026-06-12 11:21:05,727 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:21:05,728 INFO poller: Self Use
+2026-06-12 11:26:09,926 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:26:09,926 INFO poller: Self Use
+2026-06-12 11:31:14,276 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:31:14,277 INFO poller: Self Use
+2026-06-12 11:36:18,627 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:36:18,627 INFO poller: Self Use
+2026-06-12 11:41:23,024 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:41:23,024 INFO poller: Self Use
+2026-06-12 11:46:27,334 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:46:27,334 INFO poller: Self Use
+2026-06-12 11:51:31,843 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:51:31,843 INFO poller: Self Use
+2026-06-12 11:56:36,491 INFO poller: Poller healthy (PID=54332)
+2026-06-12 11:56:36,491 INFO poller: Self Use
+2026-06-12 11:59:07,032 WARNING poller: Inverter communication lost: Unable to read work mode after multiple attempts: Unable to connect to 192.168.1.66
+2026-06-12 11:59:10,037 ERROR poller: Reconnect failed
+Traceback (most recent call last):
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\backend\poller\poller.py", line 103, in main
+    snapshot = poll_inverter(
+        client,
+        controller,
+    )
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\backend\poller\poller.py", line 227, in poll_inverter
+    mode = controller.get_work_mode()
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\backend\inverter\controller.py", line 11, in get_work_mode
+    mode_registers = self.client.read_work_mode_registers()
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\solax\telemetry\modbus_client.py", line 270, in read_work_mode_registers
+    raise RuntimeError(
+        f"Unable to read work mode after multiple attempts: {last_exception}"
+    )
+RuntimeError: Unable to read work mode after multiple attempts: Unable to connect to 192.168.1.66
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\backend\poller\poller.py", line 168, in main
+    client.reconnect()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kev12\OffLine Documents\EnergyDashboard\app\solax\telemetry\modbus_client.py", line 202, in reconnect
+    raise ConnectionError(f"Unable to connect to {self.host}")
+ConnectionError: Unable to connect to 192.168.1.66
+2026-06-12 12:01:42,340 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:01:42,340 INFO poller: Self Use
+2026-06-12 12:06:47,039 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:06:47,039 INFO poller: Self Use
+2026-06-12 12:11:51,688 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:11:51,688 INFO poller: Self Use
+2026-06-12 12:16:56,387 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:16:56,388 INFO poller: Self Use
+2026-06-12 12:22:09,787 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:22:09,787 INFO poller: Self Use
+2026-06-12 12:27:14,236 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:27:14,236 INFO poller: Self Use
+2026-06-12 12:32:18,937 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:32:18,937 INFO poller: Self Use
+2026-06-12 12:37:23,534 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:37:23,534 INFO poller: Self Use
+2026-06-12 12:42:28,384 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:42:28,385 INFO poller: Self Use
+2026-06-12 12:47:33,235 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:47:33,236 INFO poller: Self Use
+2026-06-12 12:52:37,933 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:52:37,933 INFO poller: Self Use
+2026-06-12 12:57:42,681 INFO poller: Poller healthy (PID=54332)
+2026-06-12 12:57:42,682 INFO poller: Self Use
+2026-06-12 13:02:47,480 INFO poller: Poller healthy (PID=54332)
+2026-06-12 13:02:47,481 INFO poller: Self Use
+2026-06-12 13:07:52,381 INFO poller: Poller healthy (PID=54332)
+2026-06-12 13:07:52,382 INFO poller: Self Use
+2026-06-12 13:12:56,929 INFO poller: Poller healthy (PID=54332)
+2026-06-12 13:12:56,930 INFO poller: Self Use
+2026-06-12 13:15:07,520 INFO poller: Poller stopping
+2026-06-12 13:15:07,520 INFO poller: Poller stopping
+2026-06-12 13:15:07,521 INFO poller: Poller stopped
+2026-06-12 13:15:23,426 INFO poller: Poller starting
+2026-06-12 13:15:28,435 INFO poller: Starting to Poll
+2026-06-12 13:15:28,435 INFO poller: Starting poller PID=30356
+2026-06-12 13:15:35,894 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:15:35,894 INFO poller: Self Use
+2026-06-12 13:20:40,479 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:20:40,479 INFO poller: Self Use
+2026-06-12 13:25:45,076 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:25:45,076 INFO poller: Self Use
+2026-06-12 13:30:49,776 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:30:49,776 INFO poller: Self Use
+2026-06-12 13:35:54,526 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:35:54,527 INFO poller: Self Use
+2026-06-12 13:40:59,176 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:40:59,177 INFO poller: Self Use
+2026-06-12 13:46:03,885 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:46:03,885 INFO poller: Self Use
+2026-06-12 13:51:08,983 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:51:08,984 INFO poller: Self Use
+2026-06-12 13:56:13,883 INFO poller: Poller healthy (PID=30356)
+2026-06-12 13:56:13,883 INFO poller: Self Use
+2026-06-12 14:01:18,733 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:01:18,733 INFO poller: Self Use
+2026-06-12 14:06:23,633 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:06:23,633 INFO poller: Self Use
+2026-06-12 14:11:28,432 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:11:28,432 INFO poller: Self Use
+2026-06-12 14:16:33,481 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:16:33,482 INFO poller: Self Use
+2026-06-12 14:21:38,581 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:21:38,582 INFO poller: Self Use
+2026-06-12 14:26:43,381 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:26:43,381 INFO poller: Self Use
+2026-06-12 14:31:48,378 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:31:48,378 INFO poller: Self Use
+2026-06-12 14:36:53,278 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:36:53,278 INFO poller: Self Use
+2026-06-12 14:41:58,103 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:41:58,103 INFO poller: Self Use
+2026-06-12 14:47:12,126 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:47:12,126 INFO poller: Self Use
+2026-06-12 14:52:26,026 INFO poller: Poller healthy (PID=30356)
+2026-06-12 14:52:26,026 INFO poller: Self Use

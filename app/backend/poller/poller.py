@@ -100,7 +100,14 @@ def main():
     try:
         while True:
             try:
-                mode = controller.get_work_mode()
+                snapshot = poll_inverter(
+                    client,
+                    controller,
+                )
+
+
+                mode = snapshot.work_mode
+                #mode = controller.get_work_mode()
                 change = work_mode_monitor.update(
                     mode,
                 )
@@ -119,15 +126,15 @@ def main():
 
                     except Exception as exc:
                         logger.exception(f"Email failed: {exc}")
-                #
-                snapshot = client.poll_once()
+
+               # #napshot = client.poll_once()
 
                 if communication_lost:
                     logger.info("Communication restored")
 
                     communication_lost = False
 
-                snapshot.work_mode = mode
+                #snapshot.work_mode = mode
 
                 last_successful_poll = time.time()
 
@@ -152,20 +159,22 @@ def main():
                     #
                     logger.info(snapshot.work_mode)
 
+
             except Exception as exc:
-                logger.warning(f"Inverter communication lost: {exc}")
-                communication_lost = False
-                try:
-                    #logger.info("Attempting reconnect")
+                logger.warning(
+                    f"Inverter communication lost: {exc}"
+                )
 
-                    client.reconnect()
+                communication_lost = True
+                #
+                
+                # Fresh connections are established
 
-                    #logger.info("Communication restored")
-                    time.sleep(10)
-                    continue
+                # on every poll cycle, so simply
 
-                except Exception:
-                    logger.exception("Reconnect failed")
+                # wait and try again.
+                time.sleep(10)
+                continue
 
             downtime = time.time() - last_successful_poll
 
@@ -186,8 +195,10 @@ def main():
                     logger.exception("Unable to send outage notification")
 
                 failure_notification_sent = True
-            communication_lost = False
-            time.sleep(25)
+            if communication_lost:
+                time.sleep(10)
+            else:
+                time.sleep(25)
 
     except KeyboardInterrupt:
         logger.info(
@@ -211,6 +222,19 @@ def close(self):
     except Exception:
         pass
 
+
+def poll_inverter(
+    client,
+    controller,
+):
+
+    mode = controller.get_work_mode()
+
+    snapshot = client.poll_once()
+
+    snapshot.work_mode = mode
+
+    return snapshot
 
 if __name__ == "__main__":
     main()
