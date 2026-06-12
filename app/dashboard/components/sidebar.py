@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 def render_sidebar():
 
     with st.sidebar:
@@ -17,6 +16,7 @@ def render_sidebar():
             "Navigation Menu",
             [
                 "Overview",
+                "Health",
                 "Energy Costs",
                 "Octopus",
                 "Energy Data",

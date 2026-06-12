@@ -27,7 +27,7 @@ from app.solax.telemetry.registers import (
 import app.solax.telemetry.registers as registers
 
 REGISTER_BLOCK_START = 0
-REGISTER_BLOCK_SIZE = 10
+REGISTER_BLOCK_SIZE = 80
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,17 @@ class SolaxModbusClient:
 
         for attempt in range(max_attempts):
             try:
+                # ==========================================
+                # Start each attempt with a fresh connection
+                # ==========================================
+
+                try:
+                    self.client.close()
+                except Exception:
+                    pass
+
+                self.client.connect()
+
                 result = self.client.read_input_registers(
                     address=REGISTER_BLOCK_START,
                     count=REGISTER_BLOCK_SIZE,
@@ -88,7 +99,7 @@ class SolaxModbusClient:
                 if result.isError():
                     raise RuntimeError(f"Modbus read failed: {result}")
 
-                return {
+                registers = {
                     REGISTER_BLOCK_START + index: value
                     for (
                         index,
@@ -96,19 +107,38 @@ class SolaxModbusClient:
                     ) in enumerate(result.registers)
                 }
 
+                # ==========================================
+                # Clean shutdown after successful read
+                # ==========================================
+
+                try:
+                    self.client.close()
+                except Exception:
+                    pass
+
+                return registers
+
             except Exception as exc:
                 last_exception = exc
+
+                # ==========================================
+                # Ensure socket closed after failure
+                # ==========================================
+
+                try:
+                    self.client.close()
+                except Exception:
+                    pass
 
                 logger.warning(
                     f"Register block read failed ({attempt + 1}/{max_attempts}): {exc}"
                 )
 
-                time.sleep(1.0)
+                time.sleep(5.0)
 
         raise RuntimeError(
             f"Unable to read Modbus registers after multiple attempts: {last_exception}"
         )
-
     def poll_once(self) -> PowerFlowSnapshot:
 
         registers = self.read_register_block()
@@ -220,3 +250,13 @@ class SolaxModbusClient:
             registers.WORK_MODE_REGISTER: result.registers[0],
             registers.MANUAL_MODE_REGISTER: result.registers[1],
         }
+
+    def close(self):
+
+        logger.info(f"Closing connection to {self.host}")
+
+        try:
+            self.client.close()
+
+        except Exception:
+            pass

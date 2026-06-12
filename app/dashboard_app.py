@@ -1,6 +1,11 @@
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 import streamlit as st
 
@@ -58,6 +63,7 @@ from app.dashboard.pages import (
     energy_costs,
     diagnostics,
     overview,
+    health,
 )
 from app.dashboard.components.sidebar import (
     render_sidebar,
@@ -87,11 +93,6 @@ st_autorefresh(
     interval=30 * 1000,  # 30 seconds
     key="dashboard_refresh",
 )
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 # =========================================================
 # CUSTOM CSS
@@ -345,6 +346,14 @@ if page == "Overview":
         settlement_df=settlement_df,
         latest_upload_time=latest_timestamp,
         data_age_minutes=data_age_minutes,
+    )
+
+elif page == "Health":
+    health.render(
+        latest=latest,
+        latest_timestamp=latest_timestamp,
+        data_age_minutes=data_age_minutes,
+        repo=automation_repo,
     )
 
 elif page == "Energy Costs":

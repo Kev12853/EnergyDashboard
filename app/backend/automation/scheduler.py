@@ -114,13 +114,13 @@ class Scheduler:
             print(f"ENTER WINDOW: {rule.name}")
 
             if DRY_RUN:
-                print(f"DRY RUN: Would execute {rule.action}")
+                print(f"DRY RUN: Would execute {rule.mode}")
 
             else:
-                if rule.action == MODE_MANUAL_DISCHARGE:
+                if rule.mode == MODE_MANUAL_DISCHARGE:
                     self.controller.force_discharge()
 
-                elif rule.action == MODE_MANUAL_CHARGE:
+                elif rule.mode == MODE_MANUAL_CHARGE:
                     self.controller.force_charge()
 
             self.is_active = True

@@ -71,6 +71,7 @@ def main():
     client = SolaxModbusClient(
         host="192.168.1.66",
     )
+    time.sleep(5)
 
     repository = TelemetryRepository(connection)
 
@@ -95,91 +96,120 @@ def main():
         api_token=PUSHOVER_API_TOKEN,
         user_key=PUSHOVER_USER_KEY,
     )
-
-    while True:
-        try:
-            # mode = controller.get_work_mode()
-            # change = work_mode_monitor.update(
-            #     mode,
-            # )
-            #if change:
-            #     try:
-            #         logger.info(f"Current work mode: {mode}")
-            #
-            #         send_work_mode_email(
-            #             email_sender,
-            #             change,
-            #         )
-            #         send_work_mode_push(
-            #             pushover,
-            #             change,
-            #         )
-            #
-            #     except Exception as exc:
-            #         logger.exception(f"Email failed: {exc}")
-            #
-            snapshot = client.poll_once()
-
-            #snapshot.work_mode = mode
-
-            last_successful_poll = time.time()
-
-            if failure_notification_sent:
-                pushover.send_push(
-                    title="🟢 Energy Dashboard",
-                    message=(
-                        "Communication with the SolaX inverter has been restored."
-                    ),
+    communication_lost = False
+    try:
+        while True:
+            try:
+                mode = controller.get_work_mode()
+                change = work_mode_monitor.update(
+                    mode,
                 )
+                if change:
+                    try:
+                        logger.info(f"Current work mode: {mode}")
 
-                failure_notification_sent = False
+                        send_work_mode_email(
+                            email_sender,
+                            change,
+                        )
+                        send_work_mode_push(
+                            pushover,
+                            change,
+                        )
 
-            repository.save_snapshot(snapshot)
-            scheduler.evaluate()
-
-            now = time.time()
-
-            if now - last_heartbeat >= 300:
-                logger.info(f"Poller healthy (PID={os.getpid()})")
-                last_heartbeat = now
+                    except Exception as exc:
+                        logger.exception(f"Email failed: {exc}")
                 #
-                logger.info(snapshot.work_mode)
+                snapshot = client.poll_once()
 
-        except Exception as exc:
-            logger.warning(f"Inverter communication lost: {exc}")
+                if communication_lost:
+                    logger.info("Communication restored")
 
-            try:
-                logger.info("Attempting reconnect")
+                    communication_lost = False
 
-                client.reconnect()
+                snapshot.work_mode = mode
 
-                logger.info("Communication restored")
-                time.sleep(2)
-                continue
+                last_successful_poll = time.time()
 
-            except Exception:
-                logger.exception("Reconnect failed")
+                if failure_notification_sent:
+                    pushover.send_push(
+                        title="🟢 Energy Dashboard",
+                        message=(
+                            "Communication with the SolaX inverter has been restored."
+                        ),
+                    )
 
-        downtime = time.time() - last_successful_poll
+                    failure_notification_sent = False
 
-        if downtime >= COMMUNICATION_TIMEOUT and not failure_notification_sent:
-            try:
-                pushover.send_push(
-                    title="🔴 Energy Dashboard",
-                    message=(
-                        "No successful communication "
-                        "with the SolaX inverter "
-                        "for 30 minutes.\n\n"
-                        "Automatic recovery "
-                        "continues."
-                    ),
-                )
+                repository.save_snapshot(snapshot)
+                scheduler.evaluate()
 
-            except Exception:
-                logger.exception("Unable to send outage notification")
+                now = time.time()
 
-            failure_notification_sent = True
-        time.sleep(5)
+                if now - last_heartbeat >= 300:
+                    logger.info(f"Poller healthy (PID={os.getpid()})")
+                    last_heartbeat = now
+                    #
+                    logger.info(snapshot.work_mode)
+
+            except Exception as exc:
+                logger.warning(f"Inverter communication lost: {exc}")
+                communication_lost = False
+                try:
+                    #logger.info("Attempting reconnect")
+
+                    client.reconnect()
+
+                    #logger.info("Communication restored")
+                    time.sleep(10)
+                    continue
+
+                except Exception:
+                    logger.exception("Reconnect failed")
+
+            downtime = time.time() - last_successful_poll
+
+            if downtime >= COMMUNICATION_TIMEOUT and not failure_notification_sent:
+                try:
+                    pushover.send_push(
+                        title="🔴 Energy Dashboard",
+                        message=(
+                            "No successful communication "
+                            "with the SolaX inverter "
+                            "for 30 minutes.\n\n"
+                            "Automatic recovery "
+                            "continues."
+                        ),
+                    )
+
+                except Exception:
+                    logger.exception("Unable to send outage notification")
+
+                failure_notification_sent = True
+            communication_lost = False
+            time.sleep(25)
+
+    except KeyboardInterrupt:
+        logger.info(
+            "Poller stopping"
+        )
+    finally:
+        logger.info(
+            "Poller stopping"
+        )
+        client.close()
+        connection.close()
+        logger.info(
+            "Poller stopped"
+        )
+
+def close(self):
+
+    try:
+        self.client.close()
+
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

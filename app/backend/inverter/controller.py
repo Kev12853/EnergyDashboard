@@ -57,19 +57,19 @@ class InverterController:
         self,
     ):
         pass
-        # set workmode to manual
-        # self.client.client.write_register(
-        #     address=31,
-        #     value=3,
-        #     device_id=self.client.slave_id,
-        # )
-        #
-        # set manual mode to Force Charge
-        # self.client.client.write_register(
-        #     address=32,
-        #     value=1,
-        #     device_id=self.client.slave_id,
-        # )
+        #set workmode to manual
+        self.client.client.write_register(
+            address=31,
+            value=3,
+            device_id=self.client.slave_id,
+        )
+
+        #set manual mode to Force Charge
+        self.client.client.write_register(
+            address=32,
+            value=1,
+            device_id=self.client.slave_id,
+        )
         #
 
 
@@ -78,19 +78,19 @@ class InverterController:
     ):
         pass
         #set workmode to manual
-        # self.client.client.write_register(
-        #     address=31,
-        #     value=3,
-        #     device_id=self.client.slave_id,
-        # )
-        #
-        # set manual mode to Force Discharge
-        # self.client.client.write_register(
-        #     address=32,
-        #     value=2,
-        #     device_id=self.client.slave_id,
-        # )
-        #
+        self.client.client.write_register(
+            address=31,
+            value=3,
+            device_id=self.client.slave_id,
+        )
+
+        #set manual mode to Force Discharge
+        self.client.client.write_register(
+            address=32,
+            value=2,
+            device_id=self.client.slave_id,
+        )
+
 
 
 
