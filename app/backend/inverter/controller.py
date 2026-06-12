@@ -8,10 +8,10 @@ class InverterController:
 
     def get_work_mode(self):
 
-        registers = self.client.read_work_mode_registers()
+        mode_registers = self.client.read_work_mode_registers()
 
-        work_mode = registers[0x008B]
-        manual_mode = registers[0x008C]
+        work_mode = mode_registers[0x008B]
+        manual_mode = mode_registers[0x008C]
 
         return self.decode_work_mode(
             work_mode,

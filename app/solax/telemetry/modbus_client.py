@@ -220,22 +220,56 @@ class SolaxModbusClient:
 
         return parse_schedule(registers)
 
-
     def read_work_mode_registers(self):
 
-        result = self.client.read_holding_registers(
-            address=registers.WORK_MODE_REGISTER,
-            count=2,
-            device_id=self.slave_id,
+        max_attempts = 3
+
+        last_exception = None
+
+        for attempt in range(max_attempts):
+            client = ModbusTcpClient(
+                host=self.host,
+                port=self.port,
+            )
+
+            try:
+                connected = client.connect()
+
+                if not connected:
+                    raise RuntimeError(f"Unable to connect to {self.host}")
+
+                result = client.read_holding_registers(
+                    address=registers.WORK_MODE_REGISTER,
+                    count=2,
+                    device_id=self.slave_id,
+                )
+
+                if result.isError():
+                    raise RuntimeError(f"Work mode read failed: {result}")
+
+                return {
+                    registers.WORK_MODE_REGISTER: result.registers[0],
+                    registers.MANUAL_MODE_REGISTER: result.registers[1],
+                }
+
+            except Exception as exc:
+                last_exception = exc
+
+                logger.warning(
+                    f"Work mode read failed ({attempt + 1}/{max_attempts}): {exc}"
+                )
+
+                time.sleep(5.0)
+
+            finally:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+
+        raise RuntimeError(
+            f"Unable to read work mode after multiple attempts: {last_exception}"
         )
-
-        if result.isError():
-            raise RuntimeError(f"Work mode read failed: {result}")
-
-        return {
-            registers.WORK_MODE_REGISTER: result.registers[0],
-            registers.MANUAL_MODE_REGISTER: result.registers[1],
-        }
 
     def close(self):
 
