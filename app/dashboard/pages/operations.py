@@ -1,44 +1,11 @@
 import streamlit as st
 
-def get_current_state(latest):
-    return {
-        "work_mode": latest["work_mode"],
-        "status_icon": "🟢",
-        "status_text": "Following Schedule",
-    }
-
-def get_operations_status(
-    data_age_minutes,
-):
-    return {
-        "icon": "🟢",
-        "text": "Operating Normally",
-    }
-
-def get_system_health():
-
-    return {
-        "poller": {
-            "icon": "🟢",
-            "text": "Healthy",
-        },
-
-        "inverter": {
-            "icon": "🟢",
-            "text": "Connected",
-        },
-
-        "scheduler": {
-            "icon": "🟢",
-            "text": "Running",
-        },
-
-        "notifications": {
-            "icon": "🟢",
-            "text": "Active",
-        },
-    }
-
+from app.dashboard.helpers.operations import (
+    get_current_state,
+    get_next_action,
+    get_operations_status,
+    get_system_health,
+)
 
 
 def render(
@@ -80,16 +47,17 @@ def render(
     with main_col_left:
         with st.container(border=True):
             st.subheader("System Health")
+            system_health = get_system_health(latest, latest_upload_time, data_age_minutes)
 
             mainleft_inner_left, mainleft_inner_middle, mainleft_inner_right = st.columns([3, 2, 3])
 
             with mainleft_inner_left:
-                st.write("🟢 Poller")
-                st.write("🟢 Inverter")
+                st.write(f"{system_health['poller']['icon']} Poller")
+                st.write(f"{system_health['inverter']['icon']} Inverter")
 
             with mainleft_inner_middle:
-                st.write("🟢 Scheduler")
-                st.write("🟢 Notifications")
+                st.write(f"{system_health['scheduler']['icon']} Scheduler")
+                st.write(f"{system_health['notifications']['icon']} Notifications")
 
     with main_col_right:
         with st.container(border=True):
@@ -105,6 +73,7 @@ def render(
 
             with mainright_inner_right:
                 with st.container():
+                    next_action = get_next_action(latest, latest_upload_time, data_age_minutes)
                     st.subheader("Next Action")
-                    st.markdown("##### 23:30")
-                    st.write("Force Charge")
+                    st.markdown(f"##### {next_action['time']}")
+                    st.write(next_action["action"])
