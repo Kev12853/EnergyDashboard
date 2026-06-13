@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pymodbus.client import ModbusTcpClient
 
-INVERTER_IP = "192.168.1.66"
+INVERTER_IP = "192.168.1.67"
 
 START_REGISTER = 20
 REGISTER_COUNT = 20

@@ -1,7 +1,7 @@
 from pymodbus.client import ModbusTcpClient
 
 
-INVERTER_IP = "192.168.1.66"
+INVERTER_IP = "192.168.1.67"
 
 
 client = ModbusTcpClient(host=INVERTER_IP, port=502, timeout=5)

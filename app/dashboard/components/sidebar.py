@@ -15,6 +15,7 @@ def render_sidebar():
         page = st.radio(
             "Navigation Menu",
             [
+                "Operations",
                 "Overview",
                 "Health",
                 "Energy Costs",

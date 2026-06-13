@@ -1,34 +1,22 @@
 import time
+import os
+
 from app.backend.automation.repository import AutomationRepository
 from app.backend.automation.scheduler import Scheduler
 from app.backend.inverter.controller import InverterController
-
 from app.backend.notifications.email_sender import EmailSender
-
-
 from app.backend.notifications.work_mode_email import send_work_mode_email
 from app.backend.notifications.work_mode_push import send_work_mode_push
+from app.backend.notifications.pushover_sender import PushoverSender
 
-from app.solax.telemetry.modbus_client import (
-    SolaxModbusClient,
-)
+from app.backend.storage.db import get_connection
+from app.backend.storage.schema import create_all_tables
+from app.backend.common.logging_utils import setup_logger
 
-from app.solax.storage.repository import (
-    TelemetryRepository,
-)
-
-from app.backend.storage.db import (
-    get_connection,
-)
-
-from app.backend.storage.schema import (
-    create_all_tables,
-)
+from app.solax.storage.repository import TelemetryRepository
+from app.solax.telemetry.modbus_client import SolaxModbusClient
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
 
-from app.backend.common.logging_utils import (
-    setup_logger,
-)
 
 COMMUNICATION_TIMEOUT = 1800  # 1800 = 30 minutes
 
@@ -69,14 +57,14 @@ def main():
     create_all_tables(connection)
 
     client = SolaxModbusClient(
-        host="192.168.1.66",
+        host="192.168.1.67",
     )
+    
     time.sleep(5)
 
     repository = TelemetryRepository(connection)
 
     logger.info("Starting to Poll")
-    import os
 
     logger.info(f"Starting poller PID={os.getpid()}")
     automation_repo = AutomationRepository(connection)
@@ -89,8 +77,6 @@ def main():
         automation_repo,
         controller,
     )
-
-    from app.backend.notifications.pushover_sender import PushoverSender
 
     pushover = PushoverSender(
         api_token=PUSHOVER_API_TOKEN,
@@ -105,9 +91,7 @@ def main():
                     controller,
                 )
 
-
                 mode = snapshot.work_mode
-                #mode = controller.get_work_mode()
                 change = work_mode_monitor.update(
                     mode,
                 )
@@ -127,14 +111,14 @@ def main():
                     except Exception as exc:
                         logger.exception(f"Email failed: {exc}")
 
-               # #napshot = client.poll_once()
+                # #napshot = client.poll_once()
 
                 if communication_lost:
                     logger.info("Communication restored")
 
                     communication_lost = False
 
-                #snapshot.work_mode = mode
+                # snapshot.work_mode = mode
 
                 last_successful_poll = time.time()
 
@@ -159,19 +143,12 @@ def main():
                     #
                     logger.info(snapshot.work_mode)
 
-
             except Exception as exc:
-                logger.warning(
-                    f"Inverter communication lost: {exc}"
-                )
+                logger.warning(f"Inverter communication lost: {exc}")
 
                 communication_lost = True
-                #
-                
                 # Fresh connections are established
-
                 # on every poll cycle, so simply
-
                 # wait and try again.
                 time.sleep(10)
                 continue
@@ -201,18 +178,13 @@ def main():
                 time.sleep(25)
 
     except KeyboardInterrupt:
-        logger.info(
-            "Poller stopping"
-        )
+        logger.info("Poller stopping")
     finally:
-        logger.info(
-            "Poller stopping"
-        )
+        logger.info("Poller stopping")
         client.close()
         connection.close()
-        logger.info(
-            "Poller stopped"
-        )
+        logger.info("Poller stopped")
+
 
 def close(self):
 
@@ -235,6 +207,7 @@ def poll_inverter(
     snapshot.work_mode = mode
 
     return snapshot
+
 
 if __name__ == "__main__":
     main()

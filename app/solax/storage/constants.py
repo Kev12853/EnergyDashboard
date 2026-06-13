@@ -4,7 +4,7 @@ from pathlib import Path
 # CONNECTION
 # =========================================================
 
-INVERTER_IP = "192.168.1.66"
+INVERTER_IP = "192.168.1.67"
 
 MODBUS_PORT = 502
 

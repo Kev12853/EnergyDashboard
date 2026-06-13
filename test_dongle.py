@@ -6,7 +6,7 @@ import os
 
 
 
-HOST = "192.168.1.66"
+HOST = "192.168.1.67"
 PORT = 502
 SLAVE_ID = 1
 REGISTER_BLOCK_START = 0

@@ -3,7 +3,7 @@ from pprint import pprint
 from app.solax.telemetry.modbus_client import SolaxModbusClient
 
 client = SolaxModbusClient(
-    host="192.168.1.66",
+    host="192.168.1.67",
 )
 
 try:

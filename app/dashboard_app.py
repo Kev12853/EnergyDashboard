@@ -64,6 +64,7 @@ from app.dashboard.pages import (
     diagnostics,
     overview,
     health,
+    operations,
 )
 from app.dashboard.components.sidebar import (
     render_sidebar,
@@ -344,6 +345,13 @@ if page == "Overview":
         latest=latest,
         df=df,
         settlement_df=settlement_df,
+        latest_upload_time=latest_timestamp,
+        data_age_minutes=data_age_minutes,
+    )
+
+if page == "Operations":
+    operations.render(
+        latest=latest,
         latest_upload_time=latest_timestamp,
         data_age_minutes=data_age_minutes,
     )
