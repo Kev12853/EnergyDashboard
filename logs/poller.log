@@ -1006,3 +1006,28 @@ ConnectionError: Unable to connect to 192.168.1.66
 2026-06-13 08:23:29,762 INFO poller: Force Discharge
 2026-06-13 08:28:35,091 INFO poller: Poller healthy (PID=69080)
 2026-06-13 08:28:35,092 INFO poller: Force Discharge
+2026-06-13 08:33:39,652 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:33:39,653 INFO poller: Force Discharge
+2026-06-13 08:38:44,052 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:38:44,052 INFO poller: Force Discharge
+2026-06-13 08:43:48,249 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:43:48,250 INFO poller: Force Discharge
+2026-06-13 08:48:52,922 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:48:52,928 INFO poller: Force Discharge
+2026-06-13 08:53:57,957 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:53:57,957 INFO poller: Force Discharge
+2026-06-13 08:59:02,360 INFO poller: Poller healthy (PID=69080)
+2026-06-13 08:59:02,362 INFO poller: Force Discharge
+2026-06-13 09:04:06,557 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:04:06,562 INFO poller: Force Discharge
+2026-06-13 09:09:11,211 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:09:11,212 INFO poller: Force Discharge
+2026-06-13 09:14:15,504 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:14:15,505 INFO poller: Force Discharge
+2026-06-13 09:19:30,305 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:19:30,313 INFO poller: Force Discharge
+2026-06-13 09:24:09,313 INFO poller: Current work mode: Self Use
+2026-06-13 09:24:38,753 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:24:38,753 INFO poller: Self Use
+2026-06-13 09:29:43,061 INFO poller: Poller healthy (PID=69080)
+2026-06-13 09:29:43,062 INFO poller: Self Use
