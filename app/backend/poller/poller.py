@@ -3,18 +3,18 @@ import os
 
 from app.backend.automation.repository import AutomationRepository
 from app.backend.automation.scheduler import Scheduler
-from app.backend.inverter.controller import InverterController
 from app.backend.notifications.email_sender import EmailSender
 from app.backend.notifications.work_mode_email import send_work_mode_email
 from app.backend.notifications.work_mode_push import send_work_mode_push
 from app.backend.notifications.pushover_sender import PushoverSender
+from app.backend.polling.inverter_service import InverterPollingService
 
 from app.backend.storage.db import get_connection
 from app.backend.storage.schema import create_all_tables
-from app.backend.common.logging_utils import setup_logger
+import app.backend.common.logger
+import logging
 
 from app.solax.storage.repository import TelemetryRepository
-from app.solax.telemetry.modbus_client import SolaxModbusClient
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
 
 
@@ -37,13 +37,10 @@ email_sender = EmailSender(
     sender=EMAIL_ADDRESS,
     recipient=EMAIL_ADDRESS,
 )
+logger = logging.getLogger(__name__)
 
 
 def main():
-
-    logger = setup_logger(
-        "poller",
-    )
     logger.info("Poller starting")
 
     last_heartbeat = 0
@@ -56,10 +53,8 @@ def main():
 
     create_all_tables(connection)
 
-    client = SolaxModbusClient(
-        host="192.168.1.67",
-    )
-    
+    service = InverterPollingService()
+    logger.info("F sleep")
     time.sleep(5)
 
     repository = TelemetryRepository(connection)
@@ -69,14 +64,15 @@ def main():
     logger.info(f"Starting poller PID={os.getpid()}")
     automation_repo = AutomationRepository(connection)
 
-    controller = InverterController(client)
-
     work_mode_monitor = WorkModeMonitor()
 
+    logger.info("Creating Scheduler")
     scheduler = Scheduler(
         automation_repo,
-        controller,
+        service.modbus_service,
     )
+    logger.info("Created Scheduler")
+
 
     pushover = PushoverSender(
         api_token=PUSHOVER_API_TOKEN,
@@ -86,16 +82,16 @@ def main():
     try:
         while True:
             try:
-                snapshot = poll_inverter(
-                    client,
-                    controller,
-                )
+                logger.info("Getting Snapshot")
+                snapshot = service.poll()
+                logger.info("Got Snapshot")
 
                 mode = snapshot.work_mode
                 change = work_mode_monitor.update(
                     mode,
                 )
                 if change:
+                    # pass
                     try:
                         logger.info(f"Current work mode: {mode}")
 
@@ -111,7 +107,7 @@ def main():
                     except Exception as exc:
                         logger.exception(f"Email failed: {exc}")
 
-                # #napshot = client.poll_once()
+                # #napshot = service.poll()
 
                 if communication_lost:
                     logger.info("Communication restored")
@@ -123,17 +119,22 @@ def main():
                 last_successful_poll = time.time()
 
                 if failure_notification_sent:
-                    pushover.send_push(
-                        title="🟢 Energy Dashboard",
-                        message=(
-                            "Communication with the SolaX inverter has been restored."
-                        ),
-                    )
+                    # pushover.send_push(
+                    #     title="🟢 Energy Dashboard",
+                    #     message=(
+                    #         "Communication with the SolaX inverter has been restored."
+                    #     ),
+                    # )
 
                     failure_notification_sent = False
 
+                logger.info("Saving Snapshot")
                 repository.save_snapshot(snapshot)
+                logger.info("Saved Snapshot")
+
+                logger.info("Running Scheduler")
                 scheduler.evaluate()
+                logger.info("Scheduler Complete")
 
                 now = time.time()
 
@@ -181,32 +182,9 @@ def main():
         logger.info("Poller stopping")
     finally:
         logger.info("Poller stopping")
-        client.close()
+        service.close()
         connection.close()
         logger.info("Poller stopped")
-
-
-def close(self):
-
-    try:
-        self.client.close()
-
-    except Exception:
-        pass
-
-
-def poll_inverter(
-    client,
-    controller,
-):
-
-    mode = controller.get_work_mode()
-
-    snapshot = client.poll_once()
-
-    snapshot.work_mode = mode
-
-    return snapshot
 
 
 if __name__ == "__main__":

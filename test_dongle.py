@@ -4,13 +4,13 @@ from datetime import datetime
 from pymodbus.client import ModbusTcpClient
 import os
 
-
+from app.backend.poller.poller import close
 
 HOST = "192.168.1.67"
 PORT = 502
 SLAVE_ID = 1
 REGISTER_BLOCK_START = 0
-REGISTER_BLOCK_SIZE = 80
+REGISTER_BLOCK_SIZE = 10
 successes = 0
 failures = 0
 cycle = 0
@@ -33,23 +33,40 @@ while True:
     )
 
     try:
-
         connected = client.connect()
 
-        if not connected:
-            raise RuntimeError("Connect failed")
-
-        result = client.read_input_registers(
-            address=REGISTER_BLOCK_START,
-            count=REGISTER_BLOCK_SIZE,
-            device_id=SLAVE_ID,
+        result1 = client.read_holding_registers(
+            address=0x008B,
+            count=2,
+            device_id=1,
         )
 
-        if result.isError():
-            raise RuntimeError(result)
+        print(result1)
 
-        print(f"Successfully read {len(result.registers)} registers")
-        successes += 1
+        result2 = client.read_input_registers(
+            address=0,
+            count=10,
+            device_id=1,
+        )
+
+        print(result2)
+        client.close()
+        #
+        # if not connected:
+        #     raise RuntimeError("Connect failed")
+        #
+        # result = client.read_input_registers(
+        #     address=REGISTER_BLOCK_START,
+        #     count=REGISTER_BLOCK_SIZE,
+        #     device_id=SLAVE_ID,
+        # )
+        #
+        # if result.isError():
+        #     raise RuntimeError(result)
+        #
+        print(f"Successfully read registers")
+        #print(f"Successfully read {len(result.registers)} registers")
+        # successes += 1
 
     except Exception as exc:
 
@@ -69,7 +86,7 @@ while True:
     print(
         f"Success={successes}  "
         f"Failures={failures}  "
-        f"Success Rate={100 * successes / (successes + failures):.1f}%"
+        #f"Success Rate={100 * successes / (successes + failures):.1f}%"
     )
 
     sleep(10)

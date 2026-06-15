@@ -1,30 +1,28 @@
 # telemetry/modbus_client.py
 
-from datetime import datetime
 import time
+import logging
+
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
-import logging
 
-
+import app.solax.telemetry.registers as registers
 
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
-
 from app.solax.telemetry.registers import (
-    INVERTER_POWER,
-    PV1_POWER,
-    PV2_POWER,
     BATTERY_POWER,
     BATTERY_SOC,
     GRID_LSB,
     GRID_MSB,
+    INVERTER_POWER,
+    PV1_POWER,
+    PV2_POWER,
 )
-
-import app.solax.telemetry.registers as registers
 
 REGISTER_BLOCK_START = 0
 REGISTER_BLOCK_SIZE = 80
@@ -128,6 +126,7 @@ class SolaxModbusClient:
     def poll_once(self) -> PowerFlowSnapshot:
 
         registers = self.read_register_block()
+        logger.info("B1 register block OK")
 
         ac_power_w = self.signed16(registers[INVERTER_POWER])
 
@@ -221,6 +220,7 @@ class SolaxModbusClient:
         return parse_schedule(registers)
 
     def read_work_mode_registers(self):
+        logger.info("Inside Work_Mode_Read_Registers")
 
         max_attempts = 3
 

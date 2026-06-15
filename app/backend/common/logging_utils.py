@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 def setup_logger(name: str) -> logging.Logger:
 
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(__name__)
 
     if logger.handlers:
         return logger

@@ -14,12 +14,12 @@ class Scheduler:
     def __init__(
         self,
         repository,
-        controller,
+        service,
     ):
 
         self.repository = repository
 
-        self.controller = controller
+        self.service = service
 
         self.is_active = False
 
@@ -118,10 +118,10 @@ class Scheduler:
 
             else:
                 if rule.mode == MODE_MANUAL_DISCHARGE:
-                    self.controller.force_discharge()
+                    self.service.write_work_mode(3, 2)
 
                 elif rule.mode == MODE_MANUAL_CHARGE:
-                    self.controller.force_charge()
+                    self.service.write_work_mode(3, 1)
 
             self.is_active = True
 
@@ -138,7 +138,7 @@ class Scheduler:
                 print("DRY RUN: Would return to Self Use")
 
             else:
-                self.controller.self_use()
+                pass
 
             self.is_active = False
 

@@ -1,14 +1,21 @@
+import logging
+logger = logging.getLogger(__name__)
+
+
 class InverterController:
     def __init__(
         self,
-        client,
+        service,
     ):
 
-        self.client = client
+        self.service = service
 
     def get_work_mode(self):
 
-        mode_registers = self.client.read_work_mode_registers()
+        logger.info("Inside Get Work Mode")
+        logger.info("Getting Work Mode Registers")
+        mode_registers = self.service.read_work_mode()
+        logger.info("Got Work Mode Registers")
 
         work_mode = mode_registers[0x008B]
         manual_mode = mode_registers[0x008C]
@@ -58,18 +65,7 @@ class InverterController:
     ):
         pass
         #set workmode to manual
-        self.client.client.write_register(
-            address=31,
-            value=3,
-            device_id=self.client.slave_id,
-        )
-
-        #set manual mode to Force Charge
-        self.client.client.write_register(
-            address=32,
-            value=1,
-            device_id=self.client.slave_id,
-        )
+        self.service.write_work_mode(3, 1)
         #
 
 
@@ -78,18 +74,7 @@ class InverterController:
     ):
         pass
         #set workmode to manual
-        self.client.client.write_register(
-            address=31,
-            value=3,
-            device_id=self.client.slave_id,
-        )
-
-        #set manual mode to Force Discharge
-        self.client.client.write_register(
-            address=32,
-            value=2,
-            device_id=self.client.slave_id,
-        )
+        self.service.write_work_mode(3, 2)
 
 
 
@@ -99,8 +84,4 @@ class InverterController:
     ):
         pass
         # set work mode to Self Use
-        # self.client.client.write_register(
-        #     address=31,
-        #     value=0,
-        #     device_id=self.client.slave_id,
-        # )
+        # self.service.write_work_mode(0)
