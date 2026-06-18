@@ -2,6 +2,7 @@ import streamlit as st
 
 from app.backend.services.system_health_service import (
     get_system_health as build_system_health,
+    HealthStatus,
 )
 from app.dashboard.helpers.operations import (
     get_current_state,
@@ -80,11 +81,8 @@ def render(
             with mainleft_inner_middle:
                 if system_health["last_successful_poll"]:
                     st.write(f"Last successful poll: {system_health['last_successful_poll']}")
-                st.write(f"Consecutive failures: {system_health['consecutive_failures']}")
 
-            with mainleft_inner_right:
-                if system_health["last_error"]:
-                    st.write(f"Last error: {system_health['last_error']}")
+
     # endregion
 
 # region Current Status
@@ -99,9 +97,26 @@ def render(
                 #
                 with st.container():
                     st.subheader("Current State")
-                    current = get_current_state(latest)
+
+                    if health.overall_status == HealthStatus.OPERATIONAL:
+                        current = get_current_state(
+                            latest,
+                            health,
+                        )
+
+                    else:
+                        current = {
+                            "work_mode": "Last known state",
+                            "status_icon": "⚫",
+                            "status_text": (f"Latest data {health.data_age_text} old"),
+                        }
+
                     st.markdown(f"##### {current['work_mode']}")
-                    st.write(current['status_icon'], current['status_text'])
+
+                    st.write(
+                        current["status_icon"],
+                        current["status_text"],
+                    )
 
 
             with mainright_inner_middle:

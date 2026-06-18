@@ -259,6 +259,7 @@ latest["consumption_power_w"] = latest["consumption_w"]
 latest["pv1_power_w"] = latest["pv1_w"]
 latest["pv2_power_w"] = latest["pv2_w"]
 latest["house_load_w"] = latest["consumption_w"]
+
 # =========================================================
 # EMPTY STATE
 # =========================================================
