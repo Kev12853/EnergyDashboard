@@ -1,4 +1,7 @@
 import sys
+import pandas as pd
+import streamlit as st
+
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -6,8 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pandas as pd
-import streamlit as st
 
 from datetime import timedelta
 
@@ -79,6 +80,9 @@ from app.backend.bootstrap import (
 
 from app.backend.storage.db import (
     get_connection,
+)
+from app.backend.services.system_health_service import (
+    get_system_health,
 )
 
 # =========================================================
@@ -304,9 +308,12 @@ except Exception:
 
 latest_timestamp = latest["timestamp"]
 
-data_age_minutes = (
-    pd.Timestamp.now("UTC") - pd.Timestamp(latest_timestamp)
-).total_seconds() / 60
+system_health = get_system_health(
+    last_snapshot_time=latest_timestamp,
+    last_successful_poll=latest_timestamp,
+)
+
+data_age_minutes = system_health.data_age_seconds / 60
 
 # =========================================================
 # LOAD OCTOPUS DATA
@@ -347,6 +354,7 @@ if page == "Overview":
         settlement_df=settlement_df,
         latest_upload_time=latest_timestamp,
         data_age_minutes=data_age_minutes,
+        system_health=system_health,
     )
 
 if page == "Operations":
@@ -354,6 +362,7 @@ if page == "Operations":
         latest=latest,
         latest_upload_time=latest_timestamp,
         data_age_minutes=data_age_minutes,
+        system_health=system_health,
     )
 
 elif page == "Health":

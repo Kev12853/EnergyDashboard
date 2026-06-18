@@ -45,9 +45,11 @@ class SolaxModbusClient:
             host=self.host,
             port=self.port,
         )
+        logger.info("Creating persistent Modbus client")
 
-        if not self.client.connect():
-            raise ConnectionError(f"Unable to connect to {host}")
+        #if not self.client.connect():
+            #raise ConnectionError(f"Unable to connect to {host}")
+        logger.info("Persistent Modbus client connected")
 
     @staticmethod
     def signed16(value: int) -> int:
@@ -123,10 +125,39 @@ class SolaxModbusClient:
             f"Unable to read Modbus registers after multiple attempts: {last_exception}"
         )
 
+    def read_register_block_from_connection(
+        self,
+        client,
+    ) -> dict[int, int]:
+
+        result = client.read_input_registers(
+            address=REGISTER_BLOCK_START,
+            count=REGISTER_BLOCK_SIZE,
+            device_id=self.slave_id,
+        )
+
+        if result.isError():
+            raise RuntimeError(f"Modbus read failed: {result}")
+
+        return {
+            REGISTER_BLOCK_START + index: value
+            for (
+                index,
+                value,
+            ) in enumerate(result.registers)
+        }
+
     def poll_once(self) -> PowerFlowSnapshot:
 
         registers = self.read_register_block()
         logger.info("B1 register block OK")
+
+        return self.build_snapshot(registers)
+
+    def build_snapshot(
+        self,
+        registers,
+    ) -> PowerFlowSnapshot:
 
         ac_power_w = self.signed16(registers[INVERTER_POWER])
 
@@ -269,6 +300,78 @@ class SolaxModbusClient:
 
         raise RuntimeError(
             f"Unable to read work mode after multiple attempts: {last_exception}"
+        )
+
+    def read_work_mode_registers_from_connection(
+        self,
+        client,
+    ):
+        logger.info("Inside Work_Mode_Read_Registers")
+
+        result = client.read_holding_registers(
+            address=registers.WORK_MODE_REGISTER,
+            count=2,
+            device_id=self.slave_id,
+        )
+
+        if result.isError():
+            raise RuntimeError(f"Work mode read failed: {result}")
+
+        return {
+            registers.WORK_MODE_REGISTER: result.registers[0],
+            registers.MANUAL_MODE_REGISTER: result.registers[1],
+        }
+
+    def read_polling_registers(
+        self,
+    ):
+
+        max_attempts = 3
+
+        last_exception = None
+
+        for attempt in range(max_attempts):
+            client = ModbusTcpClient(
+                host=self.host,
+                port=self.port,
+            )
+
+            try:
+                connected = client.connect()
+
+                if not connected:
+                    raise RuntimeError(f"Unable to connect to {self.host}")
+
+                logger.info("A get_work_mode")
+                work_mode_registers = self.read_work_mode_registers_from_connection(
+                    client,
+                )
+                logger.info("B poll_once")
+                telemetry_registers = self.read_register_block_from_connection(client)
+                logger.info("B1 register block OK")
+
+                return (
+                    work_mode_registers,
+                    telemetry_registers,
+                )
+
+            except Exception as exc:
+                last_exception = exc
+
+                logger.warning(
+                    f"Polling read failed ({attempt + 1}/{max_attempts}): {exc}"
+                )
+
+                time.sleep(5.0)
+
+            finally:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+
+        raise RuntimeError(
+            f"Unable to read polling registers after multiple attempts: {last_exception}"
         )
 
     def close(self):

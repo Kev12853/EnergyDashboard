@@ -4,7 +4,6 @@ from datetime import datetime
 from pymodbus.client import ModbusTcpClient
 import os
 
-from app.backend.poller.poller import close
 
 HOST = "192.168.1.67"
 PORT = 502

@@ -1,5 +1,10 @@
+import pandas as pd
 import streamlit as st
 
+from app.backend.services.system_health_service import (
+    HealthStatus,
+    get_system_health,
+)
 from app.dashboard.components.solax.charts.solax_charts import (
     render_solar_chart,
     render_battery_chart,
@@ -9,7 +14,6 @@ from app.dashboard.components.solax.kpis.solax_kpis import (
     render_kpi_row,
     render_settlement_kpis,
 )
-from app.dashboard.helpers.format_data import format_data_age
 
 
 def render(
@@ -18,17 +22,21 @@ def render(
     settlement_df,
     latest_upload_time,
     data_age_minutes,
+    system_health=None,
 ):
 
     st.title("Energy Dashboard")
 
-    import pandas as pd
+    health = system_health or get_system_health(
+        last_snapshot_time=latest_upload_time,
+        last_successful_poll=latest_upload_time,
+    )
 
-    if data_age_minutes < 5:
+    if health.overall_status == HealthStatus.OPERATIONAL:
         icon = "🟢"
         status = "Healthy"
 
-    elif data_age_minutes < 30:
+    elif health.overall_status == HealthStatus.DEGRADED:
         icon = "🟡"
         status = "Delayed"
 
@@ -61,8 +69,6 @@ def render(
 """,
             unsafe_allow_html=True,
         )
-    # &nbsp;&nbsp;|&nbsp;&nbsp;
-    # Data Age: {format_data_age(data_age_minutes)}
 
     with st.container(border=True):
         render_kpi_row(latest)

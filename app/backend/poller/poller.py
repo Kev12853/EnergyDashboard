@@ -1,5 +1,7 @@
 import time
 import os
+import logging
+import app.backend.common.logger
 
 from app.backend.automation.repository import AutomationRepository
 from app.backend.automation.scheduler import Scheduler
@@ -11,9 +13,6 @@ from app.backend.polling.inverter_service import InverterPollingService
 
 from app.backend.storage.db import get_connection
 from app.backend.storage.schema import create_all_tables
-import app.backend.common.logger
-import logging
-
 from app.solax.storage.repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
 
@@ -41,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+
     logger.info("Poller starting")
 
     last_heartbeat = 0
@@ -107,7 +107,7 @@ def main():
                     except Exception as exc:
                         logger.exception(f"Email failed: {exc}")
 
-                # #napshot = service.poll()
+                # #napshot = client.poll_once()
 
                 if communication_lost:
                     logger.info("Communication restored")
