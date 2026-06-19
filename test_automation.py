@@ -2,7 +2,7 @@ from app.backend.automation.engine import (
     AutomationEngine,
 )
 
-from app.backend.automation.repository import (
+from app.backend.automation.automation_repository import (
     AutomationRepository,
 )
 

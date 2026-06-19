@@ -1,6 +1,6 @@
 from pprint import pprint
 
-from app.solax.storage.repository import (
+from app.solax.storage.storage_repository import (
     TelemetryRepository,
 )
 

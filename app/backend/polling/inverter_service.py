@@ -25,10 +25,12 @@ class InverterPollingService:
             mode_registers,
             telemetry_registers,
         ) = self.modbus_service.read_polling_registers()
+
         mode = self.controller.decode_work_mode(
             mode_registers[0x008B],
             mode_registers[0x008C],
         )
+
         logger.info("Got Work Mode")
         logger.info("Getting Poll Once")
         snapshot = self.modbus_service.build_snapshot(telemetry_registers)

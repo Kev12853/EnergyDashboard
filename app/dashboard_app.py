@@ -20,7 +20,7 @@ from streamlit_autorefresh import (
 # SOLAX REPOSITORY
 # =========================================================
 
-from app.solax.storage.repository import TelemetryRepository
+from app.solax.storage.storage_repository import TelemetryRepository
 
 # =========================================================
 # OCTOPUS STORAGE
@@ -201,13 +201,14 @@ def initialise_services():
 
 
 initialise_services()
+
 # =========================================================
 # REPOSITORY
 # =========================================================
 
 repository = TelemetryRepository(connection)
 
-from app.backend.automation.repository import (
+from app.backend.automation.automation_repository import (
     AutomationRepository,
 )
 

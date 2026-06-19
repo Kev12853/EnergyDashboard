@@ -8,12 +8,12 @@ import streamlit as st
 
 from datetime import timedelta
 
-from app.solax.storage import repository
+from app.solax.storage import storage_repository
 # =========================================================
 # SOLAX REPOSITORY
 # =========================================================
 
-from app.solax.storage.repository import TelemetryRepository
+from app.solax.storage.storage_repository import TelemetryRepository
 
 # =========================================================
 # SOLAX ANALYTICS

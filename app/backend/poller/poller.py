@@ -1,21 +1,18 @@
-import time
-import os
 import logging
-import app.backend.common.logger
+import os
+import time
 
-from app.backend.automation.repository import AutomationRepository
+from app.backend.automation.automation_repository import AutomationRepository
 from app.backend.automation.scheduler import Scheduler
 from app.backend.notifications.email_sender import EmailSender
+from app.backend.notifications.pushover_sender import PushoverSender
 from app.backend.notifications.work_mode_email import send_work_mode_email
 from app.backend.notifications.work_mode_push import send_work_mode_push
-from app.backend.notifications.pushover_sender import PushoverSender
 from app.backend.polling.inverter_service import InverterPollingService
-
 from app.backend.storage.db import get_connection
 from app.backend.storage.schema import create_all_tables
-from app.solax.storage.repository import TelemetryRepository
+from app.solax.storage.storage_repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
-
 
 COMMUNICATION_TIMEOUT = 1800  # 1800 = 30 minutes
 
@@ -73,12 +70,12 @@ def main():
     )
     logger.info("Created Scheduler")
 
-
     pushover = PushoverSender(
         api_token=PUSHOVER_API_TOKEN,
         user_key=PUSHOVER_USER_KEY,
     )
     communication_lost = False
+
     try:
         while True:
             try:
@@ -86,14 +83,14 @@ def main():
                 snapshot = service.poll()
                 logger.info("Got Snapshot")
 
-                mode = snapshot.work_mode
+                snapshot_work_mode = snapshot.work_mode
                 change = work_mode_monitor.update(
-                    mode,
+                    snapshot_work_mode,
                 )
                 if change:
                     # pass
                     try:
-                        logger.info(f"Current work mode: {mode}")
+                        logger.info(f"Current work snapshot_work_mode: {snapshot_work_mode}")
 
                         send_work_mode_email(
                             email_sender,
@@ -114,7 +111,7 @@ def main():
 
                     communication_lost = False
 
-                # snapshot.work_mode = mode
+                # snapshot.work_mode = snapshot_work_mode
 
                 last_successful_poll = time.time()
 

@@ -34,7 +34,7 @@ from app.solax.storage.constants import (
     SOLAX_TOKEN_ID,
     SOLAX_SERIAL_NUMBER,
 )
-from app.solax.storage.repository import (
+from app.solax.storage.storage_repository import (
     insert_snapshot,
 )
 from app.solax.storage.schema import (

@@ -7,7 +7,7 @@ from app.backend.automation.constants import (
 )
 from app.backend.automation.models import AutomationState
 
-DRY_RUN = False
+DRY_RUN = True
 
 
 class Scheduler:
@@ -147,7 +147,6 @@ class Scheduler:
     def reset(
         self,
     ):
-
         self.is_active = False
 
         print("Scheduler reset")

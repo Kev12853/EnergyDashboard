@@ -68,22 +68,33 @@ def render(
             st.subheader("System Health")
             system_health = get_system_health(health)
 
-            # set up 2 columns for health cards
-            mainleft_inner_left, mainleft_inner_middle, mainleft_inner_right = st.columns([3, 2, 3])
+            # set up 3 columns for health cards
+            mainleft_inner_left, mainleft_inner_middle, mainleft_inner_right = st.columns([4, 4, 1])
 
             #
             with mainleft_inner_left:
-                st.write(f"Overall status: {system_health['overall_status']}")
-                if system_health["data_age"]:
-                    st.write(f"Data age: {system_health['data_age']}")
+                st.markdown("#### Status")
+                st.markdown("##### Healthy")
 
+                st.markdown("##### Age")
+                st.markdown("###### 11 s")
             #
+            import pandas as pd
+
             with mainleft_inner_middle:
                 if system_health["last_successful_poll"]:
-                    st.write(f"Last successful poll: {system_health['last_successful_poll']}")
+                    last_poll = pd.Timestamp(system_health["last_successful_poll"])
+                    now = pd.Timestamp.now(tz=last_poll.tz)
 
+                    if last_poll.date() == now.date():
+                        last_poll_text = last_poll.strftime("Today %H:%M")
+                    else:
+                        last_poll_text = last_poll.strftime("%d %b %H:%M")
 
-    # endregion
+                    st.markdown("### Last update")
+                    st.markdown(f"##### {last_poll_text}")
+
+# endregion
 
 # region Current Status
 

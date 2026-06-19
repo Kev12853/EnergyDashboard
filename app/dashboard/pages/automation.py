@@ -162,8 +162,6 @@ def render(
                 unsafe_allow_html=True,
             )
 
-
-
     # ==================================================
     # Editor
     # ==================================================
@@ -185,8 +183,6 @@ def render(
             )
 
             st.divider()
-
-
 
             MODE_OPTIONS = {
                 "Self Use": SELF_USE,
