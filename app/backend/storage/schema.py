@@ -106,6 +106,24 @@ def create_automation_tables(
         """
     )
 
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS inverter_state (
+
+            id INTEGER PRIMARY KEY,
+
+            desired_work_mode INTEGER,
+
+            desired_manual_mode INTEGER,
+
+            source TEXT NOT NULL,
+
+            updated_at TEXT NOT NULL
+
+        )
+        """
+    )
+
     connection.commit()
 
 
