@@ -7,19 +7,23 @@ from app.backend.automation.constants import (
 )
 from app.backend.automation.models import AutomationState
 
+
 DRY_RUN = True
 
 
 class Scheduler:
+
     def __init__(
         self,
         repository,
-        service,
+        inverter_state_repo,
     ):
 
         self.repository = repository
 
-        self.service = service
+        self.inverter_state_repo = (
+            inverter_state_repo
+        )
 
         self.is_active = False
 
@@ -114,14 +118,21 @@ class Scheduler:
             print(f"ENTER WINDOW: {rule.name}")
 
             if DRY_RUN:
-                print(f"DRY RUN: Would execute {rule.mode}")
+                print(f"DRY RUN: Requesting {rule.mode}")
 
-            else:
-                if rule.mode == MODE_MANUAL_DISCHARGE:
-                    self.service.write_work_mode(3, 2)
+            if rule.mode == MODE_MANUAL_DISCHARGE:
+                self.inverter_state_repo.set(
+                    work_mode=3,
+                    manual_mode=2,
+                    source="scheduler",
+                )
 
-                elif rule.mode == MODE_MANUAL_CHARGE:
-                    self.service.write_work_mode(3, 1)
+            elif rule.mode == MODE_MANUAL_CHARGE:
+                self.inverter_state_repo.set(
+                    work_mode=3,
+                    manual_mode=1,
+                    source="scheduler",
+                )
 
             self.is_active = True
 
@@ -135,10 +146,13 @@ class Scheduler:
             print(f"LEAVE WINDOW: {rule.name}")
 
             if DRY_RUN:
-                print("DRY RUN: Would return to Self Use")
+                print("DRY RUN: Requesting Self Use")
 
-            else:
-                pass
+            self.inverter_state_repo.set(
+                work_mode=SELF_USE,
+                manual_mode=None,
+                source="scheduler",
+            )
 
             self.is_active = False
 

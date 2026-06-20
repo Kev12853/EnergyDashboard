@@ -9,7 +9,7 @@ from app.backend.common.logging_utils import (
 )
 
 logger = setup_logger(
-    "aggregator",
+    "EnergyDashboard_Aggregator",
 )
 logger.info("Aggregator starting")
 

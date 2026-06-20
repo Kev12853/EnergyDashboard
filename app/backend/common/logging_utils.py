@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 def setup_logger(name: str) -> logging.Logger:
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(name)
 
     if logger.handlers:
         return logger
@@ -17,6 +17,7 @@ def setup_logger(name: str) -> logging.Logger:
     log_dir = PROJECT_ROOT / "logs"
 
     log_dir.mkdir(exist_ok=True)
+    print(log_dir)
 
     formatter = logging.Formatter(
         "%(asctime)s %(levelname)s %(name)s: %(message)s"

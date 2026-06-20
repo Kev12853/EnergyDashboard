@@ -12,13 +12,13 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / "EnergyDashboard.log"
-
+print("CONFIGURING LOGGING")
+print(LOG_FILE)
 # =====================================================
 # Root logger
 # =====================================================
 
 root_logger = logging.getLogger()
-
 root_logger.setLevel(logging.DEBUG)
 
 # Remove existing handlers
@@ -64,5 +64,4 @@ console_handler.setFormatter(
 # =====================================================
 
 root_logger.addHandler(file_handler)
-
 root_logger.addHandler(console_handler)

@@ -121,3 +121,5 @@ def has_pending_inverter_state(
         )
         is not None
     )
+
+

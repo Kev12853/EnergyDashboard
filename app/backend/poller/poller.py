@@ -1,8 +1,8 @@
-import logging
 import os
 import time
 
 from app.backend.automation.automation_repository import AutomationRepository
+from app.backend.automation.inverter_state_repository import InverterStateRepository
 from app.backend.automation.scheduler import Scheduler
 from app.backend.notifications.email_sender import EmailSender
 from app.backend.notifications.pushover_sender import PushoverSender
@@ -13,12 +13,12 @@ from app.backend.storage.db import get_connection
 from app.backend.storage.schema import create_all_tables
 from app.solax.storage.storage_repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
+from app.backend.common.logging_utils import setup_logger
 
 COMMUNICATION_TIMEOUT = 1800  # 1800 = 30 minutes
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
-
 EMAIL_ADDRESS = "kev12853@gmail.com"
 APP_PASSWORD = "ulnr ftnv qxvc zlvn"
 
@@ -33,12 +33,14 @@ email_sender = EmailSender(
     sender=EMAIL_ADDRESS,
     recipient=EMAIL_ADDRESS,
 )
-logger = logging.getLogger(__name__)
+
+logger = setup_logger("EnergyDashboard_Poller")
 
 
 def main():
 
     logger.info("Poller starting")
+    print("Starting to Poller PID={}".format(os.getpid()))
 
     last_heartbeat = 0
 
@@ -59,15 +61,23 @@ def main():
     logger.info("Starting to Poll")
 
     logger.info(f"Starting poller PID={os.getpid()}")
-    automation_repo = AutomationRepository(connection)
 
+    automation_repo = AutomationRepository(connection)
     work_mode_monitor = WorkModeMonitor()
 
     logger.info("Creating Scheduler")
+
+    connection = get_connection()
+
+    inverter_state_repo = InverterStateRepository(
+        connection,
+    )
+
     scheduler = Scheduler(
         automation_repo,
-        service.modbus_service,
+        inverter_state_repo,
     )
+
     logger.info("Created Scheduler")
 
     pushover = PushoverSender(
@@ -90,7 +100,9 @@ def main():
                 if change:
                     # pass
                     try:
-                        logger.info(f"Current work snapshot_work_mode: {snapshot_work_mode}")
+                        logger.info(
+                            f"Current work snapshot_work_mode: {snapshot_work_mode}"
+                        )
 
                         send_work_mode_email(
                             email_sender,
@@ -132,6 +144,63 @@ def main():
                 logger.info("Running Scheduler")
                 scheduler.evaluate()
                 logger.info("Scheduler Complete")
+
+                logger.info("Checking inverter requests")
+
+                pending = inverter_state_repo.get()
+
+                if pending:
+                    logger.info(
+                        f"Desired inverter state: "
+                        f"work_mode={pending['work_mode']}, "
+                        f"manual_mode={pending['manual_mode']}"
+                    )
+
+                    desired_work_mode = pending["work_mode"]
+                    desired_manual_mode = pending["manual_mode"]
+
+                    if desired_work_mode == 3:
+                        logger.info("Required operation: Set Work Mode -> Manual")
+
+                        if desired_manual_mode == 1:
+                            logger.info(
+                                "Required operation: Set Manual Mode -> Force Charge"
+                            )
+
+                        elif desired_manual_mode == 2:
+                            logger.info(
+                                "Required operation: Set Manual Mode -> Force Discharge"
+                            )
+
+                    elif desired_work_mode == 0:
+                        logger.info("Required operation: Set Work Mode -> Self Use")
+
+                    logger.info(f"Current inverter mode: {snapshot.work_mode}")
+
+                    #
+                    # Does the inverter already match
+                    # the requested state?
+                    #
+
+                    action_required = True
+
+                    if (
+                        pending["work_mode"] == "SELF_USE"
+                        and snapshot.work_mode == "Self Use"
+                    ):
+                        action_required = False
+
+                    logger.info(
+                        f"Action required: {'YES' if action_required else 'NO'}"
+                    )
+
+                    # logger.info("Action required: YES")
+
+                    if action_required:
+                        logger.info("COMMISSIONING: Inverter write not yet enabled")
+
+                    else:
+                        logger.info("Requested state already achieved")
 
                 now = time.time()
 
@@ -186,3 +255,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#todo sort out enable v disabled detection in scheduler

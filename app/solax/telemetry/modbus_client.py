@@ -1,7 +1,6 @@
 # telemetry/modbus_client.py
 
 import time
-import logging
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -9,6 +8,7 @@ from zoneinfo import ZoneInfo
 from pymodbus.client import ModbusTcpClient
 
 import app.solax.telemetry.registers as registers
+from app.backend.common.logging_utils import setup_logger
 
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
@@ -27,7 +27,7 @@ from app.solax.telemetry.registers import (
 REGISTER_BLOCK_START = 0
 REGISTER_BLOCK_SIZE = 80
 
-logger = logging.getLogger(__name__)
+logger = setup_logger("ModbusClient")
 
 class SolaxModbusClient:
     def __init__(

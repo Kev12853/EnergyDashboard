@@ -15,12 +15,4 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-/logs/registers_0_19.csv
-/logs/registers_20_39.csv
-/logs/registers_40_59.csv
-/logs/registers_60_79.csv
-/logs/solax_cloud_telemetry.csv
-/logs/solax_registers.csv
-/logs/aggregator.log
-/logs/poller.log
 /logs/
