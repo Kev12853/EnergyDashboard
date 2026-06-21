@@ -26,6 +26,30 @@ class InverterController:
         )
 
     @staticmethod
+    def encode_work_mode(mode):
+
+        if mode == "Self Use":
+            return 0, 0
+
+        if mode == "Feed In Priority":
+            return 1, 0
+
+        if mode == "Backup":
+            return 2, 0
+
+        if mode == "Manual":
+            return 3, 0
+
+        if mode == "Force Charge":
+            return 3, 1
+
+        if mode == "Force Discharge":
+            return 3, 2
+
+        raise ValueError(...)
+
+
+    @staticmethod
     def decode_work_mode(
         work_mode,
         manual_mode,
@@ -65,7 +89,7 @@ class InverterController:
     ):
         pass
         #set workmode to manual
-        self.service.write_work_mode(3, 1)
+        #self.service.write_work_mode(3, 1)
         #
 
 
@@ -74,7 +98,7 @@ class InverterController:
     ):
         pass
         #set workmode to manual
-        self.service.write_work_mode(3, 2)
+        #self.service.write_work_mode(3, 2)
 
 
 

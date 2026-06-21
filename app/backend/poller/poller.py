@@ -4,6 +4,7 @@ import time
 from app.backend.automation.automation_repository import AutomationRepository
 from app.backend.automation.inverter_state_repository import InverterStateRepository
 from app.backend.automation.scheduler import Scheduler
+from app.backend.inverter .controller import InverterController
 from app.backend.notifications.email_sender import EmailSender
 from app.backend.notifications.pushover_sender import PushoverSender
 from app.backend.notifications.work_mode_email import send_work_mode_email
@@ -14,6 +15,7 @@ from app.backend.storage.schema import create_all_tables
 from app.solax.storage.storage_repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
 from app.backend.common.logging_utils import setup_logger
+from utils.inverter_operations import determine_required_actions
 
 COMMUNICATION_TIMEOUT = 1800  # 1800 = 30 minutes
 
@@ -92,7 +94,6 @@ def main():
                 logger.info("Getting Snapshot")
                 snapshot = service.poll()
                 logger.info("Got Snapshot")
-
                 snapshot_work_mode = snapshot.work_mode
                 change = work_mode_monitor.update(
                     snapshot_work_mode,
@@ -148,16 +149,64 @@ def main():
                 logger.info("Checking inverter requests")
 
                 pending = inverter_state_repo.get()
+                # logger.info(f"pending = {pending}")
+                # logger.info(f"type(work_mode) = {type(pending['work_mode'])}")
+                # logger.info(f"work_mode = {pending['work_mode']}")
+                # logger.info(f"type(manual_mode) = {type(pending['manual_mode'])}")
+                # logger.info(f"manual_mode = {pending['manual_mode']}")
 
                 if pending:
+                    logger.info(f"Pending Work Mode = {pending['work_mode']}")
+                    logger.info(f"SnapShot WorkMode = {snapshot.work_mode}")
+
+                    #desired_work_mode = pending["work_mode"]
+                    desired_work_mode = InverterController.decode_work_mode(
+                        pending["work_mode"],
+                        pending["manual_mode"],
+                    )
+
+                    MODE_MAP = {
+                        "Self Use": "SELF_USE",
+                        "Feed In Priority": "FEED_IN_PRIORITY",
+                        "Backup": "BACKUP",
+                        "Manual": "MANUAL",
+                        "Force Charge": "FORCE_CHARGE",
+                        "Force Discharge": "FORCE_DISCHARGE",
+                    }
+
+                    actual_mode = MODE_MAP.get(
+                        snapshot.work_mode,
+                        snapshot.work_mode,
+                    )
+
+                    logger.info(actual_mode)
+
+                    if desired_work_mode == actual_mode:
+                        logger.info("Action required: NO")
+                    else:
+                        logger.info("Action required: YES")
+
+                    desired_manual_mode = pending["manual_mode"]
+
+                    actions = []
+
+                    if desired_work_mode != actual_mode:
+                        actions.append(desired_work_mode)
+
+                    logger.info("Required actions:")
+
+                    if not actions:
+                        logger.info("None")
+
+                    for action in actions:
+                        logger.info(f"Action: {action}")
+
+                    
                     logger.info(
                         f"Desired inverter state: "
                         f"work_mode={pending['work_mode']}, "
                         f"manual_mode={pending['manual_mode']}"
                     )
-
-                    desired_work_mode = pending["work_mode"]
-                    desired_manual_mode = pending["manual_mode"]
 
                     if desired_work_mode == 3:
                         logger.info("Required operation: Set Work Mode -> Manual")
