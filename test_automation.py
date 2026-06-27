@@ -3,7 +3,7 @@ from app.backend.automation.engine import (
 )
 
 from app.backend.automation.automation_repository import (
-    AutomationRepository,
+    ScheduleRepository,
 )
 
 from app.backend.storage.db import (
@@ -12,7 +12,7 @@ from app.backend.storage.db import (
 
 connection = get_connection()
 
-repo = AutomationRepository(
+repo = ScheduleRepository(
     connection,
 )
 

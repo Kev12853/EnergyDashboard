@@ -9,6 +9,8 @@ from app.backend.automation.constants import (
     MODE_MANUAL_CHARGE,
     MODE_MANUAL_DISCHARGE,
     SELF_USE,
+    PEAK_SHAVING,
+    FEED_IN,
 )
 from app.backend.automation.models import (
     SchedulePeriod,
@@ -188,6 +190,8 @@ def render(
                 "Self Use": SELF_USE,
                 "Force Charging": MODE_MANUAL_CHARGE,
                 "Force Discharging": MODE_MANUAL_DISCHARGE,
+                "Peak Shaving": PEAK_SHAVING,
+                "Feed In Priority": FEED_IN,
             }
 
             mode_col, priority_col, gap, enabled_col = st.columns([2, 1, 0.5, 3])

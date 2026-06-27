@@ -110,15 +110,18 @@ def create_automation_tables(
         """
         CREATE TABLE IF NOT EXISTS inverter_state (
 
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY CHECK (id = 1),
 
-            desired_work_mode INTEGER,
+            requested_work_mode INTEGER,
+            requested_manual_mode INTEGER,
 
-            desired_manual_mode INTEGER,
+            restore_work_mode_to INTEGER,
+            restore_manual_mode_to INTEGER,
 
-            source TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 0,
 
-            updated_at TEXT NOT NULL
+            source TEXT,
+            updated_at TEXT
 
         )
         """

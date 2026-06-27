@@ -1,20 +1,22 @@
-import logging
-logger = logging.getLogger(__name__)
+from app.backend.common.logging_utils import setup_logger
+
+logger = setup_logger("Controller")
 
 
 class InverterController:
+
     def __init__(
         self,
         service,
     ):
-
         self.service = service
 
     def get_work_mode(self):
-
         logger.info("Inside Get Work Mode")
         logger.info("Getting Work Mode Registers")
+
         mode_registers = self.service.read_work_mode()
+
         logger.info("Got Work Mode Registers")
 
         work_mode = mode_registers[0x008B]
@@ -48,7 +50,6 @@ class InverterController:
 
         raise ValueError(...)
 
-
     @staticmethod
     def decode_work_mode(
         work_mode,
@@ -65,6 +66,7 @@ class InverterController:
             return "Backup"
 
         if work_mode == 3:
+
             if manual_mode == 0:
                 return "Manual"
 
@@ -87,25 +89,51 @@ class InverterController:
     def force_charge(
         self,
     ):
-        pass
-        #set workmode to manual
-        #self.service.write_work_mode(3, 1)
-        #
-
+        self.service.write_work_mode(
+            3,
+            1,
+        )
 
     def force_discharge(
         self,
     ):
-        pass
-        #set workmode to manual
-        #self.service.write_work_mode(3, 2)
-
-
-
+        self.service.write_work_mode(
+            3,
+            2,
+        )
 
     def self_use(
         self,
     ):
-        pass
-        # set work mode to Self Use
-        # self.service.write_work_mode(0)
+        self.service.write_work_mode(
+            0,
+            0,
+        )
+
+    def write_work_mode(
+        self,
+        desired_work_mode,
+        desired_manual_mode,
+    ):
+        """
+        Write the requested inverter operating mode.
+
+        Parameters
+        ----------
+        desired_work_mode
+            Inverter work mode register value.
+
+        desired_manual_mode
+            Manual mode register value. Ignored by the inverter
+            unless the work mode is Manual.
+        """
+
+        logger.info(
+            f"Writing work_mode={desired_work_mode}, "
+            f"manual_mode={desired_manual_mode}"
+        )
+
+        self.service.write_work_mode(
+            desired_work_mode,
+            desired_manual_mode,
+        )

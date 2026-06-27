@@ -7,7 +7,7 @@ from app.backend.automation.models import (
 )
 
 
-class AutomationRepository:
+class ScheduleRepository:
     def __init__(
         self,
         connection,

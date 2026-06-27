@@ -7,11 +7,12 @@ def get_inverter_state(
     cursor = connection.execute(
         """
         SELECT
-
-            desired_work_mode,
-            desired_manual_mode,
-            source,
-            updated_at
+            requested_work_mode,
+            requested_manual_mode,
+            restore_work_mode_to,
+            restore_manual_mode_to,
+            active,
+            source
 
         FROM inverter_state
 
@@ -25,18 +26,52 @@ def get_inverter_state(
         return None
 
     return {
-        "work_mode": row[0],
-        "manual_mode": row[1],
-        "source": row[2],
-        "updated_at": row[3],
+        "requested_work_mode": row[0],
+        "requested_manual_mode": row[1],
+        "restore_work_mode_to": row[2],
+        "restore_manual_mode_to": row[3],
+        "active": row[4],
+        "source": row[5],
     }
+
+
+def request_restore(connection):
+    """
+    Request restoration of the operating mode that was active
+    before the temporary override began.
+
+    Copies the remembered operating mode into the requested
+    operating mode and clears the stored restore state.
+    """
+
+    connection.execute(
+        """
+        UPDATE inverter_state
+
+        SET
+            requested_work_mode = restore_work_mode_to,
+            requested_manual_mode = restore_manual_mode_to,
+
+            restore_work_mode_to = NULL,
+            restore_manual_mode_to = NULL,
+
+            active = 1
+
+        WHERE id = 1
+        """
+    )
+
+    connection.commit()
 
 
 def set_inverter_state(
     connection,
-    work_mode,
-    manual_mode=None,
-    source="scheduler",
+    requested_work_mode,
+    requested_manual_mode,
+    restore_work_mode_to,
+    restore_manual_mode_to,
+    active,
+    source,
 ):
     existing = get_inverter_state(
         connection,
@@ -48,12 +83,13 @@ def set_inverter_state(
         connection.execute(
             """
             INSERT INTO inverter_state (
-
                 id,
-                desired_work_mode,
-                desired_manual_mode,
-                source,
-                updated_at
+                requested_work_mode,
+                requested_manual_mode,
+                restore_work_mode_to,
+                restore_manual_mode_to,
+                active,
+                source
 
             )
 
@@ -63,15 +99,19 @@ def set_inverter_state(
                 ?,
                 ?,
                 ?,
+                ?,
+                ?,
                 ?
 
             )
             """,
             (
-                work_mode,
-                manual_mode,
-                source,
-                timestamp,
+                requested_work_mode,
+                requested_manual_mode,
+                restore_work_mode_to,
+                restore_manual_mode_to,
+                active,
+                source
             ),
         )
 
@@ -81,36 +121,46 @@ def set_inverter_state(
             UPDATE inverter_state
 
             SET
-
-                desired_work_mode = ?,
-                desired_manual_mode = ?,
-                source = ?,
-                updated_at = ?
+                requested_work_mode = ?,
+                requested_manual_mode = ?,
+                restore_work_mode_to = ?,
+                restore_manual_mode_to = ?,
+                active = ?,
+                source = ?
 
             WHERE id = 1
             """,
             (
-                work_mode,
-                manual_mode,
+                requested_work_mode,
+                requested_manual_mode,
+                restore_work_mode_to,
+                restore_manual_mode_to,
+                active,
                 source,
-                timestamp,
             ),
         )
 
     connection.commit()
 
 
-def clear_inverter_state(
-    connection,
-):
+def clear_inverter_state(connection):
     connection.execute(
         """
-        DELETE FROM inverter_state
+        UPDATE inverter_state
+
+        SET
+            requested_work_mode = NULL,
+            requested_manual_mode = NULL,
+            restore_work_mode_to = NULL,
+            restore_manual_mode_to = NULL,
+            active = 0,
+            source = NULL
+
+        WHERE id = 1
         """
     )
 
     connection.commit()
-
 
 def has_pending_inverter_state(
     connection,

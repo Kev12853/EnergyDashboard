@@ -209,10 +209,10 @@ initialise_services()
 repository = TelemetryRepository(connection)
 
 from app.backend.automation.automation_repository import (
-    AutomationRepository,
+    ScheduleRepository,
 )
 
-automation_repo = AutomationRepository(connection)
+automation_repo = ScheduleRepository(connection)
 
 automation_rule = automation_repo.get_periods()
 
