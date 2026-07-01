@@ -136,6 +136,9 @@ class InverterStateRepository:
         The poller will detect the new requested state and restore
         the inverter.
         """
+        # Move the saved state into the active request.
+        # The restore_* fields are deliberately cleared here to indicate that
+        # the restore has been requested and to prevent repeated requests.
 
         state = self.get()
 

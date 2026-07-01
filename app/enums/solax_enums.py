@@ -7,6 +7,7 @@ class WorkMode(IntEnum):
     BACKUP = 2
     MANUAL = 3
     PEAK_SHAVING = 4
+    TOU = 5
 
 
 class ManualMode(IntEnum):

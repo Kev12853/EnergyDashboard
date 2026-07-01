@@ -1,4 +1,5 @@
 from app.backend.common.logging_utils import setup_logger
+from app.enums.solax_enums import WorkMode
 
 logger = setup_logger("Inverter Reconciler")
 
@@ -82,7 +83,7 @@ class InverterReconciler:
         # Determine whether the inverter requires updating.
         #
 
-        if requested_work_mode == 3:
+        if requested_work_mode == WorkMode.MANUAL:
             #
             # Manual work mode.
             #

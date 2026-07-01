@@ -1,4 +1,5 @@
 from app.backend.common.logging_utils import setup_logger
+from app.enums.solax_enums import WorkMode, ManualMode
 
 logger = setup_logger("Controller")
 
@@ -31,22 +32,22 @@ class InverterController:
     def encode_work_mode(mode):
 
         if mode == "Self Use":
-            return 0, 0
+            return WorkMode.SELF_USE, ManualMode.IDLE
 
         if mode == "Feed In Priority":
-            return 1, 0
+            return WorkMode.FEED_IN, ManualMode.IDLE
 
         if mode == "Backup":
-            return 2, 0
+            return WorkMode.BACKUP, ManualMode.IDLE
 
         if mode == "Manual":
-            return 3, 0
+            return WorkMode.MANUAL, ManualMode.IDLE
 
         if mode == "Force Charge":
-            return 3, 1
+            return WorkMode.MANUAL, ManualMode.FORCE_CHARGE
 
         if mode == "Force Discharge":
-            return 3, 2
+            return WorkMode.MANUAL, ManualMode.FORCE_DISCHARGE
 
         raise ValueError(...)
 
@@ -56,32 +57,32 @@ class InverterController:
         manual_mode,
     ):
 
-        if work_mode == 0:
+        if work_mode == WorkMode.SELF_USE:
             return "Self Use"
 
-        if work_mode == 1:
+        if work_mode == WorkMode.FEED_IN:
             return "Feed In Priority"
 
-        if work_mode == 2:
+        if work_mode == WorkMode.BACKUP:
             return "Backup"
 
-        if work_mode == 3:
+        if work_mode == WorkMode.MANUAL:
 
-            if manual_mode == 0:
+            if manual_mode == ManualMode.IDLE:
                 return "Manual"
 
-            if manual_mode == 1:
+            if manual_mode == ManualMode.FORCE_CHARGE:
                 return "Force Charge"
 
-            if manual_mode == 2:
+            if manual_mode == ManualMode.FORCE_DISCHARGE:
                 return "Force Discharge"
 
             return f"Manual ({manual_mode})"
 
-        if work_mode == 4:
+        if work_mode == WorkMode.PEAK_SHAVING:
             return "Peak Shaving"
 
-        if work_mode == 5:
+        if work_mode == WorkMode.TOU:
             return "TOU"
 
         return f"Unknown ({work_mode})"
@@ -90,24 +91,24 @@ class InverterController:
         self,
     ):
         self.service.write_work_mode(
-            3,
-            1,
+            WorkMode.MANUAL,
+            ManualMode.FORCE_CHARGE,
         )
 
     def force_discharge(
         self,
     ):
         self.service.write_work_mode(
-            3,
-            2,
+            WorkMode.MANUAL,
+            ManualMode.FORCE_DISCHARGE,
         )
 
     def self_use(
         self,
     ):
         self.service.write_work_mode(
-            0,
-            0,
+            WorkMode.SELF_USE,
+            ManualMode.IDLE,
         )
 
     def write_work_mode(

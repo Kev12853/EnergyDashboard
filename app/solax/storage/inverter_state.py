@@ -54,6 +54,9 @@ def request_restore(connection):
             requested_work_mode = restore_work_mode_to,
             requested_manual_mode = restore_manual_mode_to,
 
+            restore_work_mode_to = NULL,
+            restore_manual_mode_to = NULL,
+
             phase = ?,
 
             active = 1

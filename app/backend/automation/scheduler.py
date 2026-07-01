@@ -3,22 +3,15 @@ from datetime import datetime
 from app.backend.common.logging_utils import setup_logger
 
 from app.backend.automation.models import AutomationState
+from app.enums.solax_enums import WorkMode, ManualMode
 
 from app.config.solax_config import (
     DRY_RUN,
     SCHEDULER_MODE_MANUAL_CHARGE,
-    WORK_MODE_MANUAL,
-    MANUAL_MODE_FORCE_CHARGE,
-    MANUAL_MODE_FORCE_DISCHARGE,
     SCHEDULER_MODE_SELF_USE,
-    WORK_MODE_SELF_USE,
-    MANUAL_MODE_IDLE,
-    WORK_MODE_PEAK_SHAVING,
     SCHEDULER_MODE_PEAK_SHAVING,
     SCHEDULER_MODE_FEED_IN,
-    WORK_MODE_FEED_IN,
     SCHEDULER_MODE_BACKUP,
-    WORK_MODE_BACKUP,
     SCHEDULER_MODE_MANUAL_DISCHARGE,
 )
 
@@ -227,28 +220,28 @@ class Scheduler:
                 #
 
                 if rule.mode == SCHEDULER_MODE_MANUAL_CHARGE:
-                    requested_work_mode = WORK_MODE_MANUAL
-                    requested_manual_mode = MANUAL_MODE_FORCE_CHARGE
+                    requested_work_mode = WorkMode.MANUAL
+                    requested_manual_mode = ManualMode.FORCE_CHARGE
 
                 elif rule.mode == SCHEDULER_MODE_MANUAL_DISCHARGE:
-                    requested_work_mode = WORK_MODE_MANUAL
-                    requested_manual_mode = MANUAL_MODE_FORCE_DISCHARGE
+                    requested_work_mode = WorkMode.MANUAL
+                    requested_manual_mode = ManualMode.FORCE_DISCHARGE
 
                 elif rule.mode == SCHEDULER_MODE_SELF_USE:
-                    requested_work_mode = WORK_MODE_SELF_USE
-                    requested_manual_mode = MANUAL_MODE_IDLE
+                    requested_work_mode = WorkMode.SELF_USE
+                    requested_manual_mode = ManualMode.IDLE
 
                 elif rule.mode == SCHEDULER_MODE_PEAK_SHAVING:
-                    requested_work_mode = WORK_MODE_PEAK_SHAVING
-                    requested_manual_mode = MANUAL_MODE_IDLE
+                    requested_work_mode = WorkMode.PEAK_SHAVING
+                    requested_manual_mode = ManualMode.IDLE
 
                 elif rule.mode == SCHEDULER_MODE_FEED_IN:
-                    requested_work_mode = WORK_MODE_FEED_IN
-                    requested_manual_mode = MANUAL_MODE_IDLE
+                    requested_work_mode = WorkMode.FEED_IN
+                    requested_manual_mode = ManualMode.IDLE
 
                 elif rule.mode == SCHEDULER_MODE_BACKUP:
-                    requested_work_mode = WORK_MODE_BACKUP
-                    requested_manual_mode = MANUAL_MODE_IDLE
+                    requested_work_mode = WorkMode.BACKUP
+                    requested_manual_mode = ManualMode.IDLE
 
                 else:
                     raise ValueError(f"Unknown schedule mode: {rule.mode}")

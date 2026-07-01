@@ -18,19 +18,10 @@ from app.backend.automation.inverter_state_repository import (
     InverterStateRepository,
 )
 
+from app.enums.solax_enums import WorkMode, ManualMode
+from app.config.solax_config import SCHEDULER_MODE_MANUAL_CHARGE
+
 from app.solax.telemetry.models import PowerFlowSnapshot
-
-WORK_MODE_SELF_USE = 0
-WORK_MODE_FEED_IN = 1
-WORK_MODE_BACKUP = 2
-WORK_MODE_MANUAL = 3
-WORK_MODE_PEAK_SHAVING = 4
-
-MANUAL_MODE_IDLE = 0
-MANUAL_MODE_FORCE_CHARGE = 1
-MANUAL_MODE_FORCE_DISCHARGE = 2
-
-MODE_MANUAL_CHARGE = "FORCE_CHARGE"
 
 #
 # Database
@@ -61,7 +52,7 @@ schedule = SchedulePeriod(
     enabled=True,
     start_time="08:00",
     end_time="10:00",
-    mode=MODE_MANUAL_CHARGE,
+    mode=SCHEDULER_MODE_MANUAL_CHARGE,
     priority=10,
     updated_at=datetime.now(),
 )
@@ -72,13 +63,16 @@ schedule_repo.save_period(schedule)
 # Pretend the scheduler has already entered the window.
 #
 
+from app.enums.inverter_state_enums import InverterRequestPhase
+
 inverter_state_repo.set(
-    requested_work_mode=WORK_MODE_MANUAL,
-    requested_manual_mode=MANUAL_MODE_FORCE_CHARGE,
+    requested_work_mode=WorkMode.MANUAL,
+    requested_manual_mode=ManualMode.FORCE_CHARGE,
 
-    restore_work_mode_to=WORK_MODE_PEAK_SHAVING,
-    restore_manual_mode_to=MANUAL_MODE_IDLE,
+    restore_work_mode_to=WorkMode.PEAK_SHAVING,
+    restore_manual_mode_to=ManualMode.IDLE,
 
+    phase=InverterRequestPhase.OVERRIDE,
     active=True,
     source="scheduler",
 )
@@ -91,8 +85,8 @@ inverter_state_repo.set(
 snapshot = PowerFlowSnapshot(
     timestamp=datetime.now(),
 
-    work_mode=WORK_MODE_MANUAL,
-    manual_mode=MANUAL_MODE_FORCE_CHARGE,
+    work_mode=WorkMode.MANUAL,
+    manual_mode=ManualMode.FORCE_CHARGE,
 )
 
 #
@@ -130,8 +124,8 @@ print("=" * 60)
 print("EXPECTED")
 print("=" * 60)
 
-print(f"requested_work_mode      = {WORK_MODE_PEAK_SHAVING}")
-print(f"requested_manual_mode    = {MANUAL_MODE_IDLE}")
+print(f"requested_work_mode      = {WorkMode.PEAK_SHAVING}")
+print(f"requested_manual_mode    = {ManualMode.IDLE}")
 print("restore_work_mode_to     = None")
 print("restore_manual_mode_to   = None")
 print("active                   = 1")
@@ -147,8 +141,8 @@ pprint(state)
 # Assertions
 #
 
-assert state["requested_work_mode"] == WORK_MODE_PEAK_SHAVING
-assert state["requested_manual_mode"] == MANUAL_MODE_IDLE
+assert state["requested_work_mode"] == WorkMode.PEAK_SHAVING
+assert state["requested_manual_mode"] == ManualMode.IDLE
 
 assert state["restore_work_mode_to"] is None
 assert state["restore_manual_mode_to"] is None
