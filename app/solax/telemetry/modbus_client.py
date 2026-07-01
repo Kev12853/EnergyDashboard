@@ -7,25 +7,26 @@ from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
 
-import app.solax.telemetry.registers as registers
 from app.backend.common.logging_utils import setup_logger
+
+from app.config.solax_config import (
+    INVERTER_POWER,
+    PV1_POWER,
+    PV2_POWER,
+    BATTERY_POWER,
+    BATTERY_SOC,
+    GRID_MSB,
+    GRID_LSB,
+    REGISTER_BLOCK_START,
+    REGISTER_BLOCK_SIZE,
+    WORK_MODE_REGISTER,
+    MANUAL_MODE_REGISTER,
+)
 
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
-from app.solax.telemetry.registers import (
-    BATTERY_POWER,
-    BATTERY_SOC,
-    GRID_LSB,
-    GRID_MSB,
-    INVERTER_POWER,
-    PV1_POWER,
-    PV2_POWER,
-)
-
-REGISTER_BLOCK_START = 0
-REGISTER_BLOCK_SIZE = 80
 
 logger = setup_logger("ModbusClient")
 
@@ -198,7 +199,7 @@ class SolaxModbusClient:
             # =============================================
             # CONSUMPTION
             # =============================================
-            consumption_power_w=(consumption_power_w),
+            consumption_power_w=consumption_power_w,
             # =============================================
             # INVERTER
             # =============================================
@@ -270,7 +271,7 @@ class SolaxModbusClient:
                     raise RuntimeError(f"Unable to connect to {self.host}")
 
                 result = client.read_holding_registers(
-                    address=registers.WORK_MODE_REGISTER,
+                    address=WORK_MODE_REGISTER,
                     count=2,
                     device_id=self.slave_id,
                 )
@@ -279,8 +280,8 @@ class SolaxModbusClient:
                     raise RuntimeError(f"Work mode read failed: {result}")
 
                 return {
-                    registers.WORK_MODE_REGISTER: result.registers[0],
-                    registers.MANUAL_MODE_REGISTER: result.registers[1],
+                    WORK_MODE_REGISTER: result.registers[0],
+                    MANUAL_MODE_REGISTER: result.registers[1],
                 }
 
             except Exception as exc:
@@ -309,7 +310,7 @@ class SolaxModbusClient:
         logger.info("Inside Work_Mode_Read_Registers")
 
         result = client.read_holding_registers(
-            address=registers.WORK_MODE_REGISTER,
+            address=WORK_MODE_REGISTER,
             count=2,
             device_id=self.slave_id,
         )
@@ -318,8 +319,8 @@ class SolaxModbusClient:
             raise RuntimeError(f"Work mode read failed: {result}")
 
         return {
-            registers.WORK_MODE_REGISTER: result.registers[0],
-            registers.MANUAL_MODE_REGISTER: result.registers[1],
+            WORK_MODE_REGISTER: result.registers[0],
+            MANUAL_MODE_REGISTER: result.registers[1],
         }
 
     def read_polling_registers(

@@ -14,7 +14,7 @@ load_dotenv()
 # OCTOPUS CONFIG
 # =====================================================
 
-API_KEY = os.getenv("OCTOPUS_API_KEY")
+OCTOPUS_API_KEY = os.getenv("OCTOPUS_API_KEY")
 
 ACCOUNT_ID = os.getenv("ACCOUNT_ID")
 

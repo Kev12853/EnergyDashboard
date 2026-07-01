@@ -1,25 +1,28 @@
 from datetime import datetime
 
-from app.backend.automation.constants import MODE_MANUAL_CHARGE, MODE_MANUAL_DISCHARGE
+from app.backend.common.logging_utils import setup_logger
+
 from app.backend.automation.models import AutomationState
 
-WORK_MODE_SELF_USE = 0
-WORK_MODE_FEED_IN = 1
-WORK_MODE_BACKUP = 2
-WORK_MODE_MANUAL = 3
-WORK_MODE_PEAK_SHAVING = 4
+from app.config.solax_config import (
+    DRY_RUN,
+    SCHEDULER_MODE_MANUAL_CHARGE,
+    WORK_MODE_MANUAL,
+    MANUAL_MODE_FORCE_CHARGE,
+    MANUAL_MODE_FORCE_DISCHARGE,
+    SCHEDULER_MODE_SELF_USE,
+    WORK_MODE_SELF_USE,
+    MANUAL_MODE_IDLE,
+    WORK_MODE_PEAK_SHAVING,
+    SCHEDULER_MODE_PEAK_SHAVING,
+    SCHEDULER_MODE_FEED_IN,
+    WORK_MODE_FEED_IN,
+    SCHEDULER_MODE_BACKUP,
+    WORK_MODE_BACKUP,
+    SCHEDULER_MODE_MANUAL_DISCHARGE,
+)
 
-MANUAL_MODE_IDLE = 0
-MANUAL_MODE_FORCE_CHARGE = 1
-MANUAL_MODE_FORCE_DISCHARGE = 2
-
-MODE_SELF_USE=0
-MODE_FEED_IN = 1
-MODE_BACKUP = 2
-MODE_MANUAL = 3
-MODE_PEAK_SHAVING = "PEAK_SHAVING"
-
-DRY_RUN = True
+logger = setup_logger("Scheduler")
 
 
 class Scheduler:
@@ -28,6 +31,7 @@ class Scheduler:
         repository,
         inverter_state_repo,
     ):
+
 
         self.repository = repository
 
@@ -154,19 +158,12 @@ class Scheduler:
         #
 
         if not periods:
-            #
-            # Has a scheduler request already been made?
-            #
-
-            #
-            # Has the scheduler already created an outstanding
-            # inverter request?
-            #
+            # There are currently no enabled schedules
+            logger.info(f"There are no currently enabled schedules")
 
             pending = self.inverter_state_repo.get()
 
             if pending is not None:
-
                 #
                 # If a restore state exists then the inverter has
                 # already entered a temporary override. Replace the
@@ -174,29 +171,25 @@ class Scheduler:
                 # previous operating mode.
                 #
 
-                override_started = (
-                    pending["restore_work_mode_to"] is not None
-                )
+                restore_pending = pending["restore_work_mode_to"] is not None
+                # Is this a temporary override, ie pending["restore_work_mode_to"] is Not None
 
-                if override_started:
-
-                    print("RESTORING PREVIOUS OPERATING MODE")
-
+                if restore_pending:
+                    logger.info(f"Restoring prvious operating mode")
                     self.inverter_state_repo.request_restore()
 
                 #
                 # Otherwise the outstanding request has never been
                 # applied, so simply cancel it.
-                #
-
                 else:
-
-                    print("CANCELLING OUTSTANDING REQUEST")
-
+                    logger.info(f"Cancelling current override, it was never started")
                     self.inverter_state_repo.clear()
 
-            self.is_active = False
+            # Run this code in either  True or False  for Pending is not None
 
+            # Set Flag for next time
+            self.is_active = False
+            # Exit Scheduler
             return
 
         # If there are active periods get the first one in the list. This will be the period with the highest priority
@@ -208,6 +201,7 @@ class Scheduler:
         if not rule.enabled:
             return
 
+        #Should this schedule currently be active?
         should_run = self.is_in_window(
             rule.start_time,
             rule.end_time,
@@ -221,9 +215,10 @@ class Scheduler:
         if (
             should_run and not self.is_active
         ):  # schedule is in time window and is an active schedule
-            print(f"ENTER WINDOW: {rule.name}")
 
-            if DRY_RUN:
+            logger.info(f"Entering Window for {rule.name}")
+
+            if not DRY_RUN:
                 print(f"DRY RUN: Requesting {rule.mode}")
 
             if should_run and not self.is_active:
@@ -231,27 +226,27 @@ class Scheduler:
                 # Determine the requested operating mode.
                 #
 
-                if rule.mode == MODE_MANUAL_CHARGE:
+                if rule.mode == SCHEDULER_MODE_MANUAL_CHARGE:
                     requested_work_mode = WORK_MODE_MANUAL
                     requested_manual_mode = MANUAL_MODE_FORCE_CHARGE
 
-                elif rule.mode == MODE_MANUAL_DISCHARGE:
+                elif rule.mode == SCHEDULER_MODE_MANUAL_DISCHARGE:
                     requested_work_mode = WORK_MODE_MANUAL
                     requested_manual_mode = MANUAL_MODE_FORCE_DISCHARGE
 
-                elif rule.mode == MODE_SELF_USE:
+                elif rule.mode == SCHEDULER_MODE_SELF_USE:
                     requested_work_mode = WORK_MODE_SELF_USE
                     requested_manual_mode = MANUAL_MODE_IDLE
 
-                elif rule.mode == MODE_PEAK_SHAVING:
+                elif rule.mode == SCHEDULER_MODE_PEAK_SHAVING:
                     requested_work_mode = WORK_MODE_PEAK_SHAVING
                     requested_manual_mode = MANUAL_MODE_IDLE
 
-                elif rule.mode == MODE_FEED_IN:
+                elif rule.mode == SCHEDULER_MODE_FEED_IN:
                     requested_work_mode = WORK_MODE_FEED_IN
                     requested_manual_mode = MANUAL_MODE_IDLE
 
-                elif rule.mode == MODE_BACKUP:
+                elif rule.mode == SCHEDULER_MODE_BACKUP:
                     requested_work_mode = WORK_MODE_BACKUP
                     requested_manual_mode = MANUAL_MODE_IDLE
 
@@ -262,12 +257,15 @@ class Scheduler:
                 # Remember the current operating mode so it can be
                 # restored when the schedule finishes.
                 #
+                # create inverter_state request
+                from app.enums.inverter_state_enums import InverterRequestPhase
 
                 self.inverter_state_repo.set(
                     requested_work_mode=requested_work_mode,
                     requested_manual_mode=requested_manual_mode,
                     restore_work_mode_to=snapshot.work_mode,
                     restore_manual_mode_to=snapshot.manual_mode,
+                    phase=InverterRequestPhase.OVERRIDE,
                     active=True,
                     source="scheduler",
                 )

@@ -8,7 +8,7 @@ from app.octopus.api.octopus_api import (
     get_octopus_agreements,
 )
 
-from app.config import (
+from app.config.octopus_config import (
     IMPORT_MPAN,
     EXPORT_MPAN,
 )

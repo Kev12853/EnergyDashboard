@@ -34,7 +34,7 @@ from app.octopus.analytics.tariffs import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format=("%(asctime)s %(levelname)s %(message)s"),
+    format="%(asctime)s %(levelname)s %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def get_active_tariffs():
 
     conn = get_connection()
 
-    rows = conn.execute(
+    active_tarrif_rows = conn.execute(
         """
         SELECT DISTINCT
 
@@ -81,7 +81,7 @@ def get_active_tariffs():
 
     conn.close()
 
-    return [row["tariff_code"] for row in rows]
+    return [row["tariff_code"] for row in active_tarrif_rows]
 
 
 # =====================================================

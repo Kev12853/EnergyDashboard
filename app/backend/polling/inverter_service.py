@@ -3,7 +3,7 @@ from app.backend.common.logging_utils import setup_logger
 from app.backend.inverter.inverter_controller import InverterController
 from app.solax.telemetry.modbus_service import SolaxModbusService
 
-logger = setup_logger(__name__)
+logger = setup_logger("Inverter Service")
 
 # ============================================================
 # INVERTER POLLING SERVICE

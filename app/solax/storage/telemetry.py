@@ -4,7 +4,7 @@ from app.solax.storage.constants import (
     RUNTIME_BLOCK_START,
     RUNTIME_BLOCK_COUNT,
 )
-from services.solax.models import PowerFlowSnapshot
+from app.solax.telemetry.models import PowerFlowSnapshot
 from app.solax.storage.parser import SolaxParser
 
 

@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from app.enums.inverter_state_enums import InverterRequestPhase
+
 
 def get_inverter_state(
     connection,
@@ -52,13 +54,13 @@ def request_restore(connection):
             requested_work_mode = restore_work_mode_to,
             requested_manual_mode = restore_manual_mode_to,
 
-            restore_work_mode_to = NULL,
-            restore_manual_mode_to = NULL,
+            phase = ?,
 
             active = 1
 
         WHERE id = 1
-        """
+        """,
+        (InverterRequestPhase.RESTORE,),
     )
 
     connection.commit()
@@ -70,6 +72,7 @@ def set_inverter_state(
     requested_manual_mode,
     restore_work_mode_to,
     restore_manual_mode_to,
+    phase,
     active,
     source,
 ):

@@ -119,6 +119,7 @@ def create_automation_tables(
             restore_manual_mode_to INTEGER,
 
             active INTEGER NOT NULL DEFAULT 0,
+            phase TEXT NOT NULL,
 
             source TEXT,
             updated_at TEXT

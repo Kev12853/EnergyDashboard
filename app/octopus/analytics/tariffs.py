@@ -14,7 +14,7 @@ def normalize_import_tariffs(
 
     result = result.rename(
         columns={
-            "value_inc_vat": ("unit_rate_gbp_per_kwh"),
+            "value_inc_vat": "unit_rate_gbp_per_kwh",
         }
     )
 

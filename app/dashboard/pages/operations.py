@@ -119,7 +119,7 @@ def render(
                         current = {
                             "work_mode": "Last known state",
                             "status_icon": "⚫",
-                            "status_text": (f"Latest data {health.data_age_text} old"),
+                            "status_text": f"Latest data {health.data_age_text} old",
                         }
 
                     st.markdown(f"##### {current['work_mode']}")

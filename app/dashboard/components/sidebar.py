@@ -8,7 +8,7 @@ def render_sidebar():
         st.divider()
 
         st.markdown(
-            ('<div class="sidebar-heading">Navigation</div>'),
+            '<div class="sidebar-heading">Navigation</div>',
             unsafe_allow_html=True,
         )
 

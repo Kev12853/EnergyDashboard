@@ -54,7 +54,7 @@ def render_dispatch_timeline(
                         title="End",
                     ),
                     alt.Tooltip(
-                        ("scheduled_energy_kwh:Q"),
+                        "scheduled_energy_kwh:Q",
                         title="Est. kWh",
                     ),
                 ],

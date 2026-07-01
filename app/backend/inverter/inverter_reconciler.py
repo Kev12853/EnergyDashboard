@@ -1,5 +1,4 @@
 from app.backend.common.logging_utils import setup_logger
-from app.backend.inverter.inverter_controller import InverterController
 
 logger = setup_logger("Inverter Reconciler")
 

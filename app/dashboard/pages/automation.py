@@ -5,15 +5,17 @@ from datetime import (
 
 import streamlit as st
 
-from app.backend.automation.constants import (
-    MODE_MANUAL_CHARGE,
-    MODE_MANUAL_DISCHARGE,
-    SELF_USE,
-    PEAK_SHAVING,
-    FEED_IN,
-)
+
+
 from app.backend.automation.models import (
     SchedulePeriod,
+)
+from app.config.solax_config import (
+    SCHEDULER_MODE_SELF_USE,
+    SCHEDULER_MODE_MANUAL_CHARGE,
+    SCHEDULER_MODE_MANUAL_DISCHARGE,
+    SCHEDULER_MODE_PEAK_SHAVING,
+    SCHEDULER_MODE_FEED_IN,
 )
 
 # from app.dashboard_app import repository
@@ -87,7 +89,7 @@ def render(
             enabled=True,
             start_time="00:00",
             end_time="01:00",
-            mode=SELF_USE,
+            mode=SCHEDULER_MODE_SELF_USE,
             priority=10,
             updated_at=datetime.now(),
         )
@@ -187,11 +189,11 @@ def render(
             st.divider()
 
             MODE_OPTIONS = {
-                "Self Use": SELF_USE,
-                "Force Charging": MODE_MANUAL_CHARGE,
-                "Force Discharging": MODE_MANUAL_DISCHARGE,
-                "Peak Shaving": PEAK_SHAVING,
-                "Feed In Priority": FEED_IN,
+                "Self Use": SCHEDULER_MODE_SELF_USE,
+                "Force Charging": SCHEDULER_MODE_MANUAL_CHARGE,
+                "Force Discharging": SCHEDULER_MODE_MANUAL_DISCHARGE,
+                "Peak Shaving": SCHEDULER_MODE_PEAK_SHAVING,
+                "Feed In Priority": SCHEDULER_MODE_FEED_IN,
             }
 
             mode_col, priority_col, gap, enabled_col = st.columns([2, 1, 0.5, 3])

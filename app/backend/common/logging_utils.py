@@ -1,6 +1,6 @@
-from pathlib import Path
 import logging
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -17,7 +17,6 @@ def setup_logger(name: str) -> logging.Logger:
     log_dir = PROJECT_ROOT / "logs"
 
     log_dir.mkdir(exist_ok=True)
-    print(log_dir)
 
     formatter = logging.Formatter(
         "%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -29,6 +28,8 @@ def setup_logger(name: str) -> logging.Logger:
         backupCount=5,
         encoding="utf-8",
     )
+
+    logger.warning(f"Logging to {file_handler.baseFilename}")
 
     file_handler.setFormatter(formatter)
 

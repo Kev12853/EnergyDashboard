@@ -4,8 +4,8 @@ import requests
 # import streamlit as st
 from pandas import DataFrame
 
-from app.config import (
-    API_KEY,
+from app.config.octopus_config import (
+    OCTOPUS_API_KEY,
     ACCOUNT_ID,
     IMPORT_MPAN,
     EXPORT_MPAN,
@@ -26,7 +26,7 @@ from app.config import (
 #     )
 #
 #
-# API_KEY = get_secret("OCTOPUS_API_KEY")
+# OCTOPUS_API_KEY = get_secret("OCTOPUS_API_KEY")
 # IMPORT_MPAN = get_secret("IMPORT_MPAN")
 # EXPORT_MPAN = get_secret("EXPORT_MPAN")
 # METER_SERIAL = get_secret("METER_SERIAL")
@@ -57,7 +57,7 @@ def get_graphql_token():
       }
     }
     """
-        % API_KEY
+        % OCTOPUS_API_KEY
     )
 
     response = requests.post(
@@ -88,7 +88,7 @@ def fetch_all_pages(url, params):
 
     while url:
         try:
-            response = requests.get(url, params=params, auth=(API_KEY, ""), timeout=10)
+            response = requests.get(url, params=params, auth=(OCTOPUS_API_KEY, ""), timeout=10)
 
             response.raise_for_status()
 

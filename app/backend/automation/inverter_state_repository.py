@@ -94,6 +94,7 @@ class InverterStateRepository:
         requested_manual_mode,
         restore_work_mode_to,
         restore_manual_mode_to,
+        phase,
         active,
         source,
     ):
@@ -121,6 +122,7 @@ class InverterStateRepository:
             requested_manual_mode,
             restore_work_mode_to,
             restore_manual_mode_to,
+            phase,
             active,
             source,
         )

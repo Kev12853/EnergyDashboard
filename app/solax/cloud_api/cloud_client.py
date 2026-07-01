@@ -2,7 +2,7 @@ from datetime import datetime
 
 import requests
 
-from services.solax.models import PowerFlowSnapshot
+from app.solax.telemetry.models import PowerFlowSnapshot
 
 
 class SolaxCloudAPI:

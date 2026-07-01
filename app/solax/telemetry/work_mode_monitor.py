@@ -1,7 +1,7 @@
 from datetime import datetime
 
 class WorkModeMonitor:
-    '''
+    """
      ============================================================
      WORK MODE MONITOR
      ============================================================
@@ -37,7 +37,7 @@ class WorkModeMonitor:
          "Has the inverter work mode changed?"
 
      ============================================================
-    '''
+    """
 
     def __init__(self):
 
