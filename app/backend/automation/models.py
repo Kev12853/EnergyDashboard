@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime, time
 
+from app.enums.automation_enums import AutomationMode
+
 
 @dataclass
 class SchedulePeriod:
@@ -10,7 +12,7 @@ class SchedulePeriod:
     enabled: bool
     start_time: str
     end_time: str
-    mode: str
+    mode: AutomationMode
     priority: int
     updated_at: datetime
 

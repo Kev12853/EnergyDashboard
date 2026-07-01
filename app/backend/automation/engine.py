@@ -52,7 +52,7 @@ class AutomationEngine:
             active=True,
             actioned=False,
             period_name=rule.name,
-            mode=rule.mode,
+            mode=str(rule.mode),
             start_time=rule.start_time,
             end_time=rule.end_time,
             status="Waiting",
