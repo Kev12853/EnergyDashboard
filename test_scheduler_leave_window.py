@@ -19,7 +19,7 @@ from app.backend.automation.inverter_state_repository import (
 )
 
 from app.enums.solax_enums import WorkMode, ManualMode
-from app.config.solax_config import SCHEDULER_MODE_MANUAL_CHARGE
+from app.enums.automation_enums import AutomationMode
 
 from app.solax.telemetry.models import PowerFlowSnapshot
 
@@ -52,7 +52,7 @@ schedule = SchedulePeriod(
     enabled=True,
     start_time="08:00",
     end_time="10:00",
-    mode=SCHEDULER_MODE_MANUAL_CHARGE,
+    mode=AutomationMode.MANUAL_CHARGE,
     priority=10,
     updated_at=datetime.now(),
 )

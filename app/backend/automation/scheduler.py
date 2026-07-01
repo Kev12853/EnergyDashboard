@@ -3,16 +3,11 @@ from datetime import datetime
 from app.backend.common.logging_utils import setup_logger
 
 from app.backend.automation.models import AutomationState
-from app.enums.solax_enums import WorkMode, ManualMode
+from app.backend.automation.mapping import map_automation_mode
+from app.enums.automation_enums import AutomationMode
 
 from app.config.solax_config import (
     DRY_RUN,
-    SCHEDULER_MODE_MANUAL_CHARGE,
-    SCHEDULER_MODE_SELF_USE,
-    SCHEDULER_MODE_PEAK_SHAVING,
-    SCHEDULER_MODE_FEED_IN,
-    SCHEDULER_MODE_BACKUP,
-    SCHEDULER_MODE_MANUAL_DISCHARGE,
 )
 
 logger = setup_logger("Scheduler")
@@ -219,32 +214,7 @@ class Scheduler:
                 # Determine the requested operating mode.
                 #
 
-                if rule.mode == SCHEDULER_MODE_MANUAL_CHARGE:
-                    requested_work_mode = WorkMode.MANUAL
-                    requested_manual_mode = ManualMode.FORCE_CHARGE
-
-                elif rule.mode == SCHEDULER_MODE_MANUAL_DISCHARGE:
-                    requested_work_mode = WorkMode.MANUAL
-                    requested_manual_mode = ManualMode.FORCE_DISCHARGE
-
-                elif rule.mode == SCHEDULER_MODE_SELF_USE:
-                    requested_work_mode = WorkMode.SELF_USE
-                    requested_manual_mode = ManualMode.IDLE
-
-                elif rule.mode == SCHEDULER_MODE_PEAK_SHAVING:
-                    requested_work_mode = WorkMode.PEAK_SHAVING
-                    requested_manual_mode = ManualMode.IDLE
-
-                elif rule.mode == SCHEDULER_MODE_FEED_IN:
-                    requested_work_mode = WorkMode.FEED_IN
-                    requested_manual_mode = ManualMode.IDLE
-
-                elif rule.mode == SCHEDULER_MODE_BACKUP:
-                    requested_work_mode = WorkMode.BACKUP
-                    requested_manual_mode = ManualMode.IDLE
-
-                else:
-                    raise ValueError(f"Unknown schedule mode: {rule.mode}")
+                requested_work_mode, requested_manual_mode = map_automation_mode(rule.mode)
 
                 #
                 # Remember the current operating mode so it can be
