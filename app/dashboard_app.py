@@ -246,25 +246,34 @@ end = pd.Timestamp.now(tz=ZoneInfo("Europe/London"))
 start = end - timedelta(hours=hours)
 
 latest = repository.get_latest_snapshot()
-if latest is None:
-    st.warning("No telemetry data available.")
-    st.stop()
 
-latest = dict(latest)
+if latest is not None:
+    latest = dict(latest)
 
-latest["pv_power_w"] = latest["solar_w"]
-latest["battery_power_w"] = latest["battery_w"]
-latest["grid_power_w"] = latest["grid_w"]
-latest["consumption_power_w"] = latest["consumption_w"]
+    latest["pv_power_w"] = latest["solar_w"]
+    latest["battery_power_w"] = latest["battery_w"]
+    latest["grid_power_w"] = latest["grid_w"]
+    latest["consumption_power_w"] = latest["consumption_w"]
 
-latest["pv1_power_w"] = latest["pv1_w"]
-latest["pv2_power_w"] = latest["pv2_w"]
-latest["house_load_w"] = latest["consumption_w"]
+    latest["pv1_power_w"] = latest["pv1_w"]
+    latest["pv2_power_w"] = latest["pv2_w"]
+    latest["house_load_w"] = latest["consumption_w"]
 
-# =========================================================
-# EMPTY STATE
-# =========================================================
+    latest_timestamp = latest["timestamp"]
 
+    system_health = get_system_health(
+        last_snapshot_time=latest_timestamp,
+        last_successful_poll=latest_timestamp,
+    )
+
+    data_age_minutes = system_health.data_age_seconds / 60
+
+else:
+
+    #latest = {}
+    latest_timestamp = None
+    system_health = None
+    data_age_minutes = None
 
 # =========================================================
 # LOAD HISTORY
@@ -308,14 +317,7 @@ except Exception:
 # DATA FRESHNESS
 # =========================================================
 
-latest_timestamp = latest["timestamp"]
 
-system_health = get_system_health(
-    last_snapshot_time=latest_timestamp,
-    last_successful_poll=latest_timestamp,
-)
-
-data_age_minutes = system_health.data_age_seconds / 60
 
 # =========================================================
 # LOAD OCTOPUS DATA

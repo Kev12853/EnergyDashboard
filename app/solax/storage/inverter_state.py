@@ -14,7 +14,8 @@ def get_inverter_state(
             restore_work_mode_to,
             restore_manual_mode_to,
             active,
-            source
+            source,
+            phase
 
         FROM inverter_state
 
@@ -24,6 +25,7 @@ def get_inverter_state(
 
     row = cursor.fetchone()
 
+    # Should always be 1 row in the table
     if row is None:
         return None
 
@@ -34,6 +36,7 @@ def get_inverter_state(
         "restore_manual_mode_to": row[3],
         "active": row[4],
         "source": row[5],
+        "phase": row[6],
     }
 
 
@@ -95,7 +98,8 @@ def set_inverter_state(
                 restore_work_mode_to,
                 restore_manual_mode_to,
                 active,
-                source
+                source,
+                phase
 
             )
 
@@ -117,7 +121,8 @@ def set_inverter_state(
                 restore_work_mode_to,
                 restore_manual_mode_to,
                 active,
-                source
+                source,
+                phase,
             ),
         )
 
@@ -132,7 +137,8 @@ def set_inverter_state(
                 restore_work_mode_to = ?,
                 restore_manual_mode_to = ?,
                 active = ?,
-                source = ?
+                source = ?,
+                phase = ?
 
             WHERE id = 1
             """,
@@ -143,6 +149,7 @@ def set_inverter_state(
                 restore_manual_mode_to,
                 active,
                 source,
+                phase,
             ),
         )
 
@@ -150,6 +157,7 @@ def set_inverter_state(
 
 
 def clear_inverter_state(connection):
+    #phase = InverterRequestPhase.IDLE
     connection.execute(
         """
         UPDATE inverter_state
@@ -160,11 +168,13 @@ def clear_inverter_state(connection):
             restore_work_mode_to = NULL,
             restore_manual_mode_to = NULL,
             active = 0,
-            source = NULL
-
+            source = NULL,
+            phase = ?
         WHERE id = 1
-        """
+        """,
+        (InverterRequestPhase.IDLE,)
     )
+
 
     connection.commit()
 

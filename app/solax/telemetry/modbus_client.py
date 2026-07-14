@@ -343,13 +343,13 @@ class SolaxModbusClient:
                 if not connected:
                     raise RuntimeError(f"Unable to connect to {self.host}")
 
-                logger.info("A get_work_mode")
+                logger.info("Getting Work Mode registers")
                 work_mode_registers = self.read_work_mode_registers_from_connection(
                     client,
                 )
-                logger.info("B poll_once")
+                logger.info("Getting Telemetry regidters")
                 telemetry_registers = self.read_register_block_from_connection(client)
-                logger.info("B1 register block OK")
+                logger.info("Got registers")
 
                 return (
                     work_mode_registers,

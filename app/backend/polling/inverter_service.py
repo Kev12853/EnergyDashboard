@@ -77,7 +77,7 @@ class InverterPollingService:
     ):
         """
          Read all registers required for:
-             1. Work mode information
+             1. Work decoded_work_mode information
              2. Power flow telemetry
 
         :return: snapshot of the current inverter registers
@@ -89,10 +89,10 @@ class InverterPollingService:
         #
         # Read all registers required for:
         #
-        #     1. Work mode information
+        #     1. Work decoded_work_mode information
         #     2. Power flow telemetry
         #
-        # The work mode registers are read separately because
+        # The work decoded_work_mode registers are read separately because
         # they are not part of the standard telemetry block.
         #
 
@@ -103,7 +103,7 @@ class InverterPollingService:
 
         #
         # Convert raw register values into a human-readable
-        # mode name.
+        # decoded_work_mode name.
         #
         # Examples:
         #
@@ -120,7 +120,7 @@ class InverterPollingService:
         # notifications and UI display.
         #
 
-        mode = self.controller.decode_work_mode(
+        decoded_work_mode = self.controller.decode_work_mode(
             mode_registers[0x008B],
             mode_registers[0x008C],
         )
@@ -148,7 +148,7 @@ class InverterPollingService:
 
         snapshot.work_mode = mode_registers[0x008B]
         snapshot.manual_mode = mode_registers[0x008C]
-        snapshot.work_mode_name = mode
+        snapshot.work_mode_name = decoded_work_mode
 
         logger.info("Leaving Get Snapshot")
 

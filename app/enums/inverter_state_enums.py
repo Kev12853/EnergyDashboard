@@ -6,3 +6,4 @@ from enum import StrEnum
 class InverterRequestPhase(StrEnum):
     OVERRIDE = "OVERRIDE"
     RESTORE = "RESTORE"
+    IDLE = "IDLE"

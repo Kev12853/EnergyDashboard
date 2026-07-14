@@ -24,14 +24,13 @@ class TelemetryAggregator:
         self.connection.execute(
             """
             INSERT INTO telemetry_1m
-
             SELECT
-
-               strftime(
-    '%Y-%m-%d %H:%M:00',
-    timestamp,
-    'localtime'
-) AS bucket_start,
+                strftime(
+                    '%Y-%m-%d %H:%M:00',
+                    timestamp,
+                    'localtime'
+                ) 
+            AS bucket_start,
 
                 AVG(solar_w),
                 MAX(solar_w),
@@ -56,56 +55,113 @@ class TelemetryAggregator:
     def rebuild_30m(self):
 
         self.connection.execute(
-            """
-            DELETE FROM telemetry_30m
-            """
-        )
-
-        self.connection.execute(
-            """
-            INSERT INTO telemetry_30m
-
+        """
+            INSERT OR REPLACE INTO telemetry_30m
+            (
+                bucket_start,
+                avg_solar_w,
+                max_solar_w,
+                min_solar_w,
+                avg_consumption_w,
+                max_consumption_w,
+                min_consumption_w,
+                avg_grid_w,
+                avg_battery_w
+            )
+            
             SELECT
-
+            
                 strftime(
                     '%Y-%m-%d %H:',
-                    timestamp,
-                    'localtime'
+                    bucket_start
                 )
                 ||
                 CASE
-
-                    WHEN CAST(
-                        strftime(
-                            '%M',
-                            timestamp
-                        ) AS INTEGER
-                    ) < 30
-
+                    WHEN CAST(strftime('%M', bucket_start) AS INTEGER) < 30
                     THEN '00:00'
-
                     ELSE '30:00'
-
                 END
-                AS bucket_start,
-
-                AVG(solar_w),
-                MAX(solar_w),
-                MIN(solar_w),
-
-                AVG(consumption_w),
-                MAX(consumption_w),
-                MIN(consumption_w),
-
-                AVG(grid_w),
-
-                AVG(battery_w)
-
-            FROM telemetry_snapshots
-
-            GROUP BY bucket_start
-            """
+                AS bucket30_start,
+            
+                AVG(avg_solar_w),
+                MAX(max_solar_w),
+                MIN(min_solar_w),
+            
+                AVG(avg_consumption_w),
+                MAX(max_consumption_w),
+                MIN(min_consumption_w),
+            
+                AVG(avg_grid_w),
+            
+                AVG(avg_battery_w)
+            
+            FROM telemetry_1m
+            
+            WHERE bucket_start >=
+            (
+                SELECT
+                    COALESCE(
+                        datetime(MAX(bucket_start), '-1 hour'),
+                        '1970-01-01 00:00:00'
+                    )
+                FROM telemetry_30m
+            )
+            
+            GROUP BY bucket30_start;
+        """
         )
+
+        # self.connection.execute(
+        #     """
+        #     DELETE FROM telemetry_30m
+        #     """
+        # )
+
+        # self.connection.execute(
+        #     """
+        #     INSERT INTO telemetry_30m
+        #
+        #     SELECT
+        #
+        #         strftime(
+        #             '%Y-%m-%d %H:',
+        #             timestamp,
+        #             'localtime'
+        #         )
+        #         ||
+        #         CASE
+        #
+        #             WHEN CAST(
+        #                 strftime(
+        #                     '%M',
+        #                     timestamp
+        #                 ) AS INTEGER
+        #             ) < 30
+        #
+        #             THEN '00:00'
+        #
+        #             ELSE '30:00'
+        #
+        #         END
+        #         AS bucket_start,
+        #
+        #         AVG(solar_w),
+        #         MAX(solar_w),
+        #         MIN(solar_w),
+        #
+        #         AVG(consumption_w),
+        #         MAX(consumption_w),
+        #         MIN(consumption_w),
+        #
+        #         AVG(grid_w),
+        #
+        #         AVG(battery_w)
+        #
+        #     FROM telemetry_snapshots
+        #
+        #     GROUP BY bucket_start
+        #     """
+        # )
 
         self.connection.commit()
 

@@ -1,3 +1,4 @@
+from app.enums.inverter_state_enums import InverterRequestPhase
 from app.solax.storage.inverter_state import (
     get_inverter_state,
     set_inverter_state,
@@ -5,7 +6,9 @@ from app.solax.storage.inverter_state import (
     has_pending_inverter_state,
     request_restore,
 )
+from app.backend.common.logging_utils import setup_logger
 
+logger = setup_logger(__name__)
 
 class InverterStateRepository:
     """
@@ -60,28 +63,36 @@ class InverterStateRepository:
         therefore returned as None.
         """
 
-        state = get_inverter_state(
+        inverter_state = get_inverter_state(
             self.connection,
         )
 
+        if (
+            inverter_state["phase"] == InverterRequestPhase.IDLE
+            and inverter_state["requested_work_mode"] is not None
+        ):
+            logger.warning(
+                "Inverter state is inconsistent: "
+                "phase is IDLE but a requested work mode exists."
+            )
         #
         # No inverter_state row.
-        #
-
-        if state is None:
+        if inverter_state is None:
             return None
 
         #
-        # The table always contains one row.
+        # phase is the authoritative request lifecycle.
         #
-        # A NULL requested_work_mode means there is currently no
-        # outstanding request.
+        # IDLE      -> no outstanding request
+        # OVERRIDE  -> override requested/active
+        # RESTORE   -> restoration requested/in progress
         #
-
-        if state["requested_work_mode"] is None:
+        # Other columns contain payload associated with the current phase.
+        #
+        if inverter_state["phase"] == InverterRequestPhase.IDLE:
             return None
 
-        return state
+        return inverter_state
     #
     # ------------------------------------------------------------------
     # Write

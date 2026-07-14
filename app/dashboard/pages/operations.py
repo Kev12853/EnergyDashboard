@@ -18,12 +18,16 @@ def render(
     data_age_minutes,
     system_health=None,
 ):
+    st.title("Operations")
+
+    if latest is None:
+        st.warning("No live telemetry available.")
+        return
+
     health = system_health or build_system_health(
         last_snapshot_time=latest_upload_time,
         last_successful_poll=latest_upload_time,
     )
-
-    st.title("Operations")
 
 # region CSS Styles
     st.markdown(

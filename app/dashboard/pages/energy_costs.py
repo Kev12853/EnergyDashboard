@@ -15,6 +15,10 @@ def render(
 
     st.title("Energy Costs")
 
+    if settlement_df is None or settlement_df.empty:
+        st.warning("No telemetry available.")
+        return
+
     with st.container(border=True):
         render_settlement_kpis(settlement_df)
 

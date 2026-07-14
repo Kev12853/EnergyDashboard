@@ -63,7 +63,7 @@ class WorkModeMonitor:
 
         # Poller startup.
         #
-        # Record the initial mode but do not
+        # Record the initial mode of the inverter but do not
         # generate a change notification.
 
         if self.current_mode is None:

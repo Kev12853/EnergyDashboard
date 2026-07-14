@@ -27,6 +27,10 @@ def render(
 
     st.title("Energy Dashboard")
 
+    if latest is None:
+        st.warning("No live telemetry available.")
+        return
+
     health = system_health or get_system_health(
         last_snapshot_time=latest_upload_time,
         last_successful_poll=latest_upload_time,
@@ -44,8 +48,14 @@ def render(
         icon = "🔴"
         status = "Offline"
 
-    last_update = pd.Timestamp(latest_upload_time).strftime("%d %b %H:%M")
-    work_mode = latest["work_mode"]
+    ts = pd.Timestamp(latest_upload_time)
+
+    if pd.isna(ts):
+        last_update = "Unavailable"
+        work_mode = "Unknown"
+    else:
+        last_update = ts.strftime("%d %b %H:%M")
+        work_mode = latest["work_mode"]
       
     with st.container(border=True):
         st.markdown(

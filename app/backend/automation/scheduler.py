@@ -4,7 +4,7 @@ from app.backend.common.logging_utils import setup_logger
 
 from app.backend.automation.models import AutomationState
 from app.backend.automation.mapping import map_automation_mode
-from app.enums.automation_enums import AutomationMode
+from app.enums.inverter_state_enums import InverterRequestPhase
 
 from app.config.solax_config import (
     DRY_RUN,
@@ -19,17 +19,16 @@ class Scheduler:
         repository,
         inverter_state_repo,
     ):
-
-
         self.repository = repository
-
         self.inverter_state_repo = inverter_state_repo
-
         self.is_active = False
+        self.active_schedule_id = None
 
     def get_active_period(self):
 
         periods = [p for p in self.repository.get_periods() if p.enabled]
+
+        logger.info(f"is_active = {self.is_active}")
 
         if not periods:
             return None
@@ -146,32 +145,44 @@ class Scheduler:
         #
 
         if not periods:
-            # There are currently no enabled schedules
-            logger.info(f"There are no currently enabled schedules")
+            logger.info("There are no currently enabled schedules")
+            logger.info(f"Scheduler is_active = {self.is_active}")
 
             pending = self.inverter_state_repo.get()
 
+            logger.info(f"Pending state = {pending}")
+
             if pending is not None:
-                #
-                # If a restore state exists then the inverter has
-                # already entered a temporary override. Replace the
-                # outstanding request with a request to restore the
-                # previous operating mode.
-                #
+                logger.info(
+                    f"phase={pending.get('phase', '<missing>')}, "
+                    f"requested={pending['requested_work_mode']}, "
+                    f"restore={pending['restore_work_mode_to']}, "
+                    f"active={pending['active']}"
+                )
 
-                restore_pending = pending["restore_work_mode_to"] is not None
-                # Is this a temporary override, ie pending["restore_work_mode_to"] is Not None
-
-                if restore_pending:
-                    logger.info(f"Restoring prvious operating mode")
+                if pending["phase"] == InverterRequestPhase.OVERRIDE:
+                    logger.info("Requesting restore")
                     self.inverter_state_repo.request_restore()
 
+                elif pending["phase"] == InverterRequestPhase.RESTORE:
+                    logger.info("Restore already in progress")
+
+                elif pending["phase"] == InverterRequestPhase.IDLE:
+                    logger.info("Nothing to do")
+
+                # restore_pending = pending["restore_work_mode_to"] is not None
                 #
-                # Otherwise the outstanding request has never been
-                # applied, so simply cancel it.
-                else:
-                    logger.info(f"Cancelling current override, it was never started")
-                    self.inverter_state_repo.clear()
+                # logger.info(f"restore_pending = {restore_pending}")
+
+                # if restore_pending:
+                #     logger.info("Restoring previous operating mode")
+                #     self.inverter_state_repo.start_restore()
+                # else:
+                #     logger.info("Cancelling current override, it was never started")
+                #     self.inverter_state_repo.clear()
+
+            self.is_active = False
+            return
 
             # Run this code in either  True or False  for Pending is not None
 
@@ -197,6 +208,34 @@ class Scheduler:
         )
 
         #
+        # Has the active schedule changed?
+        #
+
+        if should_run and self.is_active and self.active_schedule_id != rule.id:
+            logger.info(f"Switching schedule {self.active_schedule_id} -> {rule.id}")
+
+            requested_work_mode, requested_manual_mode = map_automation_mode(rule.mode)
+
+            #
+            # Update the request, but preserve the original restore values.
+            #
+
+            pending = self.inverter_state_repo.get()
+
+            self.inverter_state_repo.set(
+                requested_work_mode=requested_work_mode,
+                requested_manual_mode=requested_manual_mode,
+                restore_work_mode_to=pending["restore_work_mode_to"],
+                restore_manual_mode_to=pending["restore_manual_mode_to"],
+                phase=InverterRequestPhase.OVERRIDE,
+                active=True,
+                source="scheduler",
+            )
+
+            self.active_schedule_id = rule.id
+
+            return
+        #
         # Enter window
         #
 
@@ -205,6 +244,7 @@ class Scheduler:
         ):  # schedule is in time window and is an active schedule
 
             logger.info(f"Entering Window for {rule.name}")
+
 
             if not DRY_RUN:
                 print(f"DRY RUN: Requesting {rule.mode}")
@@ -221,7 +261,6 @@ class Scheduler:
                 # restored when the schedule finishes.
                 #
                 # create inverter_state request
-                from app.enums.inverter_state_enums import InverterRequestPhase
 
                 self.inverter_state_repo.set(
                     requested_work_mode=requested_work_mode,
@@ -234,6 +273,7 @@ class Scheduler:
                 )
 
                 self.is_active = True
+                self.active_schedule_id = rule.id
                 return
 
         #
@@ -249,6 +289,7 @@ class Scheduler:
             self.inverter_state_repo.request_restore()
 
             self.is_active = False
+            self.active_schedule_id = None
 
             return
 

@@ -24,6 +24,26 @@
 # The poller never decides which inverter mode should be active.
 # It simply orchestrates the monitoring and control pipeline.
 
+# import builtins
+# import traceback
+# import sys
+#
+# _original_print = builtins.print
+#
+# def debug_print(*args, **kwargs):
+#
+#     _original_print("\n========== PRINT ==========")
+#
+#     traceback.print_stack(
+#         limit=8,
+#         file=sys.__stdout__,
+#     )
+#
+#     _original_print("ARGS:", args)
+#
+#     return _original_print(*args, **kwargs)
+#
+# builtins.print = debug_print
 
 import os
 import time
@@ -115,6 +135,14 @@ def main():
 
             while True:
                 try:
+                    logger.info(
+                        "\n"
+                        + "=" * 80
+                        + f"\nIn Main Loop"
+                        + "\n"
+                        + "=" * 80
+                    )
+
                     # ============================================================
                     # STAGE 1 - POLL THE INVERTER
                     #
@@ -124,13 +152,13 @@ def main():
                     # of the inverter at this moment.
                     #
                     # ============================================================
+                    logger.info("Gettng Snapshot")
                     snapshot = service.poll()
                     logger.info("Got Snapshot")
                     logger.info(
                         f"Current SnapShot Timestamp = {snapshot.timestamp}, WorkMode = {snapshot.work_mode}"
                     )
-                    # Get current state of the inverter
-                    snapshot_work_mode = snapshot.work_mode
+
 
                     # ============================================================
                     # STAGE 2 - WORK MODE CHANGE DETECTION
@@ -139,9 +167,14 @@ def main():
                     # notifications.
                     #
                     # This is independent of scheduling and reconciliation.
-                    #
+                    # On the first loop of the poller this will return None
+                    # Subsequent loops will depend on the state of the inverter
                     # ============================================================
 
+                    # Get current state of the inverter
+                    snapshot_work_mode = snapshot.work_mode
+
+                    # Has the inverter state changed since the last poll
                     change = work_mode_monitor.update(
                         snapshot_work_mode,
                     )
@@ -227,13 +260,12 @@ def main():
                     # The scheduler does NOT communicate with the inverter.
                     #
                     # ============================================================
-
                     logger.info("Running Scheduler")
-                    logger.info(f"Before scheduler: {inverter_state_repository.get()}")
+                    logger.info(f"Inverter State before running scheduler: {inverter_state_repository.get()}")
 
                     scheduler.evaluate(snapshot)
 
-                    logger.info(f"After scheduler: {inverter_state_repository.get()}")
+                    logger.info(f"After running scheduler: {inverter_state_repository.get()}")
                     logger.info("Scheduler Complete")
 
                     # ============================================================
@@ -263,10 +295,10 @@ def main():
                     now = time.time()
 
                     if now - last_heartbeat >= 300: #
-                        logger.info(f"Poller healthy (PID={os.getpid()})")
+                        logger.info(f"Poller healthy PID={os.getpid()}")
                         last_heartbeat = now
 
-                        logger.info(snapshot.work_mode)
+                        logger.info(f"Current Work Mode is {snapshot.work_mode}")
 
                 except Exception as exc:
                     logger.warning(f"Inverter communication lost: {exc}")

@@ -12,6 +12,10 @@ def render(
 
     st.title("Diagnostics")
 
+    if df is None or df.empty:
+        st.warning("No telemetry available.")
+        return
+
     # =====================================================
     # SYSTEM STATUS
     # =====================================================

@@ -11,6 +11,10 @@ def render(
 
     st.title("🔧 System Health")
 
+    if latest is None:
+        st.warning("No live telemetry available.")
+        return
+
     # ==========================================
     # Overall Status
     # ==========================================

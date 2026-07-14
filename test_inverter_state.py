@@ -3,6 +3,7 @@ from pprint import pprint
 from app.backend.storage.db import (
     get_connection,
 )
+from app.enums.inverter_state_enums import InverterRequestPhase
 
 from app.solax.storage.inverter_state import (
     get_inverter_state,
@@ -32,6 +33,7 @@ set_inverter_state(
     restore_manual_mode_to=0,
     active= True,
     source="Test",
+    phase= InverterRequestPhase.OVERRIDE,
 )
 
 print(
