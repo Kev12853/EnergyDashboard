@@ -1,11 +1,11 @@
 from datetime import datetime
 
 from app.solax.storage.constants import (
-    RUNTIME_BLOCK_START,
     RUNTIME_BLOCK_COUNT,
+    RUNTIME_BLOCK_START,
 )
-from app.solax.telemetry.models import PowerFlowSnapshot
 from app.solax.storage.parser import SolaxParser
+from app.solax.telemetry.models import PowerFlowSnapshot
 
 
 class SolaxTelemetryService:

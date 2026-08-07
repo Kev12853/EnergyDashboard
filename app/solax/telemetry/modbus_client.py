@@ -1,34 +1,32 @@
 # telemetry/modbus_client.py
 
 import time
-
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
 
 from app.backend.common.logging_utils import setup_logger
-
 from app.config.solax_config import (
-    INVERTER_POWER,
-    PV1_POWER,
-    PV2_POWER,
     BATTERY_POWER,
     BATTERY_SOC,
-    GRID_MSB,
     GRID_LSB,
-    REGISTER_BLOCK_START,
-    REGISTER_BLOCK_SIZE,
-    WORK_MODE_REGISTER,
+    GRID_MSB,
+    INVERTER_POWER,
     MANUAL_MODE_REGISTER,
+    PV1_POWER,
+    PV2_POWER,
+    REGISTER_BLOCK_SIZE,
+    REGISTER_BLOCK_START,
+    WORK_MODE_REGISTER,
 )
-
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
 
 logger = setup_logger("ModbusClient")
+
 
 class SolaxModbusClient:
     def __init__(
@@ -48,8 +46,8 @@ class SolaxModbusClient:
         )
         logger.info("Creating persistent Modbus client")
 
-        #if not self.client.connect():
-            #raise ConnectionError(f"Unable to connect to {host}")
+        # if not self.client.connect():
+        # raise ConnectionError(f"Unable to connect to {host}")
         logger.info("Persistent Modbus client connected")
 
     @staticmethod

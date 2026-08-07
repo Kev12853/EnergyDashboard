@@ -1,9 +1,8 @@
 from pprint import pprint
 
-from app.solax.storage.storage_repository import (
+from app.solax.storage.solax_repository import (
     TelemetryRepository,
 )
-
 
 repository = TelemetryRepository()
 

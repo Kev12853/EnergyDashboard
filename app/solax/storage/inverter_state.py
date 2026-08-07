@@ -8,18 +8,16 @@ def get_inverter_state(
 ):
     cursor = connection.execute(
         """
-        SELECT
-            requested_work_mode,
-            requested_manual_mode,
-            restore_work_mode_to,
-            restore_manual_mode_to,
-            active,
-            source,
-            phase
-
-        FROM inverter_state
-
-        LIMIT 1
+            SELECT
+                requested_work_mode,
+                requested_manual_mode,
+                restore_work_mode_to,
+                restore_manual_mode_to,
+                active,
+                source,
+                phase
+            FROM inverter_state
+            LIMIT 1
         """
     )
 
@@ -51,20 +49,15 @@ def request_restore(connection):
 
     connection.execute(
         """
-        UPDATE inverter_state
-
-        SET
-            requested_work_mode = restore_work_mode_to,
-            requested_manual_mode = restore_manual_mode_to,
-
-            restore_work_mode_to = NULL,
-            restore_manual_mode_to = NULL,
-
-            phase = ?,
-
-            active = 1
-
-        WHERE id = 1
+            UPDATE inverter_state
+            SET
+                requested_work_mode = restore_work_mode_to,
+                requested_manual_mode = restore_manual_mode_to,
+                restore_work_mode_to = NULL,
+                restore_manual_mode_to = NULL,
+                phase = ?,
+                active = 1
+            WHERE id = 1
         """,
         (InverterRequestPhase.RESTORE,),
     )
@@ -91,29 +84,25 @@ def set_inverter_state(
     if existing is None:
         connection.execute(
             """
-            INSERT INTO inverter_state (
-                id,
-                requested_work_mode,
-                requested_manual_mode,
-                restore_work_mode_to,
-                restore_manual_mode_to,
-                active,
-                source,
-                phase
-
-            )
-
-            VALUES (
-
-                1,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-
-            )
+                INSERT INTO inverter_state (
+                    id,
+                    requested_work_mode,
+                    requested_manual_mode,
+                    restore_work_mode_to,
+                    restore_manual_mode_to,
+                    active,
+                    source,
+                    phase
+                )
+                VALUES (
+                    1,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
             """,
             (
                 requested_work_mode,
@@ -129,18 +118,16 @@ def set_inverter_state(
     else:
         connection.execute(
             """
-            UPDATE inverter_state
-
-            SET
-                requested_work_mode = ?,
-                requested_manual_mode = ?,
-                restore_work_mode_to = ?,
-                restore_manual_mode_to = ?,
-                active = ?,
-                source = ?,
-                phase = ?
-
-            WHERE id = 1
+                UPDATE inverter_state
+                SET
+                    requested_work_mode = ?,
+                    requested_manual_mode = ?,
+                    restore_work_mode_to = ?,
+                    restore_manual_mode_to = ?,
+                    active = ?,
+                    source = ?,
+                    phase = ?
+                WHERE id = 1
             """,
             (
                 requested_work_mode,
@@ -157,26 +144,25 @@ def set_inverter_state(
 
 
 def clear_inverter_state(connection):
-    #phase = InverterRequestPhase.IDLE
+    # phase = InverterRequestPhase.IDLE
     connection.execute(
         """
-        UPDATE inverter_state
-
-        SET
-            requested_work_mode = NULL,
-            requested_manual_mode = NULL,
-            restore_work_mode_to = NULL,
-            restore_manual_mode_to = NULL,
-            active = 0,
-            source = NULL,
-            phase = ?
-        WHERE id = 1
+            UPDATE inverter_state
+            SET
+                requested_work_mode = NULL,
+                requested_manual_mode = NULL,
+                restore_work_mode_to = NULL,
+                restore_manual_mode_to = NULL,
+                active = 0,
+                source = NULL,
+                phase = ?
+            WHERE id = 1
         """,
-        (InverterRequestPhase.IDLE,)
+        (InverterRequestPhase.IDLE,),
     )
 
-
     connection.commit()
+
 
 def has_pending_inverter_state(
     connection,
@@ -187,5 +173,3 @@ def has_pending_inverter_state(
         )
         is not None
     )
-
-

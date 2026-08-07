@@ -6,28 +6,23 @@ import streamlit as st
 
 def start_services():
     print("START_SERVICES CALLED")
-    # if (
-    #     "services_started"
-    #     in st.session_state
-    # ):
-    #     return
 
     services = [
         (
             "Solax Logger",
-            "poller.solax.logger",
+            "app.backend.services.solax_service",
         ),
         (
             "Octopus Logger",
-            "poller.octopus.logger",
+            "app.backend.services.octopus_service",
         ),
         (
             "Account Sync",
-            "poller.octopus.account_logger",
+            "app.octopus.account_logger",
         ),
         (
             "Agreement Sync",
-            "poller.octopus.agreement_logger",
+            "app.octopus.agreement_logger",
         ),
     ]
 

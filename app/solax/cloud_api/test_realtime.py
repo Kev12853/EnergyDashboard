@@ -4,8 +4,8 @@ from app.solax.cloud_api.cloud_client import (
     SolaxCloudClient,
 )
 from app.solax.storage.constants import (
-    SOLAX_TOKEN_ID,
     SOLAX_SERIAL_NUMBER,
+    SOLAX_TOKEN_ID,
 )
 
 # =========================================================

@@ -5,16 +5,15 @@ import requests
 from pandas import DataFrame
 
 from app.config.octopus_config import (
-    OCTOPUS_API_KEY,
     ACCOUNT_ID,
-    IMPORT_MPAN,
-    EXPORT_MPAN,
-    METER_SERIAL,
     BASE_URL,
+    EXPORT_MPAN,
     GRAPHQL_URL,
+    IMPORT_MPAN,
+    METER_SERIAL,
+    OCTOPUS_API_KEY,
     TIMEZONE,
 )
-
 
 # -----------------------
 # CONFIG
@@ -88,7 +87,9 @@ def fetch_all_pages(url, params):
 
     while url:
         try:
-            response = requests.get(url, params=params, auth=(OCTOPUS_API_KEY, ""), timeout=10)
+            response = requests.get(
+                url, params=params, auth=(OCTOPUS_API_KEY, ""), timeout=10
+            )
 
             response.raise_for_status()
 
@@ -341,23 +342,27 @@ def get_octopus_agreements():
 # -----------------------
 
 
-def get_intelligent_dispatches() -> DataFrame:
+def get_intelligent_dispatches() -> pd.DataFrame:
+    """
+    Retrieves the current Intelligent Octopus Smart Flex dispatch plan.
 
-    url = GRAPHQL_URL
+    Returns a DataFrame with the standard application schema:
+
+        dispatch_start
+        dispatch_end
+        scheduled_energy_kwh
+        status
+    """
+    SMARTFLEX_VEHICLE_ID = "00000000-0002-4000-8020-000000100c8e"
 
     query = """
-    query getDispatches($accountNumber: String!) {
+    query getDispatches($deviceId: String!) {
 
-        plannedDispatches(accountNumber: $accountNumber) {
-            startDt
-            endDt
-            deltaKwh
-        }
-
-        completedDispatches(accountNumber: $accountNumber) {
-            startDt
-            endDt
-            deltaKwh
+        flexPlannedDispatches(deviceId: $deviceId) {
+            start
+            end
+            energyAddedKwh
+            type
         }
     }
     """
@@ -365,11 +370,19 @@ def get_intelligent_dispatches() -> DataFrame:
     try:
         token = get_graphql_token()
 
-        headers = {"Authorization": token, "Content-Type": "application/json"}
+        headers = {
+            "Authorization": token,
+            "Content-Type": "application/json",
+        }
 
         response = requests.post(
-            url,
-            json={"query": query, "variables": {"accountNumber": ACCOUNT_ID}},
+            GRAPHQL_URL,
+            json={
+                "query": query,
+                "variables": {
+                    "deviceId": SMARTFLEX_VEHICLE_ID,
+                },
+            },
             headers=headers,
             timeout=10,
         )
@@ -378,24 +391,41 @@ def get_intelligent_dispatches() -> DataFrame:
 
         data = response.json().get("data", {})
 
-        planned = pd.DataFrame(data.get("plannedDispatches") or [])
+        df = pd.DataFrame(data.get("flexPlannedDispatches") or [])
 
-        completed = pd.DataFrame(data.get("completedDispatches") or [])
+        if df.empty:
+            return df
 
-        if not planned.empty:
-            planned["status"] = "Planned"
+        df["status"] = "Planned"
 
-        if not completed.empty:
-            completed["status"] = "Completed"
+        # Convert to local timezone
+        df["start"] = to_local_time(df["start"])
+        df["end"] = to_local_time(df["end"])
 
-        df = pd.concat([planned, completed], ignore_index=True)
+        # Rename to application field names
+        df = df.rename(
+            columns={
+                "start": "dispatch_start",
+                "end": "dispatch_end",
+                "energyAddedKwh": "scheduled_energy_kwh",
+            }
+        )
 
-        if not df.empty:
-            df["startDt"] = to_local_time(df["startDt"])
+        # Ensure numeric type
+        df["scheduled_energy_kwh"] = pd.to_numeric(
+            df["scheduled_energy_kwh"],
+            errors="coerce",
+        )
 
-            df["endDt"] = to_local_time(df["endDt"])
-
-        return df
+        # Return in a consistent column order
+        return df[
+            [
+                "dispatch_start",
+                "dispatch_end",
+                "scheduled_energy_kwh",
+                "status",
+            ]
+        ]
 
     except Exception as e:
         raise RuntimeError(f"Dispatch API Error: {e}") from e

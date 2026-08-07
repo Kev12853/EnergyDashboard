@@ -64,14 +64,17 @@ from app.backend.notifications.work_mode_push import send_work_mode_push
 from app.backend.polling.inverter_service import InverterPollingService
 
 from app.backend.storage.db import get_connection
-from app.backend.storage.schema import create_all_tables
+from app.backend.storage.schema import create_solax_tables
 
 from app.config.email_config import APP_PASSWORD, EMAIL_ADDRESS
 from app.config.notification_config import PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY
 from app.config.solax_config import COMMUNICATION_TIMEOUT
+from app.nicegui.storage import repositories
 
-from app.solax.storage.storage_repository import TelemetryRepository
+from app.solax.storage.solax_repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
+
+from app.enums.service_names import ServiceName
 
 from utils.inverter_operations import determine_required_actions
 
@@ -102,7 +105,7 @@ def main():
 
         connection = get_connection()
 
-        create_all_tables(connection)
+        create_solax_tables(connection)
 
         service = InverterPollingService()
 
@@ -152,6 +155,7 @@ def main():
                     # of the inverter at this moment.
                     #
                     # ============================================================
+
                     logger.info("Gettng Snapshot")
                     snapshot = service.poll()
                     logger.info("Got Snapshot")
@@ -248,8 +252,15 @@ def main():
                         Actual state (snapshot)
                     and decides whether any action is required.
                     """
+
                     # ============================================================
-                    # STAGE 4 - EVALUATE SCHEDULES
+                    # STAGE 4 - Save Heartbeat
+
+                    # ============================================================
+                    telemetry_repository.save_heartbeat(ServiceName.POLLER)
+
+                    # ============================================================
+                    # STAGE 5 - EVALUATE SCHEDULES
                     #
                     # Examine all enabled schedules.
                     #
@@ -269,7 +280,7 @@ def main():
                     logger.info("Scheduler Complete")
 
                     # ============================================================
-                    # STAGE 5 - RECONCILE DESIRED VS ACTUAL STATE
+                    # STAGE 6 - RECONCILE DESIRED VS ACTUAL STATE
                     #
                     # Desired State:
                     #

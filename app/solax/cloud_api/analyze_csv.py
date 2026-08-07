@@ -29,9 +29,9 @@ connection = get_connection()
 
 df = pd.read_sql_query(
     """
-    SELECT *
-    FROM telemetry
-    ORDER BY upload_time
+        SELECT *
+        FROM telemetry
+        ORDER BY upload_time
     """,
     connection,
 )

@@ -3,14 +3,12 @@ from datetime import datetime
 from app.backend.storage.db import (
     get_connection,
 )
-
+from app.config.octopus_config import (
+    EXPORT_MPAN,
+    IMPORT_MPAN,
+)
 from app.octopus.api.octopus_api import (
     get_octopus_agreements,
-)
-
-from app.config.octopus_config import (
-    IMPORT_MPAN,
-    EXPORT_MPAN,
 )
 
 
@@ -38,35 +36,21 @@ def save_agreements():
 
         result = conn.execute(
             """
-            INSERT OR IGNORE INTO
-            octopus_agreements (
-
-                account_number,
-
-                mpan,
-
-                agreement_type,
-
-                tariff_type,
-
-                product_code,
-
-                tariff_code,
-
-                valid_from,
-
-                valid_to,
-
-                created_at
-
-            )
-
-            VALUES (
-
-                ?, ?, ?, ?, ?,
-                ?, ?, ?, ?
-
-            )
+                INSERT OR IGNORE INTO octopus_agreements (
+                    account_number,
+                    mpan,
+                    agreement_type,
+                    tariff_type,
+                    product_code,
+                    tariff_code,
+                    valid_from,
+                    valid_to,
+                    created_at
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?
+                )
             """,
             (
                 agreement["account_number"],

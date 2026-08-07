@@ -2,7 +2,7 @@
 # FILE
 # =========================================================
 #
-# poller/charts/storage/schema.py
+# poller/charts/storage/solax_schema.py
 #
 # =========================================================
 
@@ -36,7 +36,7 @@ from app.backend.storage.db import (
 # =========================================================
 
 
-def create_schema():
+def create_legacy_schema():
     """
     Create database tables if they do not exist.
     """
@@ -51,51 +51,35 @@ def create_schema():
 
     cursor.execute(
         """
-        CREATE TABLE IF NOT EXISTS telemetry (
-
-            upload_time TEXT PRIMARY KEY,
-
-            timestamp TEXT,
-
-            pv_power_w REAL,
-            pv1_power_w REAL,
-            pv2_power_w REAL,
-
-            battery_soc_pct REAL,
-            battery_power_w REAL,
-            battery_status TEXT,
-
-            grid_power_w REAL,
-
-            ac_power_w REAL,
-
-            house_load_w REAL,
-
-            inverter_status TEXT,
-            inverter_serial TEXT
-        )
+            CREATE TABLE IF NOT EXISTS telemetry (
+                upload_time TEXT PRIMARY KEY,
+                timestamp TEXT,
+                pv_power_w REAL,
+                pv1_power_w REAL,
+                pv2_power_w REAL,
+                battery_soc_pct REAL,
+                battery_power_w REAL,
+                battery_status TEXT,
+                grid_power_w REAL,
+                ac_power_w REAL,
+                house_load_w REAL,
+                inverter_status TEXT,
+                inverter_serial TEXT
+            )
         """
     )
 
     connection.execute(
         """
-        CREATE TABLE IF NOT EXISTS automation_rules (
-
-    id INTEGER PRIMARY KEY,
-
-    name TEXT NOT NULL,
-
-    enabled INTEGER NOT NULL,
-
-    start_time TEXT NOT NULL,
-
-    end_time TEXT NOT NULL,
-
-    action TEXT NOT NULL,
-
-    updated_at TEXT NOT NULL
-
-)
+            CREATE TABLE IF NOT EXISTS automation_rules (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                enabled INTEGER NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                action TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
         """
     )
 
@@ -107,6 +91,18 @@ def create_schema():
 # =========================================================
 # SCRIPT ENTRY
 # =========================================================
+
+
+def create_schema():
+    """Compatibility wrapper for the canonical SolaX schema creator."""
+    connection = get_connection()
+    try:
+        from app.backend.storage.schema import create_solax_tables
+
+        create_solax_tables(connection)
+    finally:
+        connection.close()
+
 
 if __name__ == "__main__":
     create_schema()

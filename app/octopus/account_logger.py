@@ -23,16 +23,11 @@ def save_accounts():
 
         result = conn.execute(
             """
-            INSERT OR IGNORE INTO
-            octopus_accounts (
-
-                account_number,
-
-                created_at
-
-            )
-
-            VALUES (?, ?)
+                INSERT OR IGNORE INTO octopus_accounts (
+                    account_number,
+                    created_at
+                )
+                VALUES (?, ?)
             """,
             (
                 account_number,

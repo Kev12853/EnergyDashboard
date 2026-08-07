@@ -1,49 +1,49 @@
 from datetime import datetime
 
+
 class WorkModeMonitor:
     """
-     ============================================================
-     WORK MODE MONITOR
-     ============================================================
+    ============================================================
+    WORK MODE MONITOR
+    ============================================================
 
-     Tracks inverter work mode changes between poll cycles.
+    Tracks inverter work mode changes between poll cycles.
 
-     Purpose:
+    Purpose:
 
-         Detect changes in inverter operating mode and
-         generate change notifications.
+        Detect changes in inverter operating mode and
+        generate change notifications.
 
-     Examples:
+    Examples:
 
-         Self Use
-             ↓
-         Force Charge
+        Self Use
+            ↓
+        Force Charge
 
-         Force Charge
-             ↓
-         Force Discharge
+        Force Charge
+            ↓
+        Force Discharge
 
-     The monitor maintains the last observed mode and
-     compares it with the latest snapshot.
+    The monitor maintains the last observed mode and
+    compares it with the latest snapshot.
 
-     This class is completely independent of:
+    This class is completely independent of:
 
-         - Scheduler
-         - inverter_state table
-         - Reconciliation logic
+        - Scheduler
+        - inverter_state table
+        - Reconciliation logic
 
-     It only answers one question:
+    It only answers one question:
 
-         "Has the inverter work mode changed?"
+        "Has the inverter work mode changed?"
 
-     ============================================================
+    ============================================================
     """
 
     def __init__(self):
 
         self.current_mode = None
         self.last_changed = None
-
 
     @property
     def mode(self):
@@ -59,15 +59,12 @@ class WorkModeMonitor:
         :return: None or previous and current mode and timestamp
         """
 
-
-
         # Poller startup.
         #
         # Record the initial mode of the inverter but do not
         # generate a change notification.
 
         if self.current_mode is None:
-
             self.current_mode = mode
 
             return None

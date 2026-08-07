@@ -1,62 +1,62 @@
-import sys
-import pandas as pd
-import streamlit as st
-
+# Ensure the project root is always importable.
 from pathlib import Path
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
+import sys
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
+
+# System Imorts
+
+import pandas as pd
+import streamlit as st
+
+from datetime import datetime
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from streamlit_autorefresh import (
     st_autorefresh,
 )
-
-# =========================================================
-# SOLAX REPOSITORY
-# =========================================================
-
-from app.solax.storage.storage_repository import TelemetryRepository
-
-# =========================================================
-# OCTOPUS STORAGE
-# =========================================================
-
-
-from app.octopus.storage.repository import (
-    get_recent_tariffs,
-    get_all_tariffs,
-    get_dispatch_history,
+from app.backend.bootstrap import (
+    start_services,
+)
+from app.backend.storage.db import (
+    get_connection,
+)
+from app.backend.services.system_health_service import (
+    get_system_health,
 )
 
-# =========================================================
-# SOLAX ANALYTICS
-# =========================================================
-
+# Solax Imports
+from app.solax.storage.solax_repository import TelemetryRepository
 from app.solax.analytics.settlement import (
     calculate_half_hour_energy,
 )
+from app.backend.automation.models import (
+    SchedulePeriod,
+)
+from app.backend.automation.automation_repository import (
+    ScheduleRepository,
+)
 
-# =========================================================
-# OCTOPUS ANALYTICS
-# =========================================================
-
+# Octopus Imports
+from app.octopus.storage.octopus_schema import create_octopus_tables
+from app.backend.octopus.repository import OctopusRepository
 from app.octopus.analytics.dispatch_matching import (
     apply_dispatch_flags,
 )
-
 from app.octopus.analytics.costs import (
     apply_import_costs,
 )
 
-# =========================================================
-# PAGE IMPORTS
-# =========================================================
+# Database Imports
+from app.backend.storage.schema import (
+    create_solax_tables,
+)
 
+# Dashboard Imports
 from app.dashboard.pages import (
     automation,
     octopus,
@@ -70,20 +70,8 @@ from app.dashboard.pages import (
 from app.dashboard.components.sidebar import (
     render_sidebar,
 )
-# =========================================================
-# STARTUP
-# =========================================================
 
-from app.backend.bootstrap import (
-    start_services,
-)
 
-from app.backend.storage.db import (
-    get_connection,
-)
-from app.backend.services.system_health_service import (
-    get_system_health,
-)
 
 # =========================================================
 # APP CONFIG
@@ -174,7 +162,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 # =========================================================
 # SIDEBAR
 # =========================================================
@@ -185,12 +172,8 @@ page, hours = render_sidebar()
 # =========================================================
 
 connection = get_connection()
-
-from app.backend.storage.schema import (
-    create_all_tables,
-)
-
-create_all_tables(connection)
+create_solax_tables(connection)
+create_octopus_tables(connection)
 
 
 @st.cache_resource
@@ -206,21 +189,14 @@ initialise_services()
 # REPOSITORY
 # =========================================================
 
-repository = TelemetryRepository(connection)
+telemetry_repository = TelemetryRepository(connection)
 
-from app.backend.automation.automation_repository import (
-    ScheduleRepository,
-)
 
 automation_repo = ScheduleRepository(connection)
 
 automation_rule = automation_repo.get_periods()
 
-from datetime import datetime
 
-from app.backend.automation.models import (
-    SchedulePeriod,
-)
 
 if automation_rule is None:
     automation_rule = SchedulePeriod(
@@ -239,13 +215,12 @@ if automation_rule is None:
 # LOAD SOLAX DATA
 # =========================================================
 
-from zoneinfo import ZoneInfo
 
 end = pd.Timestamp.now(tz=ZoneInfo("Europe/London"))
 
 start = end - timedelta(hours=hours)
 
-latest = repository.get_latest_snapshot()
+latest = telemetry_repository.get_latest_snapshot()
 
 if latest is not None:
     latest = dict(latest)
@@ -269,8 +244,7 @@ if latest is not None:
     data_age_minutes = system_health.data_age_seconds / 60
 
 else:
-
-    #latest = {}
+    # latest = {}
     latest_timestamp = None
     system_health = None
     data_age_minutes = None
@@ -280,7 +254,7 @@ else:
 # =========================================================
 
 try:
-    history_1m = repository.get_1m_history(
+    history_1m = telemetry_repository.get_1m_history(
         start=start,
         end=end,
     )
@@ -314,17 +288,13 @@ except Exception:
     df = pd.DataFrame()
 
 # =========================================================
-# DATA FRESHNESS
-# =========================================================
-
-
-
-# =========================================================
 # LOAD OCTOPUS DATA
 # =========================================================
+octopus_repository = OctopusRepository()
 
-tariff_df = get_recent_tariffs()
-dispatch_history_df = get_dispatch_history(days=7)
+tariff_df = octopus_repository.get_all_tariffs()
+dispatch_history_df = octopus_repository.get_dispatch_history(days=7)
+
 # =========================================================
 # ENERGY COST ANALYTICS
 # =========================================================
@@ -332,11 +302,9 @@ dispatch_history_df = get_dispatch_history(days=7)
 if not df.empty:
     settlement_df = calculate_half_hour_energy(df)
 
-    full_tariff_df = get_all_tariffs()
-
     settlement_df = apply_import_costs(
         settlement_df,
-        full_tariff_df,
+        tariff_df,
     )
 
     settlement_df = apply_dispatch_flags(

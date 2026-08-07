@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import UTC, datetime
 
 import pandas as pd
 
@@ -11,26 +12,20 @@ def create_dispatches_table(
 
     conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS
-        octopus_dispatches (
-
-            id INTEGER PRIMARY KEY,
-
-            dispatch_start TEXT NOT NULL,
-            dispatch_end TEXT NOT NULL,
-
-            scheduled_energy_kwh REAL,
-
-            status TEXT NOT NULL,
-
-            last_seen TEXT NOT NULL,
-
-            UNIQUE(
-                dispatch_start,
-                dispatch_end,
-                status
+            CREATE TABLE IF NOT EXISTS octopus_dispatches (
+                id INTEGER PRIMARY KEY,
+                dispatch_start TEXT NOT NULL,
+                dispatch_end TEXT NOT NULL,
+                scheduled_energy_kwh REAL,
+                status TEXT NOT NULL,
+                last_seen TEXT NOT NULL,
+                first_seen TEXT NOT NULL,
+                UNIQUE(
+                    dispatch_start,
+                    dispatch_end,
+                    status
+                )
             )
-        )
         """
     )
 
@@ -43,40 +38,28 @@ def create_tariffs_table(
 
     conn.execute(
         """
-        CREATE TABLE IF NOT EXISTS
-        octopus_tariffs (
-
-            id INTEGER PRIMARY KEY
-                AUTOINCREMENT,
-
-            tariff_code TEXT NOT NULL,
-
-            slot_start TEXT,
-            
-            slot_end TEXT,
-
-            unit_rate_gbp_per_kwh REAL
-                NOT NULL,
-
-            created_at TEXT NOT NULL,
-
-            UNIQUE(
-
-                tariff_code,
-
-                slot_start,
-
-                slot_end
-
+            CREATE TABLE IF NOT EXISTS octopus_tariffs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tariff_code TEXT NOT NULL,
+                slot_start TEXT,
+                slot_end TEXT,
+                unit_rate_gbp_per_kwh REAL NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(
+                    tariff_code,
+                    slot_start,
+                    slot_end
+                )
             )
-        )
         """
     )
 
     conn.commit()
 
 
-from datetime import datetime, UTC
+def create_octopus_tables(connection):
+    create_tariffs_table(connection)
+    create_tariffs_table(connection)
 
 
 def upsert_tariffs(
@@ -93,17 +76,13 @@ def upsert_tariffs(
     for _, row in tariff_df.iterrows():
         conn.execute(
             """
-            INSERT
-            OR IGNORE INTO
-            octopus_tariffs (
-
-                valid_from,
-                valid_to,
-                import_rate_gbp_per_kwh,
-                created_at
-
-            )
-            VALUES (?, ?, ?, ?)
+                INSERT OR IGNORE INTO octopus_tariffs (
+                    valid_from,
+                    valid_to,
+                    import_rate_gbp_per_kwh,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?)
             """,
             (
                 row["valid_from"].isoformat(),
