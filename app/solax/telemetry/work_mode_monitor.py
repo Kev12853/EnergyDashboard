@@ -69,7 +69,7 @@ class WorkModeMonitor:
 
             return None
 
-        # Subsequent loops of the poller may or may not record a change
+        # Subsequent loops of the poller_status_card may or may not record a change
 
         # No change.
         if mode == self.current_mode:

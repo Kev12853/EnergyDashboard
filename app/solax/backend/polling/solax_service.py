@@ -1,0 +1,485 @@
+# Poller Responsibilities
+#
+# 1. Poll the inverter and obtain the current snapshot.
+#
+# 2. Persist the snapshot for historical storage.
+#
+# 3. Run the scheduler.
+#
+#    The scheduler determines the desired inverter state and
+#    records it in the inverter_state table.
+#
+# 4. Run the reconciler.
+#
+#    The reconciler compares:
+#
+#        Desired State (inverter_state)
+#
+#    with
+#
+#        Actual State (snapshot)
+#
+#    and performs inverter writes only when necessary.
+#
+# The poller_status_card never decides which inverter mode should be active.
+# It simply orchestrates the monitoring and control pipeline.
+
+# import builtins
+# import traceback
+# import sys
+#
+# _original_print = builtins.print
+#
+# def debug_print(*args, **kwargs):
+#
+#     _original_print("\n========== PRINT ==========")
+#
+#     traceback.print_stack(
+#         limit=8,
+#         file=sys.__stdout__,
+#     )
+#
+#     _original_print("ARGS:", args)
+#
+#     return _original_print(*args, **kwargs)
+#
+# builtins.print = debug_print
+
+import os
+import time
+
+from app.solax.backend.automation.automation_repository import ScheduleRepository
+from app.solax.backend.automation.inverter_state_repository import InverterStateRepository
+from app.solax.backend.automation.scheduler import Scheduler
+from app.solax.backend.automation.smart_flex_orchestrator import SmartFlexOrchestrator
+
+from app.solax.backend.inverter.inverter_reconciler import InverterReconciler
+
+from app.solax.backend.notifications.email_sender import EmailSender
+from app.solax.backend.notifications.pushover_sender import PushoverSender
+from app.solax.backend.notifications.work_mode_email import send_work_mode_email
+from app.solax.backend.notifications.work_mode_push import send_work_mode_push
+
+from app.solax.backend.polling.inverter_service import InverterPollingService
+from app.solax.backend.polling.solax_cloud_service import SolaxCloudTelemetryService
+
+from app.solax.backend.storage.schema import create_solax_tables
+
+from app.config.email_config import APP_PASSWORD, EMAIL_ADDRESS
+from app.config.notification_config import PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY
+from app.config.solax_config import COMMUNICATION_TIMEOUT
+from app.connections.connection import get_connection
+from app.logging.logger import setup_logger
+
+from app.solax.storage.solax_repository import TelemetryRepository
+from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
+
+from app.enums.service_enums import ServiceName
+
+from app.octopus.api.octopus_api import (
+    get_intelligent_dispatches,
+    get_smartflex_vehicle_status,
+)
+
+from app.solax.backend.smart_flex.smart_flex_controller import SmartFlexController
+
+email_sender = EmailSender(
+    smtp_server="smtp.gmail.com",
+    smtp_port=465,
+    username=EMAIL_ADDRESS,
+    password=APP_PASSWORD,
+    sender=EMAIL_ADDRESS,
+    recipient=EMAIL_ADDRESS,
+)
+
+logger = setup_logger("Poller")
+
+
+def main():
+
+    try:
+
+        logger.info(f"Poller starting, PID = {os.getpid()}")
+
+        last_heartbeat = 0
+        last_successful_poll = time.time()
+        last_cloud_attempt = 0.0
+        cloud_interval_seconds = 300
+
+        failure_notification_sent = False
+        communication_lost = False
+
+        connection = get_connection()
+
+        create_solax_tables(connection)
+
+        service = InverterPollingService()
+        cloud_service = SolaxCloudTelemetryService()
+
+        telemetry_repository = TelemetryRepository(connection)
+        scheduler_repository = ScheduleRepository(connection)
+        inverter_state_repository = InverterStateRepository(connection)
+        work_mode_monitor = WorkModeMonitor()
+
+        pushover = PushoverSender(
+            api_token=PUSHOVER_API_TOKEN,
+            user_key=PUSHOVER_USER_KEY,
+        )
+
+        scheduler = Scheduler(
+            scheduler_repository,
+            inverter_state_repository,
+        )
+        logger.info("Created Scheduler")
+
+        smart_flex_orchestrator = SmartFlexOrchestrator(inverter_state_repository)
+        logger.info("Created Smart Flex Orchestrator")
+
+        smart_flex_controller = SmartFlexController()
+        logger.info("Created Smart Flex Controller")
+
+        reconciler = InverterReconciler(
+            inverter_state_repository,
+            service,
+        )
+        logger.info("Created Reconciler")
+
+
+        # Main Loop
+        try:
+            logger.info("Entering Main Loop")
+
+            while True:
+                try:
+                    logger.info(
+                        "\n"
+                        + "=" * 80
+                        + f"\nIn Main Loop"
+                        + "\n"
+                        + "=" * 80
+                    )
+
+                    # ============================================================
+                    # STAGE 1 - POLL THE INVERTER
+                    #
+                    # Read the current inverter state from the Solax inverter.
+                    #
+                    # This produces a snapshot representing the ACTUAL state
+                    # of the inverter at this moment.
+                    #
+                    # ============================================================
+
+                    logger.info("Gettng Snapshot")
+                    try:
+                        snapshot = service.poll()
+                    except Exception as exc:
+                        logger.warning(f"Inverter communication lost: {exc}")
+                        communication_lost = True
+
+                        # Cloud data is for monitoring only. It is deliberately
+                        # not passed to the scheduler, Smart Flex, or reconciler.
+                        now_monotonic = time.monotonic()
+                        if now_monotonic - last_cloud_attempt >= cloud_interval_seconds:
+                            last_cloud_attempt = now_monotonic
+                            try:
+                                cloud_snapshot = cloud_service.poll()
+                                telemetry_repository.save_snapshot(
+                                    cloud_snapshot,
+                                    source="cloud",
+                                )
+                                logger.info(
+                                    "Saved SolaX Cloud monitoring snapshot at "
+                                    f"{cloud_snapshot.timestamp}; control remains disabled"
+                                )
+                                telemetry_repository.save_heartbeat(
+                                    ServiceName.POLLER,
+                                    status="Running",
+                                    message=(
+                                        "Modbus unavailable; cloud monitoring active; "
+                                        "inverter control disabled"
+                                    ),
+                                )
+                            except Exception as cloud_exc:
+                                logger.warning(
+                                    f"SolaX Cloud fallback unavailable: {cloud_exc}"
+                                )
+
+                        downtime = time.time() - last_successful_poll
+                        if downtime >= COMMUNICATION_TIMEOUT and not failure_notification_sent:
+                            try:
+                                pushover.send_push(
+                                    title="Energy Dashboard",
+                                    message=(
+                                        "No successful local Modbus communication "
+                                        "with the SolaX inverter for 30 minutes. "
+                                        "Cloud readings may still be available for monitoring."
+                                    ),
+                                )
+                                failure_notification_sent = True
+                            except Exception:
+                                logger.exception("Unable to send outage notification")
+
+                        time.sleep(10)
+                        continue
+
+                    logger.info("Got Snapshot")
+                    logger.info(
+                        f"Current SnapShot Timestamp = {snapshot.timestamp}, WorkMode = {snapshot.work_mode}"
+                    )
+
+
+                    # ============================================================
+                    # STAGE 2 - WORK MODE CHANGE DETECTION
+                    #
+                    # Detect inverter work mode changes and generate
+                    # notifications.
+                    #
+                    # This is independent of scheduling and reconciliation.
+                    # On the first loop of the poller_status_card this will return None
+                    # Subsequent loops will depend on the state of the inverter
+                    # ============================================================
+
+                    # Get current state of the inverter
+                    snapshot_work_mode = snapshot.work_mode
+
+                    # Has the inverter state changed since the last poll
+                    change = work_mode_monitor.update(
+                        snapshot_work_mode,
+                    )
+                    if change:  # the inverter has been changed so notify the user
+                        try:
+                            logger.info(
+                                f"Workmode has changed. Sending messages: {snapshot_work_mode}"
+                            )
+                            send_work_mode_email(
+                                email_sender,
+                                change,
+                            )
+                            send_work_mode_push(
+                                pushover,
+                                change,
+                            )
+
+                        except Exception as exc:
+                            logger.exception(f"Email failed: {exc}")
+
+                    if communication_lost:
+                        logger.info("Communication restored")
+                        communication_lost = False
+
+                    last_successful_poll = time.time()
+
+                    if failure_notification_sent:
+                        pushover.send_push(
+                            title="🟢 Energy Dashboard",
+                            message=(
+                                "Communication with the SolaX inverter has been restored."
+                            ),
+                        )
+
+                        failure_notification_sent = False
+
+                    # ============================================================
+                    # STAGE 3 - SAVE SNAPSHOT
+                    #
+                    # Persist the current inverter state for dashboards,
+                    # graphs and historical analysis.
+                    #
+                    # ============================================================
+                    # todo guard agains db locks
+
+                    telemetry_repository.save_snapshot(snapshot, source="modbus")
+                    logger.info("Saved Snapshot")
+
+                    """
+                    Check the scheduler to see if any schedules should be run.
+    
+                    This is the start of gathering evidence about whether the
+                    inverter state should change.
+    
+                    If evaluate() determines that a different inverter state is
+                    required, it writes the desired state into the inverter_state
+                    table.
+    
+                    The inverter_state table is effectively:
+                        "What state should the inverter be in right now?"
+    
+                    It is NOT:
+                        "What state is the inverter actually in right now?"
+    
+                    The actual inverter state always comes from a live poll of
+                    the inverter (snapshot).
+    
+                    The poller_status_card later compares:
+                        Desired state (inverter_state)
+                    against:
+                        Actual state (snapshot)
+                    and decides whether any action is required.
+                    """
+
+                    # ============================================================
+                    # STAGE 4 - Save Heartbeat
+
+                    # ============================================================
+                    telemetry_repository.save_heartbeat(ServiceName.POLLER)
+
+                    # ============================================================
+                    # STAGE 5 - EVALUATE SCHEDULES AND SMART FLEX
+                    #
+                    # Normal operation winds up:
+                    #     Scheduler -> Smart Flex
+                    #
+                    # When Smart Flex is already active, unwind in reverse:
+                    #     Smart Flex -> Scheduler
+                    #
+                    # ============================================================
+
+                    smart_flex_active = smart_flex_orchestrator.is_active()
+
+                    if smart_flex_active:
+                        logger.info("Smart Flex active - unwinding Smart Flex before Scheduler")
+
+                        dispatches = get_intelligent_dispatches()
+
+                        active_dispatch = smart_flex_controller.get_active_dispatch(
+                            dispatches,
+                            snapshot.timestamp,
+                        )
+
+                        vehicle_status = get_smartflex_vehicle_status()
+
+                        smart_flex_decision = smart_flex_controller.evaluate(
+                            snapshot,
+                            active_dispatch,
+                            vehicle_status,
+                        )
+
+
+                        logger.info(
+                            f"Smart Flex decision: {smart_flex_decision}"
+                        )
+
+                        smart_flex_orchestrator.apply_decision(
+                            smart_flex_decision,
+                            snapshot,
+                        )
+
+                        logger.info(
+                            f"Smart Flex active - running Scheduler at snapshot time "
+                            f"{snapshot.timestamp}"
+                        )
+
+                        logger.info("Running Scheduler")
+                        scheduler.evaluate(snapshot)
+                        logger.info("Scheduler Complete")
+
+                    else:
+                        logger.info("Running Scheduler")
+                        scheduler.evaluate(snapshot)
+                        logger.info("Scheduler Complete")
+
+                        dispatches = get_intelligent_dispatches()
+
+                        active_dispatch = smart_flex_controller.get_active_dispatch(
+                            dispatches,
+                            snapshot.timestamp,
+                        )
+
+                        vehicle_status = get_smartflex_vehicle_status()
+
+                        smart_flex_decision = smart_flex_controller.evaluate(
+                            snapshot,
+                            active_dispatch,
+                            vehicle_status,
+                        )
+
+                        logger.info(
+                            f"Smart Flex decision: {smart_flex_decision}"
+                        )
+
+                        smart_flex_orchestrator.apply_decision(
+                            smart_flex_decision,
+                            snapshot,
+                        )
+
+                    # ============================================================
+                    # STAGE 6 - RECONCILE DESIRED VS ACTUAL STATE
+                    # ============================================================
+                    # Desired State:
+                    #
+                    #     inverter_state table
+                    #
+                    # Actual State:
+                    #
+                    #     snapshot
+                    #
+                    # If they differ:
+                    #
+                    #     action_required = True
+                    #
+                    # If they match:
+                    #
+                    #     action_required = False
+                    #
+                    # ============================================================
+
+                    reconciler.process(snapshot)
+                    logger.info("Reconciler Complete")
+
+                    now = time.time()
+
+                    if now - last_heartbeat >= 300: #
+                        logger.info(f"Poller healthy PID={os.getpid()}")
+                        last_heartbeat = now
+
+                        logger.info(f"Current Work Mode is {snapshot.work_mode}")
+
+                except Exception as exc:
+                    logger.warning(f"Inverter communication lost: {exc}")
+
+                    communication_lost = True
+                    # Fresh connections are established on every poll cycle, so simply wait and try again.
+                    time.sleep(10)
+                    continue
+
+                downtime = time.time() - last_successful_poll
+
+                if downtime >= COMMUNICATION_TIMEOUT and not failure_notification_sent:
+                    try:
+                        pushover.send_push(
+                            title="🔴 Energy Dashboard",
+                            message=(
+                                "No successful communication "
+                                "with the SolaX inverter "
+                                "for 30 minutes.\n\n"
+                                "Automatic recovery "
+                                "continues."
+                            ),
+                        )
+
+                    except Exception:
+                        logger.exception("Unable to send outage notification")
+
+                    failure_notification_sent = True
+                if communication_lost:
+                    time.sleep(10)
+                else:
+                    time.sleep(25)
+
+        except KeyboardInterrupt:
+            logger.info("Poller stopping")
+        finally:
+            logger.info("Poller stopping")
+            service.close()
+            connection.close()
+            logger.info("Poller stopped")
+
+    except Exception:
+        logger.exception("Poller terminated unexpectedly")
+        raise
+
+    finally:
+        logger.info("Poller stopping")
+
+if __name__ == "__main__":
+    main()

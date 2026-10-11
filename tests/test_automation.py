@@ -1,12 +1,12 @@
-from app.backend.automation.engine import (
+from app.solax.backend.automation import (
     AutomationEngine,
 )
 
-from app.backend.automation.automation_repository import (
+from app.solax.backend.automation import (
     ScheduleRepository,
 )
 
-from app.backend.storage.db import (
+from app.solax.backend.storage.db import (
     get_connection,
 )
 

@@ -11,26 +11,37 @@ def apply_import_costs(
 
     settlement_df = settlement_df.copy()
 
-    settlement_df["slot_time"] = settlement_df["upload_time"].dt.strftime("%H:%M")
-
     settlement_df["import_rate_gbp_per_kwh"] = 0.0
 
+    tariff_df = tariff_df.copy()
+
+    tariff_df["valid_from"] = pd.to_datetime(
+        tariff_df["valid_from"],
+        utc=True,
+    )
+
+    tariff_df["valid_to"] = pd.to_datetime(
+        tariff_df["valid_to"],
+        utc=True,
+    )
+
+    settlement_df["upload_time"] = pd.to_datetime(
+        settlement_df["upload_time"],
+        utc=True,
+    )
+
     for _, tariff in tariff_df.iterrows():
-        start = tariff["slot_start"]
 
-        end = tariff["slot_end"]
+        start = tariff["valid_from"]
 
-        rate = tariff["unit_rate_gbp_per_kwh"]
+        end = tariff["valid_to"]
 
-        if start < end:
-            mask = (settlement_df["slot_time"] >= start) & (
-                settlement_df["slot_time"] < end
-            )
+        rate = tariff["value_inc_vat"] / 100
 
-        else:
-            mask = (settlement_df["slot_time"] >= start) | (
-                settlement_df["slot_time"] < end
-            )
+        mask = (
+            (settlement_df["upload_time"] >= start)
+            & (settlement_df["upload_time"] < end)
+        )
 
         settlement_df.loc[
             mask,
@@ -38,7 +49,8 @@ def apply_import_costs(
         ] = rate
 
     settlement_df["import_cost_gbp"] = (
-        settlement_df["grid_import_kwh"] * settlement_df["import_rate_gbp_per_kwh"]
+        settlement_df["grid_import_kwh"]
+        * settlement_df["import_rate_gbp_per_kwh"]
     )
 
     return settlement_df

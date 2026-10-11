@@ -18,11 +18,11 @@ def start_services():
         ),
         (
             "Account Sync",
-            "app.octopus.account_logger",
+            "app.octopus_status_card.account_logger",
         ),
         (
             "Agreement Sync",
-            "app.octopus.agreement_logger",
+            "app.octopus_status_card.agreement_logger",
         ),
     ]
 

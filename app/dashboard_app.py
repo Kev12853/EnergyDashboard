@@ -1,6 +1,9 @@
 # Ensure the project root is always importable.
 from pathlib import Path
 import sys
+
+from app.connections.connection import get_connection
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -22,10 +25,8 @@ from streamlit_autorefresh import (
 from app.backend.bootstrap import (
     start_services,
 )
-from app.backend.storage.db import (
-    get_connection,
-)
-from app.backend.services.system_health_service import (
+
+from app.solax.backend.services import (
     get_system_health,
 )
 
@@ -34,16 +35,16 @@ from app.solax.storage.solax_repository import TelemetryRepository
 from app.solax.analytics.settlement import (
     calculate_half_hour_energy,
 )
-from app.backend.automation.models import (
+from app.solax.backend.automation import (
     SchedulePeriod,
 )
-from app.backend.automation.automation_repository import (
+from app.solax.backend.automation import (
     ScheduleRepository,
 )
 
 # Octopus Imports
 from app.octopus.storage.octopus_schema import create_octopus_tables
-from app.backend.octopus.repository import OctopusRepository
+from app.solax.backend.octopus.repository import OctopusRepository
 from app.octopus.analytics.dispatch_matching import (
     apply_dispatch_flags,
 )
@@ -52,7 +53,7 @@ from app.octopus.analytics.costs import (
 )
 
 # Database Imports
-from app.backend.storage.schema import (
+from app.solax.backend.storage.schema import (
     create_solax_tables,
 )
 

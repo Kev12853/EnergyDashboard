@@ -1,4 +1,4 @@
-from app.backend.storage.service_heartbeat_repository import (
+from app.solax.backend.storage.service_heartbeat_repository import (
     ServiceHeartbeatRepository,
 )
 

@@ -1,9 +1,6 @@
 import json
 from datetime import datetime
 
-from app.backend.storage.db import (
-    get_connection,
-)
 from app.solax.telemetry.models import (
     PowerFlowSnapshot,
 )
@@ -20,11 +17,23 @@ class TelemetryRepository:
     def save_snapshot(
         self,
         snapshot: PowerFlowSnapshot,
+        source: str = "modbus",
     ):
+        """Save Modbus and cloud snapshots separately.
+
+        Cloud samples arrive at five-minute intervals and must not be mixed into
+        the high-resolution Modbus history used by energy-cost calculations.
+        """
+        if source.lower() == "cloud":
+            table = "telemetry_cloud_snapshots"
+            source_name = "Cloud"
+        else:
+            table = "telemetry_snapshots"
+            source_name = "Modbus"
 
         self.connection.execute(
-            """
-                INSERT INTO telemetry_snapshots (
+            f"""
+                INSERT OR REPLACE INTO {table} (
                     timestamp,
                     solar_w,
                     inverter_w,
@@ -35,9 +44,10 @@ class TelemetryRepository:
                     pv1_w,
                     pv2_w,
                     work_mode,
-                    raw_json
+                    raw_json,
+                    telemetry_source
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 snapshot.timestamp.isoformat(),
@@ -51,6 +61,7 @@ class TelemetryRepository:
                 snapshot.pv2_power_w,
                 snapshot.work_mode,
                 json.dumps(snapshot.raw_registers),
+                source_name,
             ),
         )
         self.connection.commit()
@@ -107,16 +118,30 @@ class TelemetryRepository:
         return datetime.fromisoformat(row["last_seen"])
 
     def get_latest_snapshot(self):
-
+        """Return the newest reading from either telemetry source."""
         cursor = self.connection.execute(
             """
-                SELECT *
-                FROM telemetry_snapshots
+                SELECT * FROM (
+                    SELECT
+                        timestamp, solar_w, inverter_w, battery_w,
+                        battery_soc_pct, grid_w, consumption_w,
+                        pv1_w, pv2_w, work_mode, raw_json,
+                        telemetry_source
+                    FROM telemetry_snapshots
+
+                    UNION ALL
+
+                    SELECT
+                        timestamp, solar_w, inverter_w, battery_w,
+                        battery_soc_pct, grid_w, consumption_w,
+                        pv1_w, pv2_w, work_mode, raw_json,
+                        telemetry_source
+                    FROM telemetry_cloud_snapshots
+                )
                 ORDER BY timestamp DESC
                 LIMIT 1
             """
         )
-
         return cursor.fetchone()
 
     def get_1m_history(

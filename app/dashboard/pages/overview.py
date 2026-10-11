@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from app.backend.services.system_health_service import (
+from app.solax.backend.services import (
     HealthStatus,
     get_system_health,
 )

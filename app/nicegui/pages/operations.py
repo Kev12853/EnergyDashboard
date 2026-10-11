@@ -1,196 +1,74 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from nicegui import ui
 
-from app.backend.storage.db import get_connection
-from app.enums.service_names import ServiceName
-from app.solax.storage.solax_repository import TelemetryRepository
+from app.connections.connection import get_connection
+from app.enums.service_enums import ServiceName
+from app.nicegui.components.service_status_card import ServiceStatusCard
+from app.nicegui.components.status_banner import StatusBanner
+from app.nicegui.data.telemetry_repository import TelemetryRepository
 
 
 class OperationsPage:
-    def __init__(self):
-        self.label_poller_status = None
-        self.label_poller_last_seen = None
+    def __init__(self) -> None:
 
-        self.label_aggregator_status = None
-        self.label_aggregator_last_seen = None
+        self.connection = get_connection()
+        self.telemetry_repo = TelemetryRepository(self.connection)
+        self.poller_status_card = None
+        self.aggregator_status_card = None
+        self.octopus_status_card = None
+        self.shell = None
 
-        self.label_octopus_status = None
-        self.label_octopus_last_seen = None
+    def render(self, shell) -> None:
 
-        self.telemetry_repo = TelemetryRepository(get_connection())
+        self.status_banner = StatusBanner()
+        self.shell = shell
 
-    def render(self):
-
-        ui.label("Energy Dashboard").classes("text-h5")
-        ui.separator()
-        ui.label("Operations").classes("text-h6")
-
-        with ui.row().classes("w-full gap-4"):
-            # Poller Card
-            with ui.card().classes("flex-1"):
-                ui.label("Poller").classes("text-h6 font-bold")
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Status: ").classes("text-h7")
-                    self.label_poller_status = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Last Update").classes("text-h7")
-                    self.label_poller_last_seen = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-
-            # Aggregator Card
-            with ui.card().classes("flex-1"):
-                ui.label("Aggregator").classes("text-h6 font-bold")
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Status: ").classes("text-h7")
-                    self.label_aggregator_status = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Last Update").classes("text-h7")
-                    self.label_aggregator_last_seen = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-
-            # Solax Card
-            with ui.card().classes("flex-1"):
-                ui.label("Octopus").classes("text-h6 font-bold")
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Status: ").classes("text-h7")
-                    self.label_octopus_status = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-                with ui.row().classes("flex-1 items-baseline"):
-                    ui.label("Last Update").classes("text-h7")
-                    self.label_octopus_last_seen = ui.label("Unknown").classes(
-                        "text-h8 text-yellow-500"
-                    )
-
-        self.update_status()
-        ui.timer(1, self.update_status)
-
-    def update_status(self):
-        self.update_solax()
-        self.update_aggregator()
-        self.update_octopus()
-
-    def update_solax(self):
-        last_seen_poller = self.telemetry_repo.get_heartbeat(ServiceName.POLLER)
-        last_seen_agregator = self.telemetry_repo.get_heartbeat(ServiceName.AGGREGATOR)
-        last_seen_solax = self.telemetry_repo.get_heartbeat(ServiceName.OCTOPUS)
-
-        if last_seen_poller is None:
-            # Never seen
-            self.label_poller_status.set_text("🟡 No Data Available")
-            self.label_poller_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-yellow-500",
+        # Create the Status Cards
+        with ui.row().classes("w-full gap-4 wrap"):
+            self.poller_status_card = ServiceStatusCard(
+                "Poller",
+                ServiceName.POLLER,)
+            self.aggregator_status_card = ServiceStatusCard(
+                "Aggregator",
+                ServiceName.AGGREGATOR,
             )
-        elif datetime.now() - last_seen_poller < timedelta(minutes=2):
-            # Running
-            self.label_poller_status.set_text("🟢 Running").classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-            self.label_poller_last_seen.set_text(
-                f"{last_seen_poller:%b} {last_seen_poller.day}, {last_seen_poller:%H:%M}"
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-        else:
-            # Stopped
-            self.label_poller_status.set_text("🔴 Stopped")
-            self.label_poller_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
-            )
-            self.label_poller_last_seen.set_text(
-                last_seen_poller.strftime("%Y-%m-%d %H:%M:%S")
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
+            self.octopus_status_card = ServiceStatusCard(
+                "Octopus",
+                ServiceName.OCTOPUS,
             )
 
-    def update_aggregator(self):
-        last_seen_aggregator = self.telemetry_repo.get_heartbeat(ServiceName.AGGREGATOR)
-        last_seen_solax = self.telemetry_repo.get_heartbeat(ServiceName.OCTOPUS)
+        # Populate immediately
+        self.refresh()
 
-        if last_seen_aggregator is None:
-            # Never seen
-            self.label_aggregator_status.set_text("🟡 No Data Available")
-            self.label_aggregator_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-yellow-500",
-            )
-        elif datetime.now() - last_seen_aggregator < timedelta(minutes=6):
-            # Running
-            self.label_aggregator_status.set_text("🟢 Running").classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-            self.label_aggregator_last_seen.set_text(
-                f"{last_seen_aggregator:%b} {last_seen_aggregator.day}, {last_seen_aggregator:%H:%M}"
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-        else:
-            # Stopped
-            self.label_aggregator_status.set_text("🔴 Stopped")
-            self.label_aggregator_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
-            )
-            self.label_aggregator_last_seen.set_text(
-                last_seen_aggregator.strftime("%Y-%m-%d %H:%M:%S")
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
-            )
+        # Refresh every 30 seconds
+        ui.timer(
+            30,
+            self.refresh,
+        )
 
-    def update_octopus(self):
+    def _get_heartbeats(
+        self,
+    ) -> dict[ServiceName, datetime | None]:
 
-        last_seen_octopus = self.telemetry_repo.get_heartbeat(ServiceName.OCTOPUS)
+        return {
+            service: self.telemetry_repo.get_heartbeat(service)
+            for service in (
+                ServiceName.POLLER,
+                ServiceName.AGGREGATOR,
+                ServiceName.OCTOPUS,
+            )
+        }
 
-        if last_seen_octopus is None:
-            # Never seen
-            self.label_octopus_status.set_text("🟡 No Data Available")
-            self.label_octopus_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-yellow-500",
-            )
-        elif datetime.now() - last_seen_octopus < timedelta(minutes=1):
-            # Running
-            self.label_octopus_status.set_text("🟢 Running").classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-            self.label_octopus_last_seen.set_text(
-                f"{last_seen_octopus:%b} {last_seen_octopus.day}, {last_seen_octopus:%H:%M}"
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-green-500",
-            )
-        else:
-            # Stopped
-            self.label_octopus_status.set_text("🔴 Stopped")
-            self.label_octopus_status.classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
-            )
-            self.last_seen_octopus.set_text(
-                last_seen_octopus.strftime("%Y-%m-%d %H:%M:%S")
-            ).classes(
-                remove="text-red-500 text-green-500 text-yellow-500",
-                add="text-red-500",
-            )
+    def refresh(self) -> None:
 
-
-@ui.page("/")
-def operations():
-    page = OperationsPage()
-    page.render()
+        # Get the heartbeats of all the services
+        heartbeats = self._get_heartbeats()
+        # Update the Banner
+        self.status_banner.set_status(heartbeats)
+        # Update the Service Cards
+        self.poller_status_card.set_status(heartbeats[ServiceName.POLLER])
+        self.aggregator_status_card.set_status(heartbeats[ServiceName.AGGREGATOR])
+        self.octopus_status_card.set_status(heartbeats[ServiceName.OCTOPUS])
+        # Update the Status Bar
+        self.shell.status_bar.set_status(heartbeats)

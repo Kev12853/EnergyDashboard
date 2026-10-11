@@ -10,9 +10,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from app.backend.storage.db import (
-    get_connection,
-)
+from app.connections.connection import get_connection
 
 # =========================================================
 # LOAD DATA

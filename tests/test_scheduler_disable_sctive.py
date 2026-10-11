@@ -8,18 +8,18 @@ of the previous inverter operating mode.
 from datetime import datetime
 from pprint import pprint
 
-from app.backend.storage.db import get_connection
+from app.solax.backend.storage.db import get_connection
 
-from app.backend.automation.models import SchedulePeriod
-from app.backend.automation.scheduler import Scheduler
-from app.backend.automation.automation_repository import ScheduleRepository
+from app.solax.backend.automation import SchedulePeriod
+from app.solax.backend.automation import Scheduler
+from app.solax.backend.automation import ScheduleRepository
 
-from app.backend.automation.inverter_state_repository import (
+from app.solax.backend.automation.inverter_state_repository import (
     InverterStateRepository,
 )
 
 from app.enums.solax_enums import WorkMode, ManualMode
-from app.enums.automation_enums import AutomationMode
+from app.enums.automation_enums import InverterWorkMode
 from app.enums.inverter_state_enums import InverterRequestPhase
 
 from app.solax.telemetry.models import PowerFlowSnapshot
@@ -53,7 +53,7 @@ schedule = SchedulePeriod(
     enabled=True,
     start_time="08:00",
     end_time="10:00",
-    mode=AutomationMode.MANUAL_CHARGE,
+    mode=InverterWorkMode.MANUAL_CHARGE,
     priority=10,
     updated_at=datetime.now(),
 )

@@ -1,4 +1,4 @@
-from app.backend.services.system_health_service import HealthStatus
+from app.solax.backend.services import HealthStatus
 from app.dashboard.helpers.format_data import format_data_age
 
 POWER_THRESHOLD_W = 300

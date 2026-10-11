@@ -2,7 +2,7 @@
 # UPDATED ANALYZE SCRIPT
 # =========================================================
 #
-# poller/charts/cloud_api/analyze_db.py
+# poller_status_card/charts/cloud_api/analyze_db.py
 #
 # =========================================================
 
@@ -17,9 +17,7 @@ basic analytics and charts.
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from app.backend.storage.db import (
-    get_connection,
-)
+from app.connections.connection import get_connection
 
 # =========================================================
 # LOAD DATA

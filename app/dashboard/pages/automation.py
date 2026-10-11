@@ -1,16 +1,15 @@
 from datetime import (
     datetime,
-    time,
 )
 
 import streamlit as st
 
 
 
-from app.backend.automation.models import (
+from app.solax.backend.automation import (
     SchedulePeriod,
 )
-from app.enums.automation_enums import AutomationMode
+from app.enums.automation_enums import InverterWorkMode
 
 # from app.dashboard_app import repository
 
@@ -88,7 +87,7 @@ def render(
             enabled=True,
             start_time="00:00",
             end_time="01:00",
-            mode=AutomationMode.SELF_USE,
+            mode=InverterWorkMode.SELF_USE,
             priority=10,
             updated_at=datetime.now(),
         )
@@ -185,12 +184,12 @@ def render(
             st.divider()
 
             MODE_OPTIONS = {
-                "Self Use": AutomationMode.SELF_USE,
-                "Force Charging": AutomationMode.MANUAL_CHARGE,
-                "Force Discharging": AutomationMode.MANUAL_DISCHARGE,
-                "Peak Shaving": AutomationMode.PEAK_SHAVING,
-                "Feed In Priority": AutomationMode.FEED_IN,
-                "Backup": AutomationMode.BACKUP,
+                "Self Use": InverterWorkMode.SELF_USE,
+                "Force Charging": InverterWorkMode.MANUAL_CHARGE,
+                "Force Discharging": InverterWorkMode.MANUAL_DISCHARGE,
+                "Peak Shaving": InverterWorkMode.PEAK_SHAVING,
+                "Feed In Priority": InverterWorkMode.FEED_IN,
+                "Backup": InverterWorkMode.BACKUP,
             }
 
             mode_col, priority_col, gap, enabled_col = st.columns([2, 1, 0.5, 3])

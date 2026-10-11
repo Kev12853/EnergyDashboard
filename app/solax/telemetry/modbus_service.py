@@ -1,5 +1,9 @@
-from app.backend.common.logging_utils import setup_logger
-from app.config.solax_config import MANUAL_MODE_WRITE_REGISTER, WORK_MODE_WRITE_REGISTER
+from app.config.solax_config import (
+    MANUAL_MODE_WRITE_REGISTER,
+    WORK_MODE_WRITE_REGISTER,
+    DRY_RUN,
+)
+from app.logging.logger import setup_logger
 from app.solax.telemetry.modbus_client import SolaxModbusClient
 
 logger = setup_logger("ModBus Service")
@@ -55,14 +59,13 @@ class SolaxModbusService:
         work_mode,
         manual_mode=None,
     ):
-
         logger.info(f"Writing work_mode={work_mode}, manual_mode={manual_mode}")
-        # ===========================
-        x = 1
-        if x == 0:
-            logger.info("*** TEST: Simulating failed write ***")
+
+        if DRY_RUN:
+            logger.info(
+                f"DRY RUN: would write work_mode={work_mode}, manual_mode={manual_mode}"
+            )
             return
-        # ==================================
 
         self._client.client.write_register(
             address=WORK_MODE_WRITE_REGISTER,

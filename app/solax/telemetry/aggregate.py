@@ -1,6 +1,4 @@
-from app.backend.storage.db import (
-    get_connection,
-)
+from app.connections.connection import get_connection
 
 
 class TelemetryAggregator:

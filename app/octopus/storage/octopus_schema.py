@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 import pandas as pd
 
-from app.backend.storage.db import get_connection
+from app.connections.connection import get_connection
 
 
 def create_dispatches_table(
@@ -29,39 +29,177 @@ def create_dispatches_table(
         """
     )
 
-    conn.commit()
 
+def create_consumption_costs_table(
+    conn: sqlite3.Connection,
+):
+    conn.execute(
+        """
+       CREATE TABLE IF NOT EXISTS octopus_consumption_costs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    interval_start TEXT NOT NULL,
+    interval_end TEXT NOT NULL,
+
+    consumption_kwh REAL NOT NULL,
+
+    tou_bucket TEXT NOT NULL,
+
+    rate_p_per_kwh REAL NOT NULL,
+
+    cost_excl_vat_p REAL NOT NULL,
+
+    cost_incl_vat_p REAL NOT NULL,
+
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+
+    UNIQUE(
+        interval_start,
+        interval_end
+    )
+)
+        """
+    )
 
 def create_tariffs_table(
+    conn: sqlite3.Connection,
+):
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS
+        octopus_tariffs (
+
+            id INTEGER PRIMARY KEY
+                AUTOINCREMENT,
+
+            tariff_code TEXT NOT NULL,
+
+            value_exc_vat REAL NOT NULL,
+
+            value_inc_vat REAL NOT NULL,
+
+            valid_from TEXT NOT NULL,
+
+            valid_to TEXT,
+
+            payment_method TEXT,
+
+            created_at TEXT NOT NULL,
+
+            UNIQUE(
+                tariff_code,
+                valid_from,
+                valid_to
+            )
+        )
+        """
+    )
+
+def create_four_rate_tariffs_table(
+    conn: sqlite3.Connection,
+):
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS
+        octopus_four_rate_tariffs (
+
+            id INTEGER PRIMARY KEY
+                AUTOINCREMENT,
+
+            tariff_code TEXT NOT NULL,
+
+            rate_type TEXT NOT NULL,
+
+            value_exc_vat REAL NOT NULL,
+
+            value_inc_vat REAL NOT NULL,
+
+            valid_from TEXT NOT NULL,
+
+            valid_to TEXT,
+
+            payment_method TEXT,
+
+            created_at TEXT NOT NULL,
+
+            UNIQUE(
+                tariff_code,
+                rate_type,
+                valid_from,
+                valid_to
+            )
+        )
+        """
+    )
+
+def create_accounts_table(
+    conn: sqlite3.Connection,
+):
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS
+        octopus_accounts (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            account_number TEXT NOT NULL UNIQUE,
+
+            is_active INTEGER NOT NULL
+                DEFAULT 1,
+
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+
+
+def create_agreements_table(
     conn: sqlite3.Connection,
 ):
 
     conn.execute(
         """
-            CREATE TABLE IF NOT EXISTS octopus_tariffs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tariff_code TEXT NOT NULL,
-                slot_start TEXT,
-                slot_end TEXT,
-                unit_rate_gbp_per_kwh REAL NOT NULL,
-                created_at TEXT NOT NULL,
-                UNIQUE(
-                    tariff_code,
-                    slot_start,
-                    slot_end
-                )
+        CREATE TABLE IF NOT EXISTS
+        octopus_agreements (
+
+            id INTEGER PRIMARY KEY
+                AUTOINCREMENT,
+
+            account_number TEXT NOT NULL,
+
+            mpan TEXT NOT NULL,
+
+            agreement_type TEXT NOT NULL,
+
+            tariff_type TEXT NOT NULL,
+
+            product_code TEXT NOT NULL,
+
+            tariff_code TEXT NOT NULL,
+
+            valid_from TEXT NOT NULL,
+
+            valid_to TEXT,
+
+            created_at TEXT NOT NULL,
+
+            UNIQUE(
+
+                account_number,
+
+                mpan,
+
+                tariff_code,
+
+                valid_from
+
             )
+        )
         """
     )
 
-    conn.commit()
-
-
-def create_octopus_tables(connection):
-    create_tariffs_table(connection)
-    create_tariffs_table(connection)
-
-
+##delete
 def upsert_tariffs(
     tariff_df: pd.DataFrame,
 ):
@@ -92,74 +230,8 @@ def upsert_tariffs(
             ),
         )
 
-    conn.commit()
 
-
-# def create_accounts_table(
-#     conn: sqlite3.Connection,
-# ):
-#     conn.execute(
-#         """
-#         CREATE TABLE IF NOT EXISTS
-#         octopus_accounts (
-#
-#             id INTEGER PRIMARY KEY AUTOINCREMENT,
-#
-#             account_number TEXT NOT NULL UNIQUE,
-#
-#             is_active INTEGER NOT NULL
-#                 DEFAULT 1,
-#
-#             created_at TEXT NOT NULL
-#         )
-#         """
-#     )
-#
-#     conn.commit()
-
-# def create_agreements_table(
-#     conn: sqlite3.Connection,
-# ):
-#
-#     conn.execute(
-#         """
-#         CREATE TABLE IF NOT EXISTS
-#         octopus_agreements (
-#
-#             id INTEGER PRIMARY KEY
-#                 AUTOINCREMENT,
-#
-#             account_number TEXT NOT NULL,
-#
-#             mpan TEXT NOT NULL,
-#
-#             agreement_type TEXT NOT NULL,
-#
-#             tariff_type TEXT NOT NULL,
-#
-#             product_code TEXT NOT NULL,
-#
-#             tariff_code TEXT NOT NULL,
-#
-#             valid_from TEXT NOT NULL,
-#
-#             valid_to TEXT,
-#
-#             created_at TEXT NOT NULL,
-#
-#             UNIQUE(
-#
-#                 account_number,
-#
-#                 mpan,
-#
-#                 tariff_code,
-#
-#                 valid_from
-#
-#             )
-#         )
-#         """
-#     )
-#
-#     conn.commit()
+##used by old dashboard app
+def create_octopus_tables(connection):
+    create_tariffs_table(connection)
+    create_four_rate_tariffs_table(connection)

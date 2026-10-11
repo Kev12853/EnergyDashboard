@@ -1,6 +1,6 @@
 import streamlit as st
 
-from app.backend.services.system_health_service import (
+from app.solax.backend.services import (
     get_system_health as build_system_health,
     HealthStatus,
 )

@@ -1,6 +1,4 @@
-from pprint import pprint
-
-from app.backend.storage.db import (
+from app.solax.backend.storage.db import (
     get_connection,
 )
 from app.enums.inverter_state_enums import InverterRequestPhase
@@ -12,7 +10,13 @@ from app.solax.storage.inverter_state import (
     request_restore,
 )
 
+from app.solax.backend.automation.inverter_state_repository import InverterStateRepository
+from app.solax.backend.storage.schema import create_solax_tables
+
+
+
 connection = get_connection()
+create_solax_tables(connection)
 
 clear_inverter_state(connection)
 
@@ -31,6 +35,8 @@ set_inverter_state(
     requested_manual_mode=1,
     restore_work_mode_to=0,
     restore_manual_mode_to=0,
+    underlying_work_mode=0,
+    underlying_manual_mode=0,
     active= True,
     source="Test",
     phase= InverterRequestPhase.OVERRIDE,
@@ -41,6 +47,24 @@ print(
         connection,
     )
 )
+
+repository = InverterStateRepository(connection)
+
+print()
+print("SETTING UNDERLYING")
+repository.set_underlying(1, 0)
+print(repository.get())
+
+print()
+print("ACTIVATE UNDERLYING")
+repository.activate_underlying()
+print(repository.get())
+
+print()
+print("CLEAR UNDERLYING")
+repository.clear_underlying()
+print(repository.get())
+
 
 print()
 print("REQUEST RESTORE")

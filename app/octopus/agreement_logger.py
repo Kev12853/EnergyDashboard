@@ -1,12 +1,11 @@
 from datetime import datetime
 
-from app.backend.storage.db import (
-    get_connection,
-)
+
 from app.config.octopus_config import (
     EXPORT_MPAN,
     IMPORT_MPAN,
 )
+from app.connections.connection import get_connection
 from app.octopus.api.octopus_api import (
     get_octopus_agreements,
 )

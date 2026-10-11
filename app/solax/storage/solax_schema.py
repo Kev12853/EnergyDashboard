@@ -2,7 +2,7 @@
 # FILE
 # =========================================================
 #
-# poller/charts/storage/solax_schema.py
+# poller_status_card/charts/storage/solax_schema.py
 #
 # =========================================================
 
@@ -26,16 +26,14 @@ Schema creation is idempotent.
 
 Safe to run multiple times.
 """
+from app.connections.connection import get_connection
 
-from app.backend.storage.db import (
-    get_connection,
-)
 
 # =========================================================
 # CREATE SCHEMA
 # =========================================================
 
-
+##delete
 def create_legacy_schema():
     """
     Create database tables if they do not exist.
@@ -97,7 +95,7 @@ def create_schema():
     """Compatibility wrapper for the canonical SolaX schema creator."""
     connection = get_connection()
     try:
-        from app.backend.storage.schema import create_solax_tables
+        from app.solax.backend.storage.schema import create_solax_tables
 
         create_solax_tables(connection)
     finally:

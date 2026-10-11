@@ -6,7 +6,6 @@ from zoneinfo import ZoneInfo
 
 from pymodbus.client import ModbusTcpClient
 
-from app.backend.common.logging_utils import setup_logger
 from app.config.solax_config import (
     BATTERY_POWER,
     BATTERY_SOC,
@@ -20,6 +19,7 @@ from app.config.solax_config import (
     REGISTER_BLOCK_START,
     WORK_MODE_REGISTER,
 )
+from app.logging.logger import setup_logger
 from app.solax.analytics.decoders import parse_schedule
 from app.solax.telemetry.models import (
     PowerFlowSnapshot,

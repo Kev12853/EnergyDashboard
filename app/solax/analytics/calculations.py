@@ -2,7 +2,7 @@
 # FILE
 # =========================================================
 #
-# poller/charts/analytics/calculations.py
+# poller_status_card/charts/analytics/calculations.py
 #
 # =========================================================
 
