@@ -1,3 +1,10 @@
+"""NiceGUI page for Octopus dispatch schedules, dispatch history, and tariffs.
+
+The page reads dispatch data through :class:`OctopusRepository` and renders
+it with NiceGUI components. This module is presentation-layer code; it does
+not itself fetch data from the Octopus API or control the inverter.
+"""
+
 from datetime import date, timedelta
 
 import pandas as pd
@@ -10,11 +17,23 @@ from app.octopus.storage.repository import OctopusRepository
 
 
 class OctopusPage:
+    """Build the Octopus Energy page and its interactive data views."""
 
     def __init__(self) -> None:
+        """Initialise the page object.
+
+        The page currently keeps its UI state in closures created by
+        :meth:`render`, so no instance attributes are required here.
+        """
         pass
 
     def render(self, shell) -> None:
+        """Create the dispatch schedule, history table, and tariff section.
+
+        Args:
+            shell: Shared dashboard shell supplied by the page registry.
+                   It is currently not used by this page.
+        """
 
         repository = OctopusRepository()
 
@@ -63,6 +82,11 @@ class OctopusPage:
                 timeline_container = ui.column().classes("w-full")
 
             def load_current_schedule() -> None:
+                """Reload and redraw completed and planned dispatches.
+
+                The selected history window is captured from the enclosing
+                ``completed_hours`` variable.
+                """
 
                 print(f"Loading current dispatch schedule ({completed_hours} hours)")
 
@@ -85,14 +109,15 @@ class OctopusPage:
 
                 print("TIMELINE RENDERED")
 
-            # Initial current schedule load
+            # Initial schedule render for the default 24-hour window.
             load_current_schedule()
 
-            # Explicitly open on first page load
+            # Open the schedule section when the page is first displayed.
             schedule_expansion.open()
 
 
             def select_range(event) -> None:
+                """Update the selected history window and refresh the timeline."""
 
                 nonlocal completed_hours
 
@@ -109,10 +134,9 @@ class OctopusPage:
                 select_range
             )
 
-            # -------------------------------------------------
-            # Initial current schedule load
-            # -------------------------------------------------
-
+            # NOTE: This is a second initial load of the same schedule.
+            # It appears redundant with the earlier call above; preserve it
+            # until the page's initialisation behaviour is tested before removal.
             load_current_schedule()
 
             # =================================================
@@ -165,6 +189,12 @@ class OctopusPage:
                 )
 
                 def load_history() -> None:
+                    """Load dispatches for the selected dates and render a table.
+
+                    Invalid or incomplete date selections are ignored. A start
+                    date after the end date produces a warning and leaves the
+                    currently displayed history unchanged.
+                    """
 
                     if (
                         not start_date.value

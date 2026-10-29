@@ -1,3 +1,21 @@
+#TODO Issues to investigate
+# 1. Duplicate unreachable statement
+# get_octopus_consumption_costs() contains a second return df after the first return. The second statement is unreachable and can safely be removed in a separate cleanup.
+# 2. Hard-coded export tariff
+# get_current_export_rate() contains a literal tariff code rather than retrieving the current export tariff through get_current_export_tariff(). This could become incorrect if the export agreement changes. We should confirm the intended behaviour before modifying it.
+# 3. Day/night rate window
+# get_current_import_rate() uses fixed windows of 22:30–04:30 for the night rate and the remaining hours for the day rate. We should confirm that these match the actual four-rate tariff definitions before relying on this method for cost calculations.
+# 4. Database connection cleanup
+# Several methods close connections only on the normal execution path. Using try/finally or context managers would help ensure connections are closed if a query raises an exception. This is a reliability improvement, not a reason to change the repository's logic during this audit.
+
+"""Persistence and query operations for Octopus Energy data.
+
+This module provides the SQLite repository used by the application to store
+and retrieve dispatches, tariff periods, agreements, and consumption costs.
+It preserves the existing query and transaction behaviour; it does not call
+the Octopus API directly.
+"""
+
 import sqlite3
 from datetime import datetime, timezone, time
 
@@ -11,11 +29,13 @@ class OctopusRepository:
     # DISPATCHES
     # =====================================================
 
+    """Repository for persisting and querying Octopus Energy dispatches, tariffs, agreements, and consumption-cost data."""
+
     def upsert_dispatches(
         self,
         dispatch_df: pd.DataFrame,
     ):
-
+        """Insert dispatch records or update existing records identified by start, end, and status. Updates the last-seen timestamp when a record is observed again."""
         if dispatch_df.empty:
             return
 
@@ -78,7 +98,7 @@ class OctopusRepository:
         start_date,
         end_date,
     ):
-
+        """Return dispatch records whose start times fall within the inclusive calendar-date range supplied, ordered newest first."""
         conn = get_connection()
 
         query = """
@@ -124,7 +144,7 @@ class OctopusRepository:
         self,
         completed_hours: int = 24,
     ):
-
+        """Return two DataFrames containing recent completed dispatches and the latest set of planned dispatches."""
         conn = get_connection()
 
         now = pd.Timestamp.now()
@@ -210,7 +230,7 @@ class OctopusRepository:
         tariff_df: pd.DataFrame,
         tariff_code: str,
     ) -> int:
-
+        """Insert or update standard tariff periods, including special handling for open-ended periods whose valid_to value is NULL. Return the number of rows inserted or changed."""
         if tariff_df.empty:
             return 0
 
@@ -383,13 +403,12 @@ class OctopusRepository:
 
         return rows_changed
 
-
     def upsert_four_rate_tariffs(
         self,
         tariff_df: pd.DataFrame,
         tariff_code: str,
     ) -> int:
-
+        """Insert or update four-rate tariff periods and return the number of rows inserted or changed."""
         if tariff_df.empty:
             return 0
 
@@ -471,7 +490,7 @@ class OctopusRepository:
         self,
         agreements,
     ) -> int:
-
+        """Store recognised import and export tariff agreements, ignoring agreements that do not match the configured import or export MPAN."""
         if not agreements:
             return 0
 
@@ -539,6 +558,7 @@ class OctopusRepository:
         return rows_added
 
     def get_current_import_agreement(self) -> sqlite3.Row | None:
+        """Return the currently valid import agreement, or None if no matching agreement exists."""
         conn = get_connection()
 
         now = pd.Timestamp.now(tz="UTC").isoformat()
@@ -570,7 +590,7 @@ class OctopusRepository:
         return row
 
     def get_current_import_tariff(self) -> str:
-
+        """Return the tariff code from the current import agreement, raising RuntimeError if none exists."""
         row = self.get_current_import_agreement()
 
         if row is None:
@@ -579,6 +599,7 @@ class OctopusRepository:
         return row["tariff_code"]
 
     def get_comparison_import_tariff(self) -> str:
+        """Find a different import tariff that overlaps the current Intelligent Octopus Go agreement and return its tariff code."""
         conn = get_connection()
 
         now = pd.Timestamp.now(tz="UTC").isoformat()
@@ -636,7 +657,7 @@ class OctopusRepository:
         return row["comparison_tariff_code"]
 
     def get_current_export_tariff(self) -> str:
-
+        """Return the tariff code from the currently valid export agreement, raising RuntimeError if none exists."""
         conn = get_connection()
 
         now = pd.Timestamp.now(tz="UTC").isoformat()
@@ -644,23 +665,23 @@ class OctopusRepository:
         query = """
         SELECT
             tariff_code
-    
+
         FROM
             octopus_agreements
-    
+
         WHERE
             agreement_type = 'export'
-    
+
             AND valid_from <= ?
-    
+
             AND (
                 valid_to IS NULL
                 OR valid_to > ?
             )
-    
+
         ORDER BY
             valid_from DESC
-    
+
         LIMIT 1
         """
 
@@ -672,14 +693,12 @@ class OctopusRepository:
         conn.close()
 
         if row is None:
-            raise RuntimeError(
-                "No current export tariff agreement found"
-            )
+            raise RuntimeError("No current export tariff agreement found")
 
         return row[0]
 
     def get_all_tariffs(self) -> pd.DataFrame:
-
+        """Return all standard tariff rows ordered by tariff code and validity start."""
         conn = get_connection()
 
         query = """
@@ -760,9 +779,6 @@ class OctopusRepository:
             for row in rows
         ]
 
-
-
-
     # ============================================
     # CONSUMPTION COSTS
     # ============================================
@@ -772,6 +788,7 @@ class OctopusRepository:
         period_from=None,
         period_to=None,
     ) -> pd.DataFrame:
+        """Return stored consumption-cost intervals, optionally filtered by start-time bounds."""
         conn = get_connection()
 
         query = """
@@ -808,17 +825,11 @@ class OctopusRepository:
         conn.close()
 
         if not df.empty:
-            df["interval_start"] = pd.to_datetime(
-                df["interval_start"]
-            )
+            df["interval_start"] = pd.to_datetime(df["interval_start"])
 
-            df["interval_end"] = pd.to_datetime(
-                df["interval_end"]
-            )
+            df["interval_end"] = pd.to_datetime(df["interval_end"])
 
         return df
-
-
 
         return df
 
@@ -826,7 +837,7 @@ class OctopusRepository:
         self,
         cost_df: pd.DataFrame,
     ) -> int:
-
+        """Insert or update calculated consumption-cost intervals and return the number of rows SQLite reports as changed."""
         if cost_df.empty:
             return 0
 
@@ -897,6 +908,7 @@ class OctopusRepository:
         return rows_changed
 
     def get_current_import_rate(self) -> float | None:
+        """Return the currently applicable four-rate import price based on the configured day/night time window, or None if no price is found."""
         conn = get_connection()
 
         now = pd.Timestamp.now(tz="Europe/London")
@@ -936,9 +948,9 @@ class OctopusRepository:
             return None
 
         return row["value_inc_vat"]
-    
-    
+
     def get_current_export_rate(self) -> float | None:
+        """Return the current export price for the tariff code specified in this query, or None if no price is found."""
         conn = get_connection()
 
         now = pd.Timestamp.now(tz="UTC").isoformat()
@@ -961,7 +973,3 @@ class OctopusRepository:
             return None
 
         return row["value_inc_vat"]
-
-
-
-

@@ -1,8 +1,19 @@
+"""Render Octopus completed and planned dispatches as a NiceGUI timeline chart.
+
+The chart uses ECharts custom rectangles to show dispatch intervals and exposes
+scheduled energy and interval times in each block's tooltip.
+"""
+
 import pandas as pd
 from nicegui import ui
 
 
 class DispatchTimeline:
+    """Build a timeline chart from completed and planned dispatch data.
+
+    DataFrames are retained at construction and copied during rendering so
+    date conversion does not mutate the repository-provided DataFrames.
+    """
 
     def __init__(
         self,
@@ -10,13 +21,23 @@ class DispatchTimeline:
         planned_df: pd.DataFrame,
         completed_hours: int = 24,
     ) -> None:
+        """Store dispatch data and the number of completed-history hours.
 
+        Args:
+            completed_df: Completed dispatches to display.
+            planned_df: Planned dispatches to display.
+            completed_hours: Width of the chart's historical time window.
+        """
         self.completed_df = completed_df
         self.planned_df = planned_df
         self.completed_hours = completed_hours
 
     def render(self) -> None:
+        """Prepare dispatch intervals and render the ECharts timeline.
 
+        Completed and planned intervals occupy separate horizontal rows.
+        Dispatch times are converted to milliseconds for the browser chart.
+        """
         # -------------------------------------------------
         # Prepare data
         # -------------------------------------------------
@@ -24,6 +45,7 @@ class DispatchTimeline:
         completed = self.completed_df.copy()
         planned = self.planned_df.copy()
 
+        # Normalize timestamp columns on the local copies only.
         for df in (completed, planned):
 
             if not df.empty:
@@ -86,6 +108,8 @@ class DispatchTimeline:
         # [start, end, row, status, energy]
         # -------------------------------------------------
 
+        # ECharts receives [start_ms, end_ms, row_index, status, energy_kwh].
+        # Row 0 is completed history; row 1 is planned dispatches.
         series_data = []
 
         for _, row in completed.iterrows():
@@ -176,6 +200,8 @@ class DispatchTimeline:
         # ECharts
         # -------------------------------------------------
 
+        # ECharts custom-series configuration draws each dispatch as a
+        # rectangle spanning its start and end timestamps.
         options = {
 
             "animation": False,
