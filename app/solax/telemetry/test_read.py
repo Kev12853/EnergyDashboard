@@ -1,3 +1,5 @@
+"""Standalone manual Modbus read probe for local development. Running it can contact the inverter; it is not part of the production poller/control service."""
+
 from pprint import pprint
 
 from app.solax.storage.solax_repository import (

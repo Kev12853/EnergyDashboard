@@ -53,6 +53,7 @@ class _ControlInverterAdapter:
         self.write_service = write_service
 
     def write_work_mode(self, work_mode, manual_mode):
+        """Delegate the requested mode pair to the guarded Modbus writer; actual hardware writes remain blocked while DRY_RUN is true."""
         return self.write_service.write_work_mode(work_mode, manual_mode)
 
 
@@ -188,6 +189,7 @@ def _snapshot_is_control_safe(snapshot, now=None):
 
 
 def main():
+    """Run the control loop: require a fresh local snapshot, evaluate scheduler and validated Smart Flex inputs, reconcile durable requests, and save a control heartbeat. Modbus writes are delegated to the DRY_RUN-guarded writer."""
     logger.info("SolaX control starting, PID=%s", os.getpid())
     connection = get_connection()
     create_solax_tables(connection)

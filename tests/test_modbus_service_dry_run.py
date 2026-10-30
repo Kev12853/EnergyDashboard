@@ -1,3 +1,5 @@
+"""Verify the Modbus service write interlock and configured work/manual write mapping without sending physical writes."""
+
 from unittest.mock import Mock, patch
 
 from app.solax.telemetry.modbus_service import SolaxModbusService

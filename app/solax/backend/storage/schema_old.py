@@ -1,3 +1,5 @@
+"""Retain the previous backend SQLite schema definitions for compatibility and historical reference. Active schema setup is in schema.py; verify callers before relying on this module."""
+
 # app/backend/storage/solax_schema.py
 
 # SOLAX TABLES
@@ -5,6 +7,11 @@ def create_telemetry_tables(
     connection,
 ):
 
+    """Create the legacy telemetry snapshot, aggregate and heartbeat tables.
+
+Uses CREATE TABLE IF NOT EXISTS and commits; unlike the current schema creator,
+this legacy version does not add a telemetry_source column to old snapshots.
+"""
     connection.execute(
         """
             CREATE TABLE IF NOT EXISTS telemetry_snapshots (
@@ -73,6 +80,11 @@ def create_telemetry_tables(
 def create_automation_tables(
     connection,
 ):
+    """Create the legacy schedule_periods and inverter_state tables.
+
+Adds the underlying-mode columns when missing and commits the schema changes.
+This historical implementation does not initialise a singleton state row.
+"""
     connection.execute(
         """
             CREATE TABLE IF NOT EXISTS schedule_periods (
@@ -136,6 +148,7 @@ def create_automation_tables(
 def create_solax_tables(
     connection,
 ):
+    """Ensure the SolaX telemetry and automation tables exist by invoking their schema creators."""
     create_telemetry_tables(connection)
 
     create_automation_tables(connection)

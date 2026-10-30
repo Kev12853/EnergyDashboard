@@ -1,3 +1,5 @@
+"""Manual Smart Flex controller exercise using a constructed snapshot. It is diagnostic code rather than a deterministic test suite and may print decisions; it does not itself perform Modbus writes."""
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from types import SimpleNamespace
@@ -11,6 +13,7 @@ TIMEZONE = ZoneInfo("Europe/London")
 
 
 def make_snapshot(time_string, soc):
+    """Construct the sample telemetry snapshot used by the manual Smart Flex controller exercise."""
     return SimpleNamespace(
         timestamp=datetime.fromisoformat(time_string).replace(
             tzinfo=TIMEZONE
@@ -21,6 +24,7 @@ def make_snapshot(time_string, soc):
 
 def main():
 
+    """Run the standalone sample decision exercise; it is diagnostic code and not a production service."""
     print()
     print("=" * 60)
     print("SMART FLEX CONTROLLER SIMULATION")

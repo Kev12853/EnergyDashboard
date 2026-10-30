@@ -1,3 +1,5 @@
+"""Evaluate dispatch, vehicle and battery conditions for Smart Flex charging. This controller makes a decision from supplied inputs; the control service and orchestrator persist requests, and the reconciler handles inverter writes."""
+
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -12,11 +14,13 @@ logger = setup_logger("Smart Flex Controller")
 
 class SmartFlexController:
 
+    """Evaluate active dispatch, connected/charging vehicle status and battery SOC to decide whether Force Charge should start for a half-hour slot."""
     def __init__(self):
         self.current_slot_start = None
         self.force_charge_active = False
 
     def get_active_dispatch(self, dispatches, timestamp):
+        """Select the dispatch whose UTC start/end interval contains timestamp; return None for missing, empty or non-matching rows."""
         if dispatches is None or dispatches.empty:
             return None
 
@@ -143,5 +147,6 @@ class SmartFlexController:
         return "FORCE_CHARGE"
 
     def reset(self):
+        """Clear the in-memory slot latch; durable ownership and inverter state remain managed by the orchestrator/repository."""
         self.current_slot_start = None
         self.force_charge_active = False

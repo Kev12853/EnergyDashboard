@@ -1,7 +1,10 @@
+"""Decode SolaX register values and charge-time schedules into application representations. These pure helpers are used by telemetry parsing and do not access storage or control the inverter."""
+
 from app.solax.telemetry.models import ChargeSchedule
 
 
 def decode_time(register_value: int) -> str:
+    """Convert an encoded time register value to the module’s time representation."""
     minute = (register_value >> 8) & 0xFF
     hour = register_value & 0xFF
 

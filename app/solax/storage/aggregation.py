@@ -1,3 +1,5 @@
+"""Provide legacy telemetry aggregation helpers for stored SolaX readings. The transformation is separate from Modbus polling and inverter control."""
+
 def aggregate_data(df, freq):
     """
     freq:

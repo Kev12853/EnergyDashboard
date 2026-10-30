@@ -1,3 +1,5 @@
+"""Verify that schedule entry is stored beneath an active Smart Flex request without taking ownership of the top-level override."""
+
 from datetime import datetime
 from pprint import pprint
 

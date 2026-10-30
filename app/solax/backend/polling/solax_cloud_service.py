@@ -97,6 +97,7 @@ class SolaxCloudTelemetryService:
         return result[0]
 
     def poll(self) -> PowerFlowSnapshot:
+        """Fetch a cloud telemetry sample and return a snapshot for monitoring; cloud readings are not accepted as local control telemetry."""
         if not all((BASE_URL, CLIENT_ID, CLIENT_SECRET)):
             raise RuntimeError("Missing SolaX API configuration in .env")
         token = self._get_access_token()

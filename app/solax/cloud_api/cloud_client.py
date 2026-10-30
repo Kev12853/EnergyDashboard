@@ -1,3 +1,5 @@
+"""Call the SolaX cloud API and translate its realtime response into application data. This is a remote monitoring source and is not used as local control telemetry."""
+
 from datetime import datetime
 
 import requests
@@ -6,6 +8,7 @@ from app.solax.telemetry.models import PowerFlowSnapshot
 
 
 class SolaxCloudAPI:
+    """Wrap the SolaX cloud HTTP API and translate responses for monitoring/reporting; it is not a local Modbus control channel."""
     def __init__(
         self,
         token_id: str,
@@ -25,6 +28,7 @@ class SolaxCloudAPI:
 
     def get_realtime_data(self):
 
+        """Request realtime cloud data and return the decoded API payload; network, response and API errors may propagate."""
         url = f"{self.base_url}/api/v2/dataAccess/realtimeInfo/get"
 
         headers = {
@@ -58,6 +62,7 @@ class SolaxCloudAPI:
 
     def get_live_snapshot(self) -> PowerFlowSnapshot:
 
+        """Convert a realtime cloud response into the module’s live snapshot representation."""
         data = self.get_realtime_data()
 
         #

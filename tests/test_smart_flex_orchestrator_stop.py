@@ -1,3 +1,5 @@
+"""Unit tests for SmartFlexOrchestrator stop, underlying-request activation and restoration behaviour."""
+
 from app.solax.backend.storage.db import get_connection
 from app.solax.backend.storage.schema import create_solax_tables
 from app.solax.backend.automation.inverter_state_repository import (

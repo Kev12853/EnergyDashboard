@@ -1,3 +1,5 @@
+"""Combine poller/control heartbeats and telemetry freshness into a system-health result for status reporting. It reads application state and does not poll or control the inverter."""
+
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
@@ -8,6 +10,7 @@ FAULT_AFTER_SECONDS = 30 * 60
 
 
 class HealthStatus(Enum):
+    """Represent one health indicator’s machine-readable state and display details."""
     UNKNOWN = "unknown"
     OPERATIONAL = "operational"
     DEGRADED = "degraded"
@@ -15,6 +18,7 @@ class HealthStatus(Enum):
 
 
 class IndicatorStatus(Enum):
+    """Represent the status, label, and optional age/message of a single health indicator."""
     UNKNOWN = "unknown"
     OK = "ok"
     WARNING = "warning"
@@ -23,6 +27,7 @@ class IndicatorStatus(Enum):
 
 @dataclass
 class SystemHealth:
+    """Aggregate service and data indicators for status presentation; does not initiate recovery or inverter actions."""
     last_snapshot_time: datetime | str | None = None
     last_successful_poll: datetime | str | None = None
     consecutive_failures: int = 0
@@ -34,6 +39,7 @@ class SystemHealth:
             self,
     ):
 
+        """Return the age of the latest telemetry sample in seconds when a timestamp is available."""
         last_snapshot_time = _to_datetime(self.last_snapshot_time)
 
         if last_snapshot_time is None:
@@ -46,6 +52,7 @@ class SystemHealth:
     @property
     def data_status(self):
 
+        """Classify telemetry freshness using the configured health thresholds."""
         age = self.data_age_seconds
 
         if age is None:
@@ -64,6 +71,7 @@ class SystemHealth:
             self,
     ):
 
+        """Combine component statuses into an overall health classification."""
         if self.last_snapshot_time is None:
             return HealthStatus.UNKNOWN
 
@@ -86,16 +94,19 @@ class SystemHealth:
     @property
     def poller_icon(self):
 
+        """Return the display icon associated with poller health."""
         return self._icon(self.poller_status)
 
     @property
     def poller_label(self):
 
+        """Return the human-readable poller status label."""
         return self._label(self.poller_status)
 
     @property
     def poller_status(self):
 
+        """Return the poller heartbeat status classification."""
         if self.last_successful_poll is None:
             return IndicatorStatus.UNKNOWN
 
@@ -110,6 +121,7 @@ class SystemHealth:
     @property
     def system_icon(self):
 
+        """Return the display icon associated with overall system health."""
         mapping = {
             HealthStatus.UNKNOWN: "⚫",
             HealthStatus.OPERATIONAL: "🟢",
@@ -122,6 +134,7 @@ class SystemHealth:
     @property
     def system_label(self):
 
+        """Return the human-readable overall system label."""
         mapping = {
             HealthStatus.UNKNOWN: "Unknown",
             HealthStatus.OPERATIONAL: "Healthy",
@@ -134,16 +147,19 @@ class SystemHealth:
     @property
     def data_icon(self):
 
+        """Return the display icon associated with telemetry freshness."""
         return self._icon(self.data_status)
 
     @property
     def data_label(self):
 
+        """Return the human-readable telemetry status label."""
         return self._label(self.data_status)
 
     @property
     def data_age_text(self):
 
+        """Format the telemetry age for status display, or report unavailable age."""
         age = self.data_age_seconds
 
         if age is None:
@@ -191,6 +207,7 @@ def get_system_health(
         last_error=None,
         scheduler_running=None,
 ):
+    """Read telemetry and service status and construct a SystemHealth value; database/query failures are handled by the calling health boundary."""
     return SystemHealth(
         last_snapshot_time=last_snapshot_time,
         last_successful_poll=last_successful_poll,

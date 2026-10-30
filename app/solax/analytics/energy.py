@@ -1,3 +1,5 @@
+"""Calculate interval and daily energy summaries from stored SolaX power telemetry. The functions transform readings for reporting and do not poll or control the inverter."""
+
 import pandas as pd
 
 

@@ -1,3 +1,5 @@
+"""Implement low-level SolaX Modbus reads and register decoding into PowerFlowSnapshot values. It opens TCP connections, retries failed reads, and handles signed register encodings; inverter writes are provided separately by SolaxModbusService."""
+
 # telemetry/modbus_client.py
 
 import time
@@ -29,6 +31,7 @@ logger = setup_logger("ModbusClient")
 
 
 class SolaxModbusClient:
+    """Read SolaX input/holding registers over Modbus TCP and decode raw values; read failures are retried by the polling helpers and ultimately raised."""
     def __init__(
         self,
         host: str,
@@ -53,6 +56,7 @@ class SolaxModbusClient:
     @staticmethod
     def signed16(value: int) -> int:
 
+        """Interpret one unsigned 16-bit register as a signed two’s-complement value."""
         if value > 32767:
             return value - 65536
 
@@ -61,6 +65,7 @@ class SolaxModbusClient:
     @staticmethod
     def signed32(msb: int, lsb: int) -> int:
 
+        """Combine high and low 16-bit words and interpret the result as signed 32-bit data."""
         unsigned32 = (msb * 65536) + lsb
 
         if unsigned32 > 2147483647:
@@ -72,6 +77,7 @@ class SolaxModbusClient:
         self,
     ) -> dict[int, int]:
 
+        """Open a short-lived TCP connection, read the configured input-register block with retries, and raise RuntimeError after exhausted attempts."""
         max_attempts = 3
 
         last_exception = None
@@ -129,6 +135,7 @@ class SolaxModbusClient:
         client,
     ) -> dict[int, int]:
 
+        """Read the configured input-register block through an already connected client; raises RuntimeError for a Modbus error response."""
         result = client.read_input_registers(
             address=REGISTER_BLOCK_START,
             count=REGISTER_BLOCK_SIZE,
@@ -148,6 +155,7 @@ class SolaxModbusClient:
 
     def poll_once(self) -> PowerFlowSnapshot:
 
+        """Read telemetry registers and convert them to a timestamped PowerFlowSnapshot."""
         registers = self.read_register_block()
         logger.info("B1 register block OK")
 
@@ -158,6 +166,7 @@ class SolaxModbusClient:
         registers,
     ) -> PowerFlowSnapshot:
 
+        """Convert raw register offsets to power/SOC fields; combines grid high/low words as signed 32-bit and derives household consumption."""
         ac_power_w = self.signed16(registers[INVERTER_POWER])
 
         pv1_power_w = registers[PV1_POWER]
@@ -210,6 +219,7 @@ class SolaxModbusClient:
 
     def reconnect(self):
 
+        """Close and replace the persistent client, connect to the configured host, and raise ConnectionError if reconnection fails."""
         logger.warning(f"Reconnecting to {self.host}")
 
         try:
@@ -234,6 +244,7 @@ class SolaxModbusClient:
 
     def read_charge_schedule(self):
 
+        """Read holding registers for the charge schedule and decode them; raises RuntimeError on a Modbus error response."""
         result = self.client.read_holding_registers(
             address=0x0097,
             count=9,
@@ -250,6 +261,7 @@ class SolaxModbusClient:
         return parse_schedule(registers)
 
     def read_work_mode_registers(self):
+        """Read the two work/manual holding registers using bounded retries; raises RuntimeError after all attempts fail."""
         logger.info("Inside Work_Mode_Read_Registers")
 
         max_attempts = 3
@@ -305,6 +317,7 @@ class SolaxModbusClient:
         self,
         client,
     ):
+        """Read work/manual holding registers on a caller-owned connection; raises RuntimeError for a Modbus error response."""
         logger.info("Inside Work_Mode_Read_Registers")
 
         result = client.read_holding_registers(
@@ -325,6 +338,7 @@ class SolaxModbusClient:
         self,
     ):
 
+        """Read work/manual mode and telemetry registers on one short-lived connection with retries; returns both raw mappings."""
         max_attempts = 3
 
         last_exception = None
@@ -375,6 +389,7 @@ class SolaxModbusClient:
 
     def close(self):
 
+        """Close the persistent Modbus client; suppresses close errors during cleanup."""
         logger.info(f"Closing connection to {self.host}")
 
         try:

@@ -1,3 +1,5 @@
+"""Verify that a saved underlying schedule request can be promoted after Smart Flex ownership ends."""
+
 from app.enums.solax_enums import WorkMode, ManualMode
 from app.enums.inverter_state_enums import InverterRequestPhase
 from app.solax.backend.automation.inverter_state_repository import InverterStateRepository

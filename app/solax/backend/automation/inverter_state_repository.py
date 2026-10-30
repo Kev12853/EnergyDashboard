@@ -1,3 +1,5 @@
+"""Persist the durable desired inverter state and its ownership/restoration lifecycle in SQLite. Scheduler, Smart Flex and InverterReconciler share this request record; this repository does not communicate over Modbus."""
+
 from app.enums.inverter_state_enums import InverterRequestPhase
 from app.logging.logger import setup_logger
 from app.solax.storage.inverter_state import (
@@ -223,6 +225,7 @@ class InverterStateRepository:
         )
 
     def set_underlying(self, work_mode, manual_mode):
+        """Replace the saved underlying request while preserving the current owner, active request, phase and restoration target; commits through set()."""
         state = self.get()
 
         self.set(
@@ -238,6 +241,7 @@ class InverterStateRepository:
         )
 
     def clear_underlying(self):
+        """Clear the saved underlying request while leaving the current active request and ownership intact; commits through set()."""
         state = self.get()
 
         self.set(
@@ -253,6 +257,7 @@ class InverterStateRepository:
         )
 
     def activate_underlying(self):
+        """Promote the saved underlying request to the active scheduler request; raises RuntimeError when no request is available."""
         state = self.get()
 
         if state is None:

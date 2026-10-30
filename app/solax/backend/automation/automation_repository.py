@@ -1,3 +1,5 @@
+"""Read and write scheduled automation periods in SQLite. The repository supplies schedule data to Scheduler and does not issue Modbus commands."""
+
 # app/backend/automation/solax_repository.py
 
 from datetime import datetime
@@ -8,6 +10,7 @@ from app.solax.backend.automation.models import (
 
 
 class ScheduleRepository:
+    """Access schedule_periods rows in SQLite; this repository commits mutations and performs no inverter I/O."""
     def __init__(
         self,
         connection,
@@ -19,6 +22,7 @@ class ScheduleRepository:
         period: SchedulePeriod,
     ):
 
+        """Insert a new SchedulePeriod or update the row identified by its id; mutates the supplied model with the generated id and commits the transaction."""
         if period.id is None:
             cursor = self.connection.execute(
                 """
@@ -88,6 +92,7 @@ class ScheduleRepository:
         period_id: int,
     ) -> SchedulePeriod | None:
 
+        """Fetch one schedule_periods row by id and return a SchedulePeriod, or None when it does not exist."""
         row = self.connection.execute(
             """
             SELECT *
@@ -108,6 +113,7 @@ class ScheduleRepository:
         self,
     ) -> list[SchedulePeriod]:
 
+        """Return schedule_periods ordered by descending priority and then start time; performs a read only."""
         rows = self.connection.execute(
             """
             SELECT *
@@ -126,6 +132,7 @@ class ScheduleRepository:
         period_id: int,
     ):
 
+        """Delete the schedule_periods row with the supplied id and commit the change."""
         self.connection.execute(
             """
             DELETE FROM schedule_periods
@@ -158,6 +165,7 @@ class ScheduleRepository:
         self,
     ) -> SchedulePeriod | None:
 
+        """Return the first period in repository order, or None when no schedule exists."""
         periods = self.get_periods()
 
         return periods[0] if periods else None

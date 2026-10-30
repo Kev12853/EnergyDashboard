@@ -29,6 +29,7 @@ def _heartbeat(repository, status, message):
 
 
 def main():
+    """Run the monitoring poll loop, persist local/cloud monitoring data and heartbeat status, and send outage/work-mode notifications. This entry point never writes inverter registers."""
     logger.info("SolaX monitoring poller starting, PID=%s", os.getpid())
     connection = get_connection()
     create_solax_tables(connection)

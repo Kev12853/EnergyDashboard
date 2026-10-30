@@ -1,4 +1,13 @@
-"""Resolve shared application data and log paths without hiding old databases."""
+"""Resolve shared application data and log paths without hiding old databases.
+
+``ENERGY_DASHBOARD_DB`` selects an explicit SQLite file;
+``ENERGY_DASHBOARD_DATA_DIR`` selects the data directory and, unless the DB
+file is explicitly configured, its ``energy_dashboard.db`` child;
+``ENERGY_DASHBOARD_LOG_DIR`` selects the log directory. Defaults are rooted
+under the project checkout, with known legacy database locations considered
+before selecting the new data-directory default. Values are filesystem paths,
+not credentials.
+"""
 import os
 import platform
 from pathlib import Path
@@ -10,6 +19,21 @@ def resolve_paths(project_root, platform_name=None, environ=None, home=None):
     Explicit DB configuration wins. Without it, an existing legacy database
     is retained. If both legacy and new default databases exist, fail loudly
     instead of silently choosing one and splitting application state.
+
+    Args:
+        project_root: Checkout root used to form the new ``data`` default.
+        platform_name: Optional OS name, useful for selecting/testing legacy
+            candidates; defaults to the current platform.
+        environ: Environment mapping containing the three path overrides.
+        home: Home directory used to locate the legacy Windows database.
+
+    Returns:
+        ``(data_dir, log_dir, db_path)`` as expanded ``Path`` objects. The
+        function does not create directories or a database.
+
+    Raises:
+        RuntimeError: If both a new and known legacy database already exist
+            and no explicit database path resolves the ambiguity.
     """
     root = Path(project_root).expanduser()
     platform_name = platform_name or platform.system()

@@ -1,3 +1,5 @@
+"""Integration-style tests for request reconciliation and DRY_RUN behaviour using controlled dependencies."""
+
 from unittest.mock import Mock, patch
 
 from app.enums.solax_enums import WorkMode, ManualMode

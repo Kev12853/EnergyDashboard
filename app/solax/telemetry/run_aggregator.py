@@ -1,3 +1,5 @@
+"""Run periodic SQLite telemetry aggregation as a standalone maintenance process. It reads and writes database rows and does not communicate with the inverter."""
+
 import time
 
 from app.backend.common.logging_utils import (
@@ -18,6 +20,7 @@ logger.info("Aggregator starting")
 
 def main():
 
+    """Open the configured database and run recurring telemetry aggregation until interrupted; database errors are reported by the process loop."""
     aggregator = TelemetryAggregator()
     connection = get_connection()
     telemetry_repository = TelemetryRepository(connection)

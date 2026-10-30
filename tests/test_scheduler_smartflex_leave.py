@@ -1,3 +1,5 @@
+"""Verify that leaving a schedule window clears or updates the underlying request while Smart Flex owns the active override."""
+
 from datetime import datetime
 from pprint import pprint
 

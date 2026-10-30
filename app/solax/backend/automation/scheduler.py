@@ -1,3 +1,5 @@
+"""Evaluate enabled schedule windows and update the durable desired inverter request. The scheduler manages ownership and restoration, including scheduler requests underneath Smart Flex; actual writes are performed by the control service reconciler."""
+
 from datetime import datetime
 
 
@@ -14,6 +16,7 @@ logger = setup_logger("Scheduler")
 
 
 class Scheduler:
+    """Evaluate enabled schedule windows and write desired-state transitions through the injected inverter-state repository; never writes Modbus directly."""
     def __init__(
         self,
         repository,
@@ -26,6 +29,7 @@ class Scheduler:
 
     def get_active_period(self):
 
+        """Return the highest-priority enabled period if its window is currently active, otherwise None."""
         periods = [p for p in self.repository.get_periods() if p.enabled]
 
         logger.info(f"is_active = {self.is_active}")
@@ -45,6 +49,7 @@ class Scheduler:
 
     def get_state(self) -> AutomationState:
 
+        """Return an AutomationState describing whether the selected schedule is currently in its time window."""
         periods = [p for p in self.repository.get_periods() if p.enabled]
 
         if not periods:
@@ -365,6 +370,7 @@ class Scheduler:
     def reset(
         self,
     ):
+        """Clear only this Scheduler instance’s in-memory active flag; it does not alter the durable inverter request."""
         self.is_active = False
 
         print("Scheduler reset")
@@ -376,6 +382,7 @@ class Scheduler:
         current_time: str | None = None,
     ) -> bool:
 
+        """Test a local HH:MM time against a half-open interval, including a window that wraps past midnight."""
         if current_time:
             now = datetime.strptime(
                 current_time,

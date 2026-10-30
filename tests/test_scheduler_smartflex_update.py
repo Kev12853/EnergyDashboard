@@ -1,3 +1,5 @@
+"""Verify schedule changes update the underlying request while preserving Smart Flex ownership and restoration data."""
+
 from datetime import datetime
 from pprint import pprint
 

@@ -1,3 +1,5 @@
+"""Unit tests for inverter reconciliation requests using fake state and snapshots; no physical inverter communication is intended."""
+
 from unittest.mock import Mock
 
 from app.enums.solax_enums import ManualMode, WorkMode

@@ -1,3 +1,5 @@
+"""Manual Modbus connection/read probe for a local SolaX dongle; execution contacts inverter hardware and reads holding registers."""
+
 from pymodbus.client import ModbusTcpClient
 
 

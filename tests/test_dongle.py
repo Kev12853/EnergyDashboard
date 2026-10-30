@@ -1,3 +1,5 @@
+"""Manual SolaX dongle polling diagnostic. It may contact local Modbus hardware and contain an unbounded polling loop; do not run as part of routine test collection."""
+
 from time import sleep
 from datetime import datetime
 

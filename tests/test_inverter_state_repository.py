@@ -1,3 +1,5 @@
+"""Unit tests for repository persistence and lifecycle operations on the singleton inverter_state row."""
+
 from app.enums.inverter_state_enums import InverterRequestPhase
 from app.enums.solax_enums import ManualMode, WorkMode
 from app.solax.backend.automation.inverter_state_repository import (

@@ -1,3 +1,5 @@
+"""Exercise reconciliation of Smart Flex override and restoration requests against supplied telemetry."""
+
 from pprint import pprint
 
 from app.solax.backend.inverter.inverter_reconciler import InverterReconciler

@@ -1,3 +1,5 @@
+"""Exercise the legacy SolaX automation facade against the configured SQLite database. This script has database side effects at import time and is not an isolated pytest test."""
+
 from app.solax.backend.automation import (
     AutomationEngine,
 )

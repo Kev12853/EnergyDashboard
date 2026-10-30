@@ -1,3 +1,5 @@
+"""Exercise compatibility helpers for reading, setting and clearing the durable inverter request in SQLite."""
+
 from app.solax.backend.storage.db import (
     get_connection,
 )

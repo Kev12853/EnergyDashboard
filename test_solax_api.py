@@ -1,3 +1,5 @@
+"""Manual SolaX cloud API authentication and telemetry probe. It loads local environment configuration and makes network requests when executed; credential values are intentionally not documented."""
+
 import os
 
 import requests

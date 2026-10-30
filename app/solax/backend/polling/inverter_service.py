@@ -1,3 +1,5 @@
+"""Read local Modbus work-mode and telemetry registers and assemble a PowerFlowSnapshot. This read-only poller interface feeds storage and control decisions but exposes no inverter write method."""
+
 
 from app.solax.backend.inverter.inverter_controller import InverterController
 from app.logging.logger import setup_logger
@@ -47,6 +49,7 @@ logger = setup_logger("Inverter Service")
 # ============================================================
 
 class InverterPollingService:
+    """Read local Modbus registers and build snapshots for storage/control; it exposes no write method."""
     def __init__(
         self,
         host=SOLAX_HOST,
@@ -161,4 +164,5 @@ class InverterPollingService:
         self,
     ):
 
+        """Close the polling Modbus client and release its connection resources."""
         self._modbus_service.close()

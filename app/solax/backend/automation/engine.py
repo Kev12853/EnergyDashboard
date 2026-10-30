@@ -1,9 +1,12 @@
+"""Legacy scheduling facade that evaluates automation periods using ScheduleRepository and inverter state. It expresses desired state and does not write to the inverter."""
+
 from app.solax.backend.automation.models import (
     AutomationState,
 )
 
 
 class AutomationEngine:
+    """Legacy read-only schedule evaluator backed by a repository; it reports periods and window state without changing durable inverter requests."""
     def __init__(
         self,
         repository,
@@ -13,6 +16,7 @@ class AutomationEngine:
 
     def get_active_period(self):
 
+        """Return the first enabled period if its time window contains the current local time, otherwise None."""
         periods = [
             p
             for p in self.repository.get_periods()
@@ -34,6 +38,7 @@ class AutomationEngine:
 
     def get_state(self) -> AutomationState:
 
+        """Build an AutomationState for the currently active period, or an idle state when no period is active."""
         rule = self.get_active_period()
 
         if rule is None:
@@ -66,6 +71,7 @@ class AutomationEngine:
         current_time: str | None = None,
     ) -> bool:
 
+        """Check whether a local HH:MM time falls in a half-open schedule interval; supports intervals that cross midnight."""
         from datetime import datetime
 
         if current_time:

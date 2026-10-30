@@ -1,3 +1,5 @@
+"""Track observed work-mode values and report changes for poller notifications. It observes telemetry only and never requests a mode change."""
+
 from datetime import datetime
 
 
@@ -47,6 +49,7 @@ class WorkModeMonitor:
 
     @property
     def mode(self):
+        """Return the most recently observed mode tracked by this monitor, or its initial value before an update."""
         return self.current_mode
 
     def update(

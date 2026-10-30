@@ -1,7 +1,10 @@
+"""Rebuild one-minute and thirty-minute telemetry aggregates and prune raw history in SQLite. This maintenance service transforms stored data and does not communicate with the inverter."""
+
 from app.connections.connection import get_connection
 
 
 class TelemetryAggregator:
+    """Read raw telemetry and persist derived one-minute and thirty-minute aggregates in SQLite."""
     def __init__(self):
         self.connection = get_connection()
 
@@ -19,6 +22,7 @@ class TelemetryAggregator:
         #     """
         # )
 
+        """Rebuild minute buckets from stored raw snapshots and commit aggregate rows."""
         self.connection.execute(
             """
                 INSERT OR REPLACE INTO telemetry_1m
@@ -93,6 +97,7 @@ class TelemetryAggregator:
 
     def rebuild_30m(self):
 
+        """Rebuild half-hour buckets from stored telemetry and commit aggregate rows."""
         self.connection.execute(
             """
                 INSERT OR REPLACE INTO telemetry_30m
@@ -197,6 +202,7 @@ class TelemetryAggregator:
 
     def cleanup_raw_telemetry(self):
 
+        """Delete raw samples older than the configured retention boundary and commit the deletion."""
         self.connection.execute(
             """
                 DELETE FROM telemetry_snapshots

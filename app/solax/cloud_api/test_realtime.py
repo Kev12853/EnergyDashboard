@@ -1,3 +1,5 @@
+"""Standalone manual probe for SolaX cloud realtime data. It is diagnostic code that may make a network request when run, not an automated inverter-control component."""
+
 import time
 
 from app.solax.cloud_api.cloud_client import (

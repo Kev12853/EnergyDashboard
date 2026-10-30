@@ -1,3 +1,5 @@
+"""Deterministic regression tests for the SolaX poller/control separation, Smart Flex dispatch-data safety, reconciliation and database path resolution."""
+
 import sqlite3
 import tempfile
 from datetime import datetime, timedelta, timezone

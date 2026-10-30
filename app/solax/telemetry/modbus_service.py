@@ -1,3 +1,5 @@
+"""Expose the Modbus read interface and the guarded inverter write interface. Polling methods read telemetry; write_work_mode is the only method here that can write work/manual registers and returns without a Modbus write while DRY_RUN is true."""
+
 from app.config.solax_config import (
     MANUAL_MODE_WRITE_REGISTER,
     WORK_MODE_WRITE_REGISTER,
@@ -11,6 +13,7 @@ logger = setup_logger("ModBus Service")
 
 
 class SolaxModbusService:
+    """Provide the Modbus boundary used by polling and control, separating register reads from guarded mode writes."""
     def __init__(
         self,
         host: str,
@@ -28,18 +31,21 @@ class SolaxModbusService:
         self,
     ):
 
+        """Return raw work/manual mode holding registers from the client."""
         return self._client.read_work_mode_registers()
 
     def read_telemetry(
         self,
     ):
 
+        """Read a telemetry snapshot from the configured input registers."""
         return self._client.poll_once()
 
     def read_polling_registers(
         self,
     ):
 
+        """Read work/manual mode plus telemetry mappings for one poll cycle."""
         return self._client.read_polling_registers()
 
     def build_snapshot(
@@ -47,12 +53,14 @@ class SolaxModbusService:
         registers,
     ):
 
+        """Convert a telemetry-register mapping into a PowerFlowSnapshot."""
         return self._client.build_snapshot(registers)
 
     def read_charge_schedule(
         self,
     ):
 
+        """Read and decode the inverter charge schedule through the Modbus client."""
         return self._client.read_charge_schedule()
 
     def write_work_mode(
@@ -60,6 +68,7 @@ class SolaxModbusService:
         work_mode,
         manual_mode=None,
     ):
+        """Request work/manual register writes using configured write addresses; while DRY_RUN is true it only logs, otherwise it opens a short-lived connection and raises on connection or Modbus write failure."""
         logger.info(f"Writing work_mode={work_mode}, manual_mode={manual_mode}")
 
         if DRY_RUN:
@@ -99,10 +108,12 @@ class SolaxModbusService:
         **kwargs,
     ):
 
+        """Always raise NotImplementedError because charge-schedule writes are not implemented."""
         raise NotImplementedError("Charge schedule writing is not implemented")
 
     def close(
         self,
     ):
 
+        """Close the wrapped Modbus client and release its connection resources."""
         self._client.close()

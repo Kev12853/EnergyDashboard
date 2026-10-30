@@ -1,3 +1,5 @@
+"""Compare the durable desired inverter request with a fresh local Modbus snapshot and advance its write/restore lifecycle. This is the control-side writer client: writes are delegated to its injected service and are subject to DRY_RUN and retry/telemetry confirmation safeguards."""
+
 from app.enums.solax_enums import WorkMode
 from app.logging.logger import setup_logger
 import time

@@ -1,3 +1,5 @@
+"""Create and migrate SQLite tables shared by SolaX telemetry, automation, Octopus inputs and service heartbeats. Schema setup has database side effects but never communicates with the inverter."""
+
 # app/backend/storage/solax_schema.py
 
 # SOLAX TABLES
@@ -5,6 +7,7 @@ def create_telemetry_tables(
     connection,
 ):
 
+    """Create telemetry snapshot, aggregate and heartbeat tables, adding the source marker to older snapshots where needed; commits the schema transaction."""
     connection.execute(
         """
             CREATE TABLE IF NOT EXISTS telemetry_snapshots (
@@ -107,6 +110,7 @@ def create_telemetry_tables(
 def create_automation_tables(
     connection,
 ):
+    """Create schedule_periods and singleton inverter_state tables, apply additive compatibility columns and initialise the singleton row; commits changes."""
     connection.execute(
         """
             CREATE TABLE IF NOT EXISTS schedule_periods (
@@ -177,6 +181,7 @@ def create_automation_tables(
 def create_solax_tables(
     connection,
 ):
+    """Ensure the SolaX telemetry and automation tables exist by invoking their schema creators."""
     create_telemetry_tables(connection)
 
     create_automation_tables(connection)

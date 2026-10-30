@@ -1,3 +1,5 @@
+"""Convert SolaX telemetry readings into half-hour settlement energy values. This is reporting logic over supplied data, with no database or inverter side effects."""
+
 import pandas as pd
 
 from app.solax.analytics.energy import (

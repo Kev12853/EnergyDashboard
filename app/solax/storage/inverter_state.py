@@ -1,3 +1,5 @@
+"""Compatibility functions for reading and changing the durable inverter request in SQLite. Scheduler and Smart Flex ownership semantics are represented here; this module stores intent and does not issue Modbus writes."""
+
 from datetime import datetime
 
 from app.enums.inverter_state_enums import InverterRequestPhase
@@ -6,6 +8,7 @@ from app.enums.inverter_state_enums import InverterRequestPhase
 def get_inverter_state(
     connection,
 ):
+    """Read the singleton inverter_state row and return its request fields as a dictionary, or None when the row is absent."""
     cursor = connection.execute(
         """
             SELECT
@@ -84,6 +87,7 @@ def set_inverter_state(
     active,
     source,
 ):
+    """Insert/update the singleton inverter_state request and commit; stores intent and ownership but performs no hardware write."""
     existing = get_inverter_state(
         connection,
     )
@@ -170,6 +174,7 @@ def set_inverter_state(
 
 def clear_inverter_state(connection):
     # phase = InverterRequestPhase.IDLE
+    """Set the singleton inverter_state row to IDLE, clear request/ownership payloads and commit the change."""
     connection.execute(
         """
             UPDATE inverter_state
@@ -195,6 +200,7 @@ def clear_inverter_state(connection):
 def has_pending_inverter_state(
     connection,
 ):
+    """Return whether an inverter_state row exists; despite the name, callers should use its phase/request fields to determine active intent."""
     return (
         get_inverter_state(
             connection,

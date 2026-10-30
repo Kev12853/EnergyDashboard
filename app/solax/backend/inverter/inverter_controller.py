@@ -1,3 +1,5 @@
+"""Translate between human-readable inverter modes and raw work/manual register values, and obtain the current decoded mode through a polling service. It contains no write path."""
+
 from app.enums.solax_enums import WorkMode, ManualMode
 from app.logging.logger import setup_logger
 
@@ -6,6 +8,7 @@ logger = setup_logger("Controller")
 
 class InverterController:
 
+    """Decode raw work/manual mode values and present named modes; reads through the injected service but has no write operation."""
     def __init__(
         self,
         service,
@@ -13,6 +16,7 @@ class InverterController:
         self.service = service
 
     def get_work_mode(self):
+        """Read work/manual holding registers and return the decoded human-readable mode; propagates communication/read failures."""
         logger.info("Inside Get Work Mode")
         logger.info("Getting Work Mode Registers")
 
@@ -31,6 +35,7 @@ class InverterController:
     @staticmethod
     def encode_work_mode(mode):
 
+        """Map a supported display name to its (work_mode, manual_mode) register values; raises ValueError for an unknown name."""
         if mode == "Self Use":
             return WorkMode.SELF_USE, ManualMode.IDLE
 
@@ -57,6 +62,7 @@ class InverterController:
         manual_mode,
     ):
 
+        """Map raw work/manual register values to a display name, retaining unknown values in the returned label."""
         if work_mode == WorkMode.SELF_USE:
             return "Self Use"
 

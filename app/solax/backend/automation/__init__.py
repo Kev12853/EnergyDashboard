@@ -1,3 +1,5 @@
+"""Schedule, automation-state persistence and Smart Flex coordination."""
+
 from app.solax.backend.automation.models import AutomationState, SchedulePeriod
 from app.solax.backend.automation.engine import AutomationEngine
 from app.solax.backend.automation.automation_repository import ScheduleRepository

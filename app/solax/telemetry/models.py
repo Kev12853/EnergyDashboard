@@ -1,3 +1,5 @@
+"""Define typed SolaX telemetry snapshots and charge schedule values passed between polling, storage and reporting layers. The models do not perform I/O."""
+
 # telemetry/models.py
 
 from dataclasses import dataclass
@@ -10,6 +12,7 @@ class PowerFlowSnapshot:
     # TIMESTAMP
     # =====================================================
 
+    """Carry a timestamped set of solar, battery, grid, consumption and inverter readings plus raw registers and mode values; powers use watts and SOC uses percent."""
     timestamp: datetime
 
     upload_time: str | None = None
@@ -73,6 +76,7 @@ class PowerFlowSnapshot:
 
 @dataclass(slots=True)
 class ChargeSchedule:
+    """Carry decoded charge/discharge window times and whether the second period is enabled."""
     charge1_start: str
     charge1_end: str
 

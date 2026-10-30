@@ -1,8 +1,11 @@
+"""Format and send a Pushover notification when the poller observes a work-mode change. The helper does not initiate a mode change."""
+
 def send_work_mode_push(
     pushover,
     change,
 ):
 
+    """Format a work-mode-change message and send it through the injected Pushover sender."""
     title = "⚡ Energy Dashboard"
 
     message = (

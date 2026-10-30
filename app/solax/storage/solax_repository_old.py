@@ -1,3 +1,5 @@
+"""Older telemetry repository retained for compatibility or migration reference. Prefer the current storage repository after confirming a caller does not depend on legacy behaviour."""
+
 import json
 from datetime import datetime
 
@@ -7,6 +9,7 @@ from app.solax.telemetry.models import (
 
 
 class TelemetryRepository:
+    """Persist/query telemetry snapshots, history and heartbeat rows using the injected SQLite connection."""
     def __init__(
         self,
         connection,
@@ -19,6 +22,7 @@ class TelemetryRepository:
         snapshot: PowerFlowSnapshot,
     ):
 
+        """Insert or replace one telemetry_snapshots or telemetry_cloud_snapshots row according to source, then commit."""
         self.connection.execute(
             """
                 INSERT INTO telemetry_snapshots (
@@ -58,6 +62,7 @@ class TelemetryRepository:
         status: str = "Running",
         message: str | None = None,
     ):
+        """Upsert a service_heartbeat record and commit it on the injected connection."""
         self.connection.execute(
             """
                 INSERT INTO service_heartbeat (
@@ -86,6 +91,7 @@ class TelemetryRepository:
 
     def get_heartbeat(self, service_name: str) -> datetime | None:
 
+        """Read one heartbeat timestamp from service_heartbeat and return a datetime, or None if absent."""
         cursor = self.connection.execute(
             """
                 SELECT
@@ -105,6 +111,7 @@ class TelemetryRepository:
 
     def get_latest_snapshot(self):
 
+        """Return the newest row across local and cloud snapshot tables; callers must inspect telemetry_source before using it for control."""
         cursor = self.connection.execute(
             """
                 SELECT *
@@ -121,6 +128,7 @@ class TelemetryRepository:
         start,
         end,
     ):
+        """Read telemetry_1m buckets between the supplied endpoints in chronological order."""
         start = start.strftime("%Y-%m-%d %H:%M:%S")
 
         end = end.strftime("%Y-%m-%d %H:%M:%S")
@@ -145,6 +153,7 @@ class TelemetryRepository:
         start: str,
         end: str,
     ):
+        """Read telemetry_30m buckets between the supplied endpoints in chronological order."""
         cursor = self.connection.execute(
             """
                 SELECT *

@@ -1,3 +1,5 @@
+"""Unit tests for monitoring poller behaviour when local Modbus polling or telemetry persistence fails."""
+
 from unittest.mock import MagicMock, patch
 
 import app.solax.backend.polling.solax_service as poller

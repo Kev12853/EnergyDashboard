@@ -1,3 +1,5 @@
+"""Parse raw SolaX register blocks into typed telemetry snapshots. This conversion layer interprets readings but does not store them or control the inverter."""
+
 from app.solax.telemetry.models import PowerFlowSnapshot
 
 
@@ -23,8 +25,10 @@ class SolaxParser:
         #   40 + index
         #
 
+        """Decode a raw Modbus register mapping into named runtime values; missing or malformed register data may raise during lookup/conversion."""
         def reg(index, default=None):
 
+            """Read and convert one named value from the register mapping, applying the parser’s configured scaling when present."""
             try:
                 return registers[index]
 
@@ -50,6 +54,7 @@ class SolaxParser:
     @staticmethod
     def build_snapshot(parsed: dict) -> PowerFlowSnapshot:
 
+        """Build a PowerFlowSnapshot from parsed register values without database or network side effects."""
         return PowerFlowSnapshot(
             timestamp=None,
             battery_soc_pct=parsed.get("battery_soc_pct"),

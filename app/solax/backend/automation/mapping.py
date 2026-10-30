@@ -1,3 +1,5 @@
+"""Map named automation modes to the raw work-mode and manual-mode values used by inverter requests. The mapping is pure and performs no I/O."""
+
 from app.enums.automation_enums import InverterWorkMode
 from app.enums.solax_enums import WorkMode, ManualMode
 

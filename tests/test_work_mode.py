@@ -1,3 +1,5 @@
+"""Manual local Modbus telemetry probe that reads the configured inverter host and prints a snapshot; running it contacts hardware."""
+
 from pprint import pprint
 
 from app.solax.telemetry.modbus_client import SolaxModbusClient
