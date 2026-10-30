@@ -2,6 +2,7 @@
 from app.solax.backend.inverter.inverter_controller import InverterController
 from app.logging.logger import setup_logger
 from app.solax.telemetry.modbus_service import SolaxModbusService
+from app.config.solax_config import SOLAX_HOST, SOLAX_PORT
 
 logger = setup_logger("Inverter Service")
 
@@ -48,13 +49,15 @@ logger = setup_logger("Inverter Service")
 class InverterPollingService:
     def __init__(
         self,
-        host="192.168.1.67",
+        host=SOLAX_HOST,
+        port=SOLAX_PORT,
     ):
 
-        self.modbus_service = SolaxModbusService(
+        self._modbus_service = SolaxModbusService(
             host=host,
+            port=port,
         )
-        self.controller = InverterController(self.modbus_service)
+        # Decoding is pure; this service deliberately exposes no write method.
 
         """
         Poll the inverter and return a PowerFlowSnapshot.
@@ -99,7 +102,7 @@ class InverterPollingService:
         (
             mode_registers,
             telemetry_registers,
-        ) = self.modbus_service.read_polling_registers()
+        ) = self._modbus_service.read_polling_registers()
 
         #
         # Convert raw register values into a human-readable
@@ -120,14 +123,14 @@ class InverterPollingService:
         # notifications and UI display.
         #
 
-        decoded_work_mode = self.controller.decode_work_mode(
+        decoded_work_mode = InverterController.decode_work_mode(
             mode_registers[0x008B],
             mode_registers[0x008C],
         )
 
         logger.info("Got Work Mode")
         logger.info("Getting Poll Once")
-        snapshot = self.modbus_service.build_snapshot(telemetry_registers)
+        snapshot = self._modbus_service.build_snapshot(telemetry_registers)
         logger.info("Got Poll Once")
 
         #
@@ -154,32 +157,8 @@ class InverterPollingService:
 
         return snapshot
 
-    def write_work_mode(
-        self,
-        work_mode,
-        manual_mode,
-    ):
-        """
-        Write a new operating mode to the inverter.
-
-        The reconciler requests operating mode changes via the
-        polling service. The actual Modbus write is delegated
-        to the underlying Modbus service.
-        """
-
-        logger.info(
-            f"Writing inverter mode: "
-            f"work_mode={work_mode}, "
-            f"manual_mode={manual_mode}"
-        )
-
-        self.modbus_service.write_work_mode(
-            work_mode,
-            manual_mode,
-        )
-
     def close(
         self,
     ):
 
-        self.modbus_service.close()
+        self._modbus_service.close()

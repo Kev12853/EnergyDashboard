@@ -235,3 +235,21 @@ def upsert_tariffs(
 def create_octopus_tables(connection):
     create_tariffs_table(connection)
     create_four_rate_tariffs_table(connection)
+
+
+def create_smartflex_vehicle_status_table(connection):
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS octopus_vehicle_status (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            connected INTEGER NOT NULL,
+            charging INTEGER NOT NULL,
+            observed_at TEXT NOT NULL
+        )"""
+    )
+
+    connection.execute(
+        """CREATE TABLE IF NOT EXISTS octopus_data_status (
+            data_name TEXT PRIMARY KEY,
+            updated_at TEXT NOT NULL
+        )"""
+    )

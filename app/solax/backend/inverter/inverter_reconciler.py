@@ -1,5 +1,6 @@
 from app.enums.solax_enums import WorkMode
 from app.logging.logger import setup_logger
+import time
 
 logger = setup_logger("Inverter Reconciler")
 
@@ -38,6 +39,8 @@ class InverterReconciler:
     ):
         self.inverter_state_repo = inverter_state_repo
         self.inverter_service = inverter_service
+        self._last_attempt = {}
+        self._retry_after_seconds = 60
 
     def process(
         self,
@@ -110,12 +113,41 @@ class InverterReconciler:
 
         if action_required:
 
-            logger.info("Updating inverter")
-
-            self.inverter_service.write_work_mode(
+            request_key = (
                 requested_work_mode,
                 requested_manual_mode,
+                requested_state.get("source"),
+                requested_state.get("phase"),
+                requested_state.get("updated_at"),
             )
+            now = time.monotonic()
+            if now - self._last_attempt.get(request_key, float("-inf")) < self._retry_after_seconds:
+                logger.warning("Control write retry suppressed by 60 second backoff")
+                return
+
+            logger.info("Updating inverter")
+            # A scheduler/Smart Flex update may have arrived after the first
+            # read. Never issue a command for a superseded request.
+            current_state = self.inverter_state_repo.get()
+            if current_state is None or any(
+                current_state.get(key) != requested_state.get(key)
+                for key in (
+                    "requested_work_mode", "requested_manual_mode", "source", "phase",
+                    "active", "restore_work_mode_to", "restore_manual_mode_to",
+                    "underlying_work_mode", "underlying_manual_mode", "updated_at",
+                )
+            ):
+                logger.info("Request changed during reconciliation; deferring to next fresh poll")
+                return
+            self._last_attempt[request_key] = now
+            try:
+                self.inverter_service.write_work_mode(
+                    requested_work_mode,
+                    requested_manual_mode,
+                )
+            except Exception:
+                logger.exception("Inverter command failed; request retained for controlled retry")
+                raise
             
             return
 
@@ -134,8 +166,11 @@ class InverterReconciler:
             requested_state["restore_work_mode_to"] is None
         ):
             logger.info("Override complete - clearing inverter state")
-
-            self.inverter_state_repo.clear()
+            clear_if_current = getattr(self.inverter_state_repo, "clear_if_current", None)
+            if clear_if_current:
+                clear_if_current(requested_state)
+            else:
+                self.inverter_state_repo.clear()
 
         else:
 

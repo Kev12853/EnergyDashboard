@@ -17,7 +17,8 @@ def get_inverter_state(
                 underlying_manual_mode,
                 active,
                 source,
-                phase
+                phase,
+                updated_at
             FROM inverter_state
             LIMIT 1
         """
@@ -39,6 +40,7 @@ def get_inverter_state(
         "active": row[6],
         "source": row[7],
         "phase": row[8],
+        "updated_at": row[9],
     }
 
 
@@ -60,10 +62,11 @@ def request_restore(connection):
                 restore_work_mode_to = NULL,
                 restore_manual_mode_to = NULL,
                 phase = ?,
-                active = 1
+                active = 1,
+                updated_at = ?
             WHERE id = 1
         """,
-        (InverterRequestPhase.RESTORE,),
+        (InverterRequestPhase.RESTORE, datetime.now().isoformat()),
     )
 
     connection.commit()
@@ -100,7 +103,8 @@ def set_inverter_state(
                     underlying_manual_mode,
                     active,
                     source,
-                    phase
+                    phase,
+                    updated_at
                 )
                 VALUES (
                     1,
@@ -109,6 +113,7 @@ def set_inverter_state(
                     ?,
                     ?,
                     ?,  
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -125,6 +130,7 @@ def set_inverter_state(
                 active,
                 source,
                 phase,
+                timestamp,
             ),
         )
 
@@ -141,7 +147,8 @@ def set_inverter_state(
                     underlying_manual_mode = ?,
                     active = ?,
                     source = ?,
-                    phase = ?
+                    phase = ?,
+                    updated_at = ?
                 WHERE id = 1
             """,
             (
@@ -154,6 +161,7 @@ def set_inverter_state(
                 active,
                 source,
                 phase,
+                timestamp,
             ),
         )
 
@@ -174,10 +182,11 @@ def clear_inverter_state(connection):
                 underlying_manual_mode = NULL,
                 active = 0,
                 source = NULL,
-                phase = ?
+                phase = ?,
+                updated_at = ?
             WHERE id = 1
         """,
-        (InverterRequestPhase.IDLE,),
+        (InverterRequestPhase.IDLE, datetime.now().isoformat()),
     )
 
     connection.commit()

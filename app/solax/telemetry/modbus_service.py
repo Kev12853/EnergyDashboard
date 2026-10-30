@@ -5,6 +5,7 @@ from app.config.solax_config import (
 )
 from app.logging.logger import setup_logger
 from app.solax.telemetry.modbus_client import SolaxModbusClient
+from pymodbus.client import ModbusTcpClient
 
 logger = setup_logger("ModBus Service")
 
@@ -67,20 +68,30 @@ class SolaxModbusService:
             )
             return
 
-        self._client.client.write_register(
-            address=WORK_MODE_WRITE_REGISTER,
-            value=work_mode,
-            device_id=self._client.slave_id,
-        )
-
-        if manual_mode is None:
-            return
-
-        self._client.client.write_register(
-            address=MANUAL_MODE_WRITE_REGISTER,
-            value=manual_mode,
-            device_id=self._client.slave_id,
-        )
+        # Use a short lived connection for the write too; the dongle has shown
+        # instability with reused connections. Keep the configured mappings.
+        client = ModbusTcpClient(host=self._client.host, port=self._client.port)
+        if not client.connect():
+            raise ConnectionError(f"Unable to connect to {self._client.host} for inverter write")
+        try:
+            result = client.write_register(address=WORK_MODE_WRITE_REGISTER,
+                                           value=int(work_mode),
+                                           device_id=self._client.slave_id)
+            if result.isError():
+                raise RuntimeError(f"Work-mode write rejected: {result}")
+            if manual_mode is not None:
+                try:
+                    result = client.write_register(address=MANUAL_MODE_WRITE_REGISTER,
+                                                   value=int(manual_mode),
+                                                   device_id=self._client.slave_id)
+                    if result.isError():
+                        raise RuntimeError(f"Manual-mode write rejected: {result}")
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"Work-mode write acknowledged but manual-mode write failed: {exc}"
+                    ) from exc
+        finally:
+            client.close()
 
     def write_charge_schedule(
         self,

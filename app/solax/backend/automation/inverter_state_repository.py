@@ -69,6 +69,9 @@ class InverterStateRepository:
             self.connection,
         )
 
+        if inverter_state is None:
+            return None
+
         if (
             inverter_state["phase"] == InverterRequestPhase.IDLE
             and inverter_state["requested_work_mode"] is not None
@@ -79,9 +82,6 @@ class InverterStateRepository:
             )
         #
         # No inverter_state row.
-        if inverter_state is None:
-            return None
-
         #
         # phase is the authoritative request lifecycle.
         #
@@ -107,11 +107,11 @@ class InverterStateRepository:
         requested_manual_mode,
         restore_work_mode_to,
         restore_manual_mode_to,
-        underlying_work_mode,
-        underlying_manual_mode,
-        phase,
-        active,
-        source,
+        underlying_work_mode=None,
+        underlying_manual_mode=None,
+        phase=InverterRequestPhase.OVERRIDE,
+        active=True,
+        source="scheduler",
     ):
         """
         Create or update an override request.
@@ -184,6 +184,28 @@ class InverterStateRepository:
         return clear_inverter_state(
             self.connection,
         )
+
+    def clear_if_current(self, state):
+        """Clear only the request that was actually verified by telemetry."""
+        cursor = self.connection.execute(
+            """UPDATE inverter_state SET requested_work_mode=NULL,
+                   requested_manual_mode=NULL, restore_work_mode_to=NULL,
+                   restore_manual_mode_to=NULL, underlying_work_mode=NULL,
+                   underlying_manual_mode=NULL, active=0, source=NULL,
+                   phase=?, updated_at=CURRENT_TIMESTAMP
+               WHERE id=1 AND phase=? AND source IS ? AND active IS ?
+                 AND requested_work_mode IS ? AND requested_manual_mode IS ?
+                 AND restore_work_mode_to IS ? AND restore_manual_mode_to IS ?
+                 AND underlying_work_mode IS ? AND underlying_manual_mode IS ?
+                 AND updated_at IS ?""",
+            (InverterRequestPhase.IDLE, state["phase"], state["source"],
+             state["active"], state["requested_work_mode"], state["requested_manual_mode"],
+             state["restore_work_mode_to"], state["restore_manual_mode_to"],
+             state["underlying_work_mode"], state["underlying_manual_mode"],
+             state["updated_at"]),
+        )
+        self.connection.commit()
+        return cursor.rowcount == 1
 
     #
     # ------------------------------------------------------------------

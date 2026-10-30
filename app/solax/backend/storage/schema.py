@@ -161,6 +161,13 @@ def create_automation_tables(
             ADD COLUMN underlying_manual_mode INTEGER
             """
         )
+    if "updated_at" not in columns:
+        connection.execute("ALTER TABLE inverter_state ADD COLUMN updated_at TEXT")
+    # Establish the singleton coordination row for new databases without
+    # modifying an existing active request.
+    connection.execute(
+        "INSERT OR IGNORE INTO inverter_state (id, active, phase) VALUES (1, 0, 'IDLE')"
+    )
     connection.commit()
 
 

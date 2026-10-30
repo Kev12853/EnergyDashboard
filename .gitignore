@@ -18,3 +18,7 @@ __pycache__/
 Thumbs.db
 /logs/
 /tests/
+!/tests/
+/tests/*
+!/tests/test_sola_x_service_split.py
+!/tests/test_solax_service_poll_failure.py

@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+import pandas as pd
 
 from app.config.solax_config import SMART_FLEX_SOC_TARGET
 from app.enums.solax_enums import WorkMode, ManualMode
@@ -18,13 +20,14 @@ class SmartFlexController:
         if dispatches is None or dispatches.empty:
             return None
 
-        if timestamp.tzinfo is not None:
-            timestamp = timestamp.replace(tzinfo=None)
+        # Compare absolute instants. Stripping an offset can select the wrong
+        # half-hour slot around daylight-saving transitions.
+        timestamp = timestamp.replace(tzinfo=timestamp.tzinfo or timezone.utc)
+        timestamp = timestamp.astimezone(timezone.utc)
+        starts = pd.to_datetime(dispatches["dispatch_start"], utc=True)
+        ends = pd.to_datetime(dispatches["dispatch_end"], utc=True)
 
-        active = dispatches[
-            (dispatches["dispatch_start"] <= timestamp)
-            & (dispatches["dispatch_end"] > timestamp)
-        ]
+        active = dispatches[(starts <= timestamp) & (ends > timestamp)]
 
         if active.empty:
             return None
@@ -107,6 +110,10 @@ class SmartFlexController:
         # ------------------------------------------------------------
 
         soc = snapshot.battery_soc_pct
+
+        if soc is None:
+            logger.info("Smart Flex: battery SOC unavailable")
+            return "NORMAL"
 
         logger.info(f"Smart Flex: BMW charging, SolaX SOC={soc:.1f}%")
 

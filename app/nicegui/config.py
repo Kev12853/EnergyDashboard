@@ -1,5 +1,4 @@
-from pathlib import Path
+"""Compatibility aliases for the canonical shared database paths."""
+from app.config.project_paths import DATA_DIR, DB_PATH, LOG_DIR, PROJECT_ROOT
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "data"
-DB_PATH = DATA_DIR / "energy_dashboard.db"
+__all__ = ["DATA_DIR", "DB_PATH", "LOG_DIR", "PROJECT_ROOT"]

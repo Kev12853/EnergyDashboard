@@ -1,7 +1,8 @@
 """Operations page showing the health of background application services.
 
-The page displays heartbeat information for three services:
+The page displays heartbeat information for four services:
     - Poller
+    - SolaX Control
     - Aggregator
     - Octopus
 
@@ -43,6 +44,7 @@ class OperationsPage:
 
         # These references are populated by render() before refresh() is called.
         self.poller_status_card = None
+        self.control_status_card = None
         self.aggregator_status_card = None
         self.octopus_status_card = None
         self.shell = None
@@ -63,6 +65,10 @@ class OperationsPage:
             self.poller_status_card = ServiceStatusCard(
                 "Poller",
                 ServiceName.POLLER,
+            )
+            self.control_status_card = ServiceStatusCard(
+                "SolaX Control",
+                ServiceName.CONTROL,
             )
             self.aggregator_status_card = ServiceStatusCard(
                 "Aggregator",
@@ -90,6 +96,7 @@ class OperationsPage:
             service: self.telemetry_repo.get_heartbeat(service)
             for service in (
                 ServiceName.POLLER,
+                ServiceName.CONTROL,
                 ServiceName.AGGREGATOR,
                 ServiceName.OCTOPUS,
             )
@@ -105,6 +112,7 @@ class OperationsPage:
 
         # Update each service's individual card.
         self.poller_status_card.set_status(heartbeats[ServiceName.POLLER])
+        self.control_status_card.set_status(heartbeats[ServiceName.CONTROL])
         self.aggregator_status_card.set_status(heartbeats[ServiceName.AGGREGATOR])
         self.octopus_status_card.set_status(heartbeats[ServiceName.OCTOPUS])
 

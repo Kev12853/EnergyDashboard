@@ -20,6 +20,10 @@ class StatusBar:
                 "Poller",
             )
             self._add_status_item(
+                ServiceName.CONTROL,
+                "SolaX Control",
+            )
+            self._add_status_item(
                 ServiceName.AGGREGATOR,
                 "Aggregator",
             )

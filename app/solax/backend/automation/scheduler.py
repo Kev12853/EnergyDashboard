@@ -223,6 +223,36 @@ class Scheduler:
             current_time,
         )
 
+        # Recover in-memory schedule ownership after a control-process restart.
+        # The durable inverter_state request already carries the schedule's
+        # restore target; re-entering would incorrectly replace it with the
+        # inverter's temporary current mode.
+        if should_run and not self.is_active:
+            pending = self.inverter_state_repo.get()
+            if pending is not None and pending.get("source") == "scheduler":
+                if pending.get("phase") == InverterRequestPhase.RESTORE:
+                    # A restoration already requested before a process restart
+                    # must reach telemetry confirmation before a still-active
+                    # schedule can be re-entered.
+                    return
+                requested_mode = map_automation_mode(rule.mode)
+                if (pending["requested_work_mode"], pending["requested_manual_mode"]) != requested_mode:
+                    self.inverter_state_repo.set(
+                        requested_work_mode=requested_mode[0],
+                        requested_manual_mode=requested_mode[1],
+                        restore_work_mode_to=pending["restore_work_mode_to"],
+                        restore_manual_mode_to=pending["restore_manual_mode_to"],
+                        underlying_work_mode=pending["underlying_work_mode"],
+                        underlying_manual_mode=pending["underlying_manual_mode"],
+                        phase=InverterRequestPhase.OVERRIDE,
+                        active=True,
+                        source="scheduler",
+                    )
+                self.is_active = True
+                self.active_schedule_id = rule.id
+                logger.info("Recovered active schedule %s from inverter_state", rule.id)
+                return
+
         #
         # Has the active schedule changed?
         #

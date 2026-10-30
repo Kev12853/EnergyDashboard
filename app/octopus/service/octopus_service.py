@@ -13,6 +13,7 @@ from app.octopus.api.octopus_api import (
     get_octopus_agreements,
     get_completed_dispatches,
     get_device_consumption_breakdown,
+    get_smartflex_vehicle_status,
 )
 
 from app.connections.connection import get_connection
@@ -23,6 +24,7 @@ from app.octopus.storage.octopus_schema import (
     create_accounts_table,
     create_consumption_costs_table,
     create_four_rate_tariffs_table,
+    create_smartflex_vehicle_status_table,
 )
 from app.octopus.storage.repository import OctopusRepository
 
@@ -37,6 +39,7 @@ def initialise_database():
     create_dispatches_table(conn)
     create_accounts_table(conn)
     create_consumption_costs_table(conn)
+    create_smartflex_vehicle_status_table(conn)
 
     conn.commit()
     conn.close()
@@ -123,16 +126,25 @@ def update_dispatches(repository: OctopusRepository) -> None:
         ignore_index=True,
     )
 
-    if dispatches.empty:
-        logger.info("No dispatches returned")
-        return
+    if not dispatches.empty:
+        repository.upsert_dispatches(dispatches)
+    else:
+        logger.info("No dispatches returned; successful empty result will be recorded")
 
-    repository.upsert_dispatches(dispatches)
+    # A current successful empty query is different from a query failure.
+    connection = get_connection()
+    try:
+        connection.execute(
+            """INSERT INTO octopus_data_status (data_name, updated_at)
+               VALUES ('dispatches', ?)
+               ON CONFLICT(data_name) DO UPDATE SET updated_at=excluded.updated_at""",
+            (datetime.now().astimezone().isoformat(),),
+        )
+        connection.commit()
+    finally:
+        connection.close()
 
-    logger.info(
-        "Processed %d dispatches",
-        len(dispatches),
-    )
+    logger.info("Processed %d dispatches", len(dispatches))
 
 def update_consumption_costs(
     repository: OctopusRepository,
@@ -202,6 +214,25 @@ def save_heartbeat() -> None:
         connection.close()
 
 
+def update_vehicle_status() -> None:
+    """Persist vehicle inputs so SolaX control never calls Octopus directly."""
+    status = get_smartflex_vehicle_status()
+    if not isinstance(status, dict) or "connected" not in status or "charging" not in status:
+        return
+    connection = get_connection()
+    try:
+        connection.execute(
+            """INSERT INTO octopus_vehicle_status (id, connected, charging, observed_at)
+               VALUES (1, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET connected=excluded.connected,
+                   charging=excluded.charging, observed_at=excluded.observed_at""",
+            (int(bool(status["connected"])), int(bool(status["charging"])), datetime.now().astimezone().isoformat()),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def main() -> None:
 
     logger.info("Octopus Service starting")
@@ -236,6 +267,10 @@ def main() -> None:
                 export_tariff_code,
             )
             update_dispatches(repository)
+            try:
+                update_vehicle_status()
+            except Exception:
+                logger.exception("Unable to refresh Smart Flex vehicle status")
             update_consumption_costs(repository)
             save_heartbeat()
 
