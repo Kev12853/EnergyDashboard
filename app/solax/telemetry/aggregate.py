@@ -1,18 +1,10 @@
 """Rebuild one-minute and thirty-minute telemetry aggregates and prune raw history in SQLite. This maintenance service transforms stored data and does not communicate with the inverter."""
 
-from app.connections.connection import get_connection
-
-
 class TelemetryAggregator:
-    """Read raw telemetry and persist derived one-minute and thirty-minute aggregates in SQLite."""
-    def __init__(self):
-        self.connection = get_connection()
+    """Read raw telemetry and persist derived aggregates in SQLite."""
 
-        self.connection.execute("PRAGMA journal_mode=WAL")
-
-        self.connection.execute("PRAGMA synchronous=NORMAL")
-
-        # self.create_tables()
+    def __init__(self, connection):
+        self.connection = connection
 
     def rebuild_1m(self):
 

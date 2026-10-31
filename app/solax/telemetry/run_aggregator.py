@@ -5,7 +5,7 @@ import time
 from app.backend.common.logging_utils import (
     setup_logger,
 )
-from app.solax.backend.storage.telemetry_aggregation import (
+from app.solax.telemetry.aggregate import (
     TelemetryAggregator,
 )
 from app.connections.connection import get_connection
@@ -19,27 +19,32 @@ logger.info("Aggregator starting")
 
 
 def main():
-
-    """Open the configured database and run recurring telemetry aggregation until interrupted; database errors are reported by the process loop."""
-    aggregator = TelemetryAggregator()
     connection = get_connection()
+
+    aggregator = TelemetryAggregator(connection)
     telemetry_repository = TelemetryRepository(connection)
 
-    while True:
-        try:
-            aggregator.rebuild_1m()
-            aggregator.rebuild_30m()
-            aggregator.cleanup_raw_telemetry()
+    try:
+        while True:
+            try:
+                aggregator.rebuild_1m()
+                aggregator.rebuild_30m()
+                aggregator.cleanup_raw_telemetry()
 
-            telemetry_repository.save_heartbeat(ServiceName.AGGREGATOR)
+                telemetry_repository.save_heartbeat(ServiceName.AGGREGATOR)
 
-            logger.info("Aggregation complete")
+                logger.info("Aggregation complete")
 
-        except Exception:
-            logger.exception("Aggregation failed")
+            except Exception:
+                logger.exception("Aggregation failed")
 
-        time.sleep(300)
+            time.sleep(300)
 
+    except KeyboardInterrupt:
+        logger.info("Aggregator stopping")
+
+    finally:
+        connection.close()
 
 if __name__ == "__main__":
     main()
