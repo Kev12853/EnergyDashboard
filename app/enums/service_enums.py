@@ -15,6 +15,7 @@ class ServiceName(StrEnum):
     OCTOPUS = "Octopus"
     DASHBOARD = "Dashboard"
     DATABASE = "Database"
+    SOLAX_CLOUD = "SolaX Cloud"
 
 
 class HeartbeatAge(IntEnum):
@@ -24,6 +25,7 @@ class HeartbeatAge(IntEnum):
     AGGREGATOR = 600,
     OCTOPUS = 7200,
     DATABASE = 800,
+    SOLAX_CLOUD = 600,
 
 
 class ServiceState(IntEnum):
