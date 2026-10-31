@@ -13,7 +13,6 @@ from app.solax.backend.notifications.pushover_sender import PushoverSender
 from app.solax.backend.notifications.work_mode_email import send_work_mode_email
 from app.solax.backend.notifications.work_mode_push import send_work_mode_push
 from app.solax.backend.polling.inverter_service import InverterPollingService
-from app.solax.backend.polling.solax_cloud_service import SolaxCloudTelemetryService
 from app.solax.backend.storage.schema import create_solax_tables
 from app.solax.storage.solax_repository import TelemetryRepository
 from app.solax.telemetry.work_mode_monitor import WorkModeMonitor
@@ -29,20 +28,18 @@ def _heartbeat(repository, status, message):
 
 
 def main():
-    """Run the monitoring poll loop, persist local/cloud monitoring data and heartbeat status, and send outage/work-mode notifications. This entry point never writes inverter registers."""
+    """Run the monitoring poll loop, persist local telemetry and heartbeat status, and send outage/work-mode notifications. This entry point never writes inverter registers."""
     logger.info("SolaX monitoring poller starting, PID=%s", os.getpid())
     connection = get_connection()
     create_solax_tables(connection)
     repository = TelemetryRepository(connection)
     service = InverterPollingService()
-    cloud = SolaxCloudTelemetryService()
     monitor = WorkModeMonitor()
     push = PushoverSender(api_token=PUSHOVER_API_TOKEN, user_key=PUSHOVER_USER_KEY)
     email = EmailSender(smtp_server="smtp.gmail.com", smtp_port=465,
                         username=EMAIL_ADDRESS, password=APP_PASSWORD,
                         sender=EMAIL_ADDRESS, recipient=EMAIL_ADDRESS)
     last_success = time.monotonic()
-    last_cloud = 0.0
     outage_notified = False
     in_outage = False
     try:
@@ -54,12 +51,6 @@ def main():
                 downtime = time.monotonic() - last_success
                 _heartbeat(repository, "Warning",
                            f"Local Modbus poll failed; outage {int(downtime)}s: {exc}")
-                if time.monotonic() - last_cloud >= 300:
-                    last_cloud = time.monotonic()
-                    try:
-                        repository.save_snapshot(cloud.poll(), source="cloud")
-                    except Exception:
-                        logger.exception("Cloud monitoring fallback failed")
                 if downtime >= COMMUNICATION_TIMEOUT and not outage_notified:
                     try:
                         push.send_push(title="🔴 Energy Dashboard",
