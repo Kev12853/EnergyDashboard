@@ -394,9 +394,21 @@ class OverviewPage:
         timestamp_text = snapshot["timestamp"]
         try:
             from datetime import datetime
+
+            london_tz = ZoneInfo("Europe/London")
             measured_at = datetime.fromisoformat(timestamp_text)
-            reading_time = measured_at.strftime("%H:%M:%S")
-            age_seconds = (datetime.now() - measured_at).total_seconds()
+
+            if measured_at.tzinfo is None:
+                measured_at = measured_at.replace(tzinfo=london_tz)
+            else:
+                measured_at = measured_at.astimezone(london_tz)
+
+            reading_time = (
+                f"{measured_at:%A} {measured_at.day} {measured_at:%B %Y at %H:%M:%S}"
+            )
+
+            age_seconds = (datetime.now(london_tz) - measured_at).total_seconds()
+
         except (TypeError, ValueError):
             reading_time = str(timestamp_text)
             age_seconds = 0
