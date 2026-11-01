@@ -72,7 +72,8 @@ def create_telemetry_tables(
                 max_consumption_w INTEGER,
                 min_consumption_w INTEGER,
                 avg_grid_w REAL,
-                avg_battery_w REAL
+                avg_battery_w REAL,
+                battery_soc_pct REAL
             )
         """
     )
@@ -88,10 +89,24 @@ def create_telemetry_tables(
                 max_consumption_w INTEGER,
                 min_consumption_w INTEGER,
                 avg_grid_w REAL,
-                avg_battery_w REAL
+                avg_battery_w REAL,
+                battery_soc_pct REAL
             )
         """
     )
+
+    # Add battery SoC to existing aggregate tables without dropping history.
+    for table_name in ("telemetry_1m", "telemetry_30m"):
+        aggregate_columns = {
+            row[1]
+            for row in connection.execute(
+                f"PRAGMA table_info({table_name})"
+            ).fetchall()
+        }
+        if "battery_soc_pct" not in aggregate_columns:
+            connection.execute(
+                f"ALTER TABLE {table_name} ADD COLUMN battery_soc_pct REAL"
+            )
 
     connection.execute(
         """
