@@ -155,19 +155,13 @@ def update_consumption_costs(
 ) -> None:
 
     logger.info("Downloading Octopus consumption costs")
+    now = pd.Timestamp.now(tz="UTC")
 
-    # now = pd.Timestamp.now(tz="UTC")
-    #
-    # period_from = (
-    #     now - pd.Timedelta(hours=24)
-    # ).isoformat()
-    #
-    # period_to = now.isoformat()
-    #
+    period_from = (
+        now - pd.Timedelta(hours=24)
+    ).isoformat()
 
-
-    period_from = "2026-09-20T00:00:00Z"
-    period_to = "2026-09-25T00:00:00Z"
+    period_to = now.isoformat()
 
     consumption = get_device_consumption_breakdown(
         period_from,

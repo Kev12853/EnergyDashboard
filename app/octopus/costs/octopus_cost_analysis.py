@@ -455,6 +455,9 @@ def get_smart_flex_summary(
         period_to=day_end.replace(tzinfo=None).isoformat(),
     )
 
+    print(f"Octopus records returned: {len(costs)}")
+    print(costs.head())
+
     if costs.empty:
         return {
             "start_date": start_date,

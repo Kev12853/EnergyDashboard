@@ -24,15 +24,18 @@ behaviour. Debug print statements and commented-out code are preserved so they
 can be reviewed separately during the project audit.
 """
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from zoneinfo import ZoneInfo
 
 from nicegui import ui
 
+from app.config.octopus_config import TIMEZONE
 # Database connection and repository interfaces for Octopus and SolaX data.
 from app.connections.connection import get_connection
 from app.octopus.costs.octopus_cost_analysis import (
     get_smart_flex_summary,
+    calculate_octopus_actual_costs,
+    summarise_octopus_actual_costs,
 )
 from app.octopus.storage.repository import OctopusRepository
 from app.solax.storage.solax_repository import TelemetryRepository
@@ -483,17 +486,39 @@ class OverviewPage:
         if start_date > end_date:
             return
 
-        # Use the comparison import tariff for the Smart Flex cost comparison.
-        tariff_code = self.octopus_repo.get_comparison_import_tariff()
-        summary = get_smart_flex_summary(
-            self.octopus_repo,
-            tariff_code,
-            start_date=start_date,
-            end_date=end_date,
+        # Retrieve actual Octopus consumption and costs for the selected period.
+        tz = ZoneInfo(TIMEZONE)
+
+        period_start = datetime.combine(
+            start_date,
+            datetime.min.time(),
+            tzinfo=tz,
         )
 
-        total = summary["total"]
-        daily = summary["daily"]
+        period_end = datetime.combine(
+            end_date + timedelta(days=1),
+            datetime.min.time(),
+            tzinfo=tz,
+        )
+
+        all_costs = self.octopus_repo.get_octopus_consumption_costs()
+
+        print(f"Total stored Octopus records: {len(all_costs)}")
+
+        if not all_costs.empty:
+            print("First record:", all_costs["interval_start"].min())
+            print("Last record:", all_costs["interval_start"].max())
+
+        costs = self.octopus_repo.get_octopus_consumption_costs(
+            period_from=period_start.replace(tzinfo=None).isoformat(),
+            period_to=period_end.replace(tzinfo=None).isoformat(),
+        )
+
+        print(f"Octopus records returned: {len(costs)}")
+        print(costs.head())
+
+        actual_costs = calculate_octopus_actual_costs(costs)
+        total = summarise_octopus_actual_costs(actual_costs)
 
         # Calculate today's energy and costs using the 30-minute aggregates.
         energy_summary = self.energy_cost_service.get_daily_summary()
@@ -548,17 +573,5 @@ class OverviewPage:
 
         # Update the summary cards.
         self.imported_label.set_text(f"{total['consumption_kwh']:.1f} kWh")
-        self.actual_cost_label.set_text(f"£{total['actual_cost_gbp']:.2f}")
-        self.normal_cost_label.set_text(f"£{total['normal_cost_gbp']:.2f}")
-        self.saving_label.set_text(f"£{total['smart_flex_saving_gbp']:.2f}")
-        self.saving_percentage_label.set_text(f"{total['saving_percentage']:.1f}%")
 
-        # Replace chart data with the daily actual and normal-tariff cost series.
-        dates = [row.strftime("%d %b") for row in daily["date"]]
-        actual_costs = [float(value) for value in daily["actual_cost_gbp"]]
-        normal_costs = [float(value) for value in daily["normal_cost_gbp"]]
-
-        self.cost_chart.options["xAxis"]["data"] = dates
-        self.cost_chart.options["series"][0]["data"] = actual_costs
-        self.cost_chart.options["series"][1]["data"] = normal_costs
-        self.cost_chart.update()
+        self.actual_cost_label.set_text(f"£{total['cost_excl_vat_gbp']:.2f}")
