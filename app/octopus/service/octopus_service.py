@@ -109,9 +109,13 @@ def update_prices(
     # print("IMPORT PRICE ROWS:", len(import_prices))
 
     if not import_prices.empty:
-        print("FIRST IMPORT PRICE:", import_prices[0])
-        print("LAST IMPORT PRICE:", import_prices[-1])
-
+        print("FIRST IMPORT PRICE:", import_prices.iloc[0].to_dict() if not import_prices.empty else "No import prices returned")
+        print(
+            "LAST IMPORT PRICE:",
+            import_prices.iloc[-1].to_dict()
+            if not import_prices.empty
+            else "No import prices returned",
+        )
 
 def update_dispatches(repository: OctopusRepository) -> None:
 
@@ -251,9 +255,10 @@ def main() -> None:
                 "Agreements synchronised, %d new rows",
                 rows_added,
             )
-            import_tariff_code = repository.get_current_import_tariff()
+            import_tariff_code = "E-1R-INTELLI-FIX-12M-26-04-18-A"
+
             logger.info(
-                "Current import tariff: %s",
+                "Selected household import tariff: %s",
                 import_tariff_code,
             )
             export_tariff_code = repository.get_current_export_tariff()

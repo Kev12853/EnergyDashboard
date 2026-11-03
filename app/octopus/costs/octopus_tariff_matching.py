@@ -31,6 +31,63 @@ def _time_in_interval(
     # Interval crosses midnight.
     return target >= start or target < end
 
+def get_tariff_history(
+    tariff_code: str,
+    period_end: datetime,
+    include_vat: bool = True,
+) -> list[dict]:
+    """Load all tariff records up to the end of an analysis period."""
+
+    if period_end.tzinfo is None:
+        raise ValueError("period_end must be timezone-aware")
+
+    end_iso = (
+        period_end
+        .astimezone(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+    conn = get_connection()
+
+    try:
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                value_inc_vat,
+                value_exc_vat,
+                valid_from,
+                valid_to
+            FROM octopus_tariffs
+            WHERE
+                tariff_code = ?
+                AND valid_from < ?
+            ORDER BY
+                valid_from DESC
+            """,
+            (
+                tariff_code,
+                end_iso,
+            ),
+        ).fetchall()
+
+    finally:
+        conn.close()
+
+    return [
+        {
+            "tariff_id": row["id"],
+            "rate_p_per_kwh": (
+                row["value_inc_vat"]
+                if include_vat
+                else row["value_exc_vat"]
+            ),
+            "valid_from": row["valid_from"],
+            "valid_to": row["valid_to"],
+        }
+        for row in rows
+    ]
 
 def get_tariff_for_period(
     tariff_code: str,
