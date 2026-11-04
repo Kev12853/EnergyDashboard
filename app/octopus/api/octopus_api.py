@@ -78,9 +78,7 @@ def get_graphql_token():
     )
 
     response.raise_for_status()
-
     data = response.json()
-
     errors = data.get("errors")
 
     if errors:
@@ -118,6 +116,21 @@ def fetch_all_pages(url, params):
             raise RuntimeError(f"Connection Error: {e}") from e
 
     return results
+
+
+def test_rest_consumption():
+    url = (
+        f"https://api.octopus.energy/v1/electricity-meter-points/"
+        f"{IMPORT_MPAN}/meters/{METER_SERIAL}/consumption/"
+    )
+
+    params = {
+        "period_from": "2026-11-01T00:00:00Z",
+        "period_to": "2026-11-03T00:00:00Z",
+        "page_size": 10,
+    }
+
+    results = fetch_all_pages(url, params)
 
 
 def get_meter_data(mpan, column_name, period_from=None, period_to=None):
@@ -173,17 +186,10 @@ def get_tariffs(
     if period_to:
         params["period_to"] = period_to
 
-    # print("TARIFF URL:", url)
-    # print("TARIFF PARAMS:", params)
-
     data = fetch_all_pages(
         url,
         params,
     )
-
-    # print("TARIFF RAW ROW COUNT:", len(data))
-    # print("TARIFF RAW DATA:", data[:3])
-
     return pd.DataFrame(data)
 
 
@@ -196,13 +202,7 @@ def get_four_rate_tariffs(
 
     product_code = "-".join(parts[2:-1])
 
-    base_url = (
-        f"{BASE_URL}"
-        f"/products/"
-        f"{product_code}/"
-        f"electricity-tariffs/"
-        f"{tariff_code}/"
-    )
+    base_url = f"{BASE_URL}/products/{product_code}/electricity-tariffs/{tariff_code}/"
 
     rate_endpoints = {
         "DAY": "day-unit-rates/",
@@ -214,7 +214,6 @@ def get_four_rate_tariffs(
     rows = []
 
     for rate_type, endpoint in rate_endpoints.items():
-
         url = base_url + endpoint
 
         params = {"page_size": 25000}
@@ -236,6 +235,7 @@ def get_four_rate_tariffs(
             rows.append(row)
 
     return pd.DataFrame(rows)
+
 
 SMARTFLEX_VEHICLE_ID = "00000000-0002-4000-8020-000000100c8e"
 
@@ -500,6 +500,7 @@ def get_octopus_agreements():
 # INTELLIGENT DISPATCHES
 # -----------------------
 
+
 def get_intelligent_dispatches() -> pd.DataFrame:
     """
     Retrieves the current Intelligent Octopus Smart Flex dispatch plan.
@@ -546,8 +547,6 @@ def get_intelligent_dispatches() -> pd.DataFrame:
         )
 
         if not response.ok:
-            # print("DISPATCH API STATUS:", response.status_code)
-            # print("DISPATCH API RESPONSE:", response.text)
             response.raise_for_status()
 
         data = response.json().get("data", {})
@@ -643,9 +642,7 @@ def get_completed_dispatches() -> pd.DataFrame:
 
         data = result.get("data", {})
 
-        df = pd.DataFrame(
-            data.get("completedDispatches") or []
-        )
+        df = pd.DataFrame(data.get("completedDispatches") or [])
 
         if df.empty:
             return pd.DataFrame(
@@ -686,9 +683,7 @@ def get_completed_dispatches() -> pd.DataFrame:
         ]
 
     except Exception as e:
-        raise RuntimeError(
-            f"Completed Dispatch API Error: {e}"
-        ) from e
+        raise RuntimeError(f"Completed Dispatch API Error: {e}") from e
 
 
 # -----------------------
@@ -698,348 +693,47 @@ def get_device_consumption_breakdown(
     start_at: str,
     end_at: str,
 ) -> pd.DataFrame:
+    """Retrieve electricity consumption intervals using the Octopus REST API."""
 
-    query = """
-    query getDeviceConsumptionBreakdown(
-        $accountNumber: String!
-        $first: Int!
-        $utilityFilters: [UtilityFiltersInput!]
-        $startAt: DateTime
-        $endAt: DateTime
-        $timezone: String
-        $cursor: String
-    ) {
-        account(accountNumber: $accountNumber) {
-            properties {
-                measurements(
-                    first: $first
-                    utilityFilters: $utilityFilters
-                    startAt: $startAt
-                    endAt: $endAt
-                    timezone: $timezone
-                    after: $cursor
-                ) {
-                    edges {
-                        node {
-                            value
-                            unit
-
-                            ... on IntervalMeasurementType {
-                                startAt
-                                endAt
-                                durationInSeconds
-                            }
-
-                            metaData {
-                                statistics {
-                                    costExclTax {
-                                        pricePerUnit {
-                                            amount
-                                        }
-                                        costCurrency
-                                        estimatedAmount
-                                    }
-
-                                    costInclTax {
-                                        pricePerUnit {
-                                            amount
-                                        }
-                                        costCurrency
-                                        estimatedAmount
-                                    }
-
-                                    value
-                                    description
-                                    label
-                                    type
-                                }
-                            }
-                        }
-                    }
-
-                    pageInfo {
-                        hasNextPage
-                        endCursor
-                    }
-                }
-            }
-        }
-    }
-    """
-
-    variables = {
-        "accountNumber": ACCOUNT_ID,
-        "first": 100,
-        "utilityFilters": [
-            {
-                "electricityFilters": {
-                    "readingFrequencyType": "RAW_INTERVAL",
-                    "readingDirection": "CONSUMPTION",
-                    "marketSupplyPointId": IMPORT_MPAN,
-                }
-            }
-        ],
-        "startAt": start_at,
-        "endAt": end_at,
-        "timezone": TIMEZONE,
-        "cursor": None,
-    }
-
-    token = get_graphql_token()
-
-    headers = {
-        "Authorization": token,
-        "Content-Type": "application/json",
-    }
-
-    rows = []
-
-    while True:
-        response = requests.post(
-            GRAPHQL_URL,
-            json={
-                "query": query,
-                "variables": variables,
-            },
-            headers=headers,
-        )
-
-        response.raise_for_status()
-
-        data = response.json()
-
-        if "errors" in data:
-            raise RuntimeError(data["errors"])
-
-        measurements = data["data"]["account"]["properties"][0]["measurements"]
-
-        # print(
-        #     "OCTOPUS MEASUREMENT EDGES:",
-        #     len(measurements["edges"]),
-        # )
-        # print(
-        #     "OCTOPUS PAGE INFO:",
-        #     measurements["pageInfo"],
-        # )
-
-        diagnostic_rows = []
-
-        for edge in measurements["edges"]:
-            node = edge["node"]
-
-            statistics = node.get("metaData", {}).get("statistics", [])
-
-            # ------------------------------------------------
-            # Temporary tariff diagnostic
-            # Print the first 10 intervals returned by
-            # Octopus, showing the rate components.
-            # ------------------------------------------------
-
-            if len(diagnostic_rows) < 10:
-                rate_components = [
-                    {
-                        "label": stat.get("label"),
-                        "value": stat.get("value"),
-                        "rate": (
-                            stat.get("costExclTax", {})
-                            .get("pricePerUnit", {})
-                            .get("amount")
-                            if stat.get("costExclTax", {}).get("pricePerUnit")
-                            else None
-                        ),
-                    }
-                    for stat in statistics
-                    if stat.get("type") == "CONSUMPTION_COST"
-                ]
-
-                # print(
-                #     "OCTOPUS RATE DIAGNOSTIC:",
-                #     node.get("startAt"),
-                #     node.get("endAt"),
-                #     "consumption=",
-                #     node.get("value"),
-                #     rate_components,
-                # )
-
-                diagnostic_rows.append(node)
-
-            # ------------------------------------------------
-            # Existing processing continues here
-            # ------------------------------------------------
-
-            # Your existing consumption_stats / tou_stats
-            # and rows.append(...) code goes here.
-
-        page_info = measurements["pageInfo"]
-
-        if not page_info["hasNextPage"]:
-            break
-
-        variables["cursor"] = page_info["endCursor"]
-
-    if not rows:
-        return pd.DataFrame(
-            columns=[
-                "interval_start",
-                "interval_end",
-                "consumption_kwh",
-                "tou_bucket",
-                "rate_p_per_kwh",
-                "cost_excl_vat_p",
-                "cost_incl_vat_p",
-            ]
-        )
-
-    df = pd.DataFrame(rows)
-
-    df["interval_start"] = to_local_time(
-        df["interval_start"]
+    url = (
+        f"https://api.octopus.energy/v1/electricity-meter-points/"
+        f"{IMPORT_MPAN}/meters/{METER_SERIAL}/consumption/"
     )
 
-    df["interval_end"] = to_local_time(
-        df["interval_end"]
+    params = {
+        "period_from": "2026-11-01T00:00:00Z",
+        "period_to": "2026-11-03T00:00:00Z",
+        "page_size": 25000,
+    }
+
+    results = fetch_all_pages(url, params)
+
+    columns = [
+        "interval_start",
+        "interval_end",
+        "consumption_kwh",
+        "tou_bucket",
+        "rate_p_per_kwh",
+        "cost_excl_vat_p",
+        "cost_incl_vat_p",
+    ]
+
+    if not results:
+        return pd.DataFrame(columns=columns)
+
+    df = pd.DataFrame(results)
+
+    df.rename(
+        columns={"consumption": "consumption_kwh"},
+        inplace=True,
     )
 
-    return df
+    df["interval_start"] = to_local_time(df["interval_start"])
+    df["interval_end"] = to_local_time(df["interval_end"])
 
+    df["tou_bucket"] = None
+    df["rate_p_per_kwh"] = None
+    df["cost_excl_vat_p"] = None
+    df["cost_incl_vat_p"] = None
 
-#
-# if __name__ == "__main__":
-#     from app.octopus.storage.repository import OctopusRepository
-#
-#     repository = OctopusRepository()
-#
-#     # -------------------------------------------------
-#     # Test API → database
-#     # -------------------------------------------------
-#
-#     df = get_device_consumption_breakdown(
-#         "2026-08-04T23:00:00.000Z",
-#         "2026-08-05T23:00:00.000Z",
-#     )
-#
-#     print(df.to_string(index=False))
-#
-#     rows_changed = repository.upsert_consumption_costs(df)
-#
-#     print()
-#     print(f"Rows changed: {rows_changed}")
-#
-#     # -------------------------------------------------
-#     # Test database → DataFrame
-#     # -------------------------------------------------
-#
-#     stored_df = repository.get_octopus_consumption_costs(
-#         period_from="2026-08-05T00:00:00",
-#         period_to="2026-08-06T00:00:00",
-#     )
-#
-#     print()
-#     print("Stored consumption costs:")
-#     print(stored_df.to_string(index=False))
-#
-#     print()
-#     print(f"Rows retrieved: {len(stored_df)}")
-#
-#     # -------------------------------------------------
-#     # Test actual cost analysis
-#     # -------------------------------------------------
-#
-#     actual_costs = calculate_octopus_actual_costs(
-#         stored_df
-#     )
-#
-#     print()
-#     print("Actual cost analysis:")
-#     print(actual_costs.to_string(index=False))
-#
-#     # -------------------------------------------------
-#     # Test actual cost summary
-#     # -------------------------------------------------
-#
-#     summary = summarise_octopus_actual_costs(
-#         actual_costs
-#     )
-#
-#     print()
-#     print("Actual cost summary:")
-#
-#     for key, value in summary.items():
-#         print(f"{key}: {value}")
-#
-#     # -------------------------------------------------
-#     # Test Smart Flex savings
-#     # -------------------------------------------------
-#
-#     savings = calculate_smart_flex_savings(
-#         actual_costs,
-#         "E-1R-INTELLI-FIX-12M-26-04-18-A",
-#     )
-#
-#     print()
-#     print("Smart Flex savings:")
-#     print(savings.to_string(index=False))
-#
-#     summary = summarise_smart_flex_savings(savings)
-#
-#     print()
-#     print("Smart Flex savings summary:")
-#     for key, value in summary.items():
-#         print(f"{key}: {value}")
-#
-#     conn = get_connection()
-#
-#     rows = conn.execute(
-#         """
-#         SELECT
-#             id,
-#             tariff_code,
-#             value_exc_vat,
-#             value_inc_vat,
-#             valid_from,
-#             valid_to
-#         FROM octopus_tariffs
-#         WHERE
-#             tariff_code = ?
-#             AND valid_from < ?
-#             AND (
-#                 valid_to IS NULL
-#                 OR valid_to > ?
-#             )
-#         ORDER BY valid_from
-#         """,
-#         (
-#             "E-1R-INTELLI-FIX-12M-26-04-18-A",
-#             "2026-08-06T00:00:00Z",
-#             "2026-08-05T00:00:00Z",
-#         ),
-#     ).fetchall()
-#
-#     print("\nDIRECT OCTOPUS TARIFF API TEST:")
-#
-#     tariffs = get_tariffs(
-#         "E-1R-INTELLI-FIX-12M-26-04-18-A",
-#         period_from="2026-08-04T23:00:00Z",
-#         period_to="2026-08-05T23:00:00Z",
-#     )
-#
-#     print(tariffs.to_string(index=False))
-#
-#     print()
-#     print("Tariff records covering 5 August:")
-#     for row in rows:
-#         print(dict(row))
-#
-#     conn.close()
-#
-#     tariff = get_tariff_for_period(
-#         tariff_code="E-1R-INTELLI-FIX-12M-26-04-18-A",
-#         period_start=pd.Timestamp(
-#             "2026-08-05T14:00:00", tz="Europe/London"
-#         ).to_pydatetime(),
-#         include_vat=False,
-#     )
-#
-#     print()
-#     print("Test tariff lookup:")
-#     print(tariff)
+    return df[columns]

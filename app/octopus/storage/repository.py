@@ -1,4 +1,4 @@
-#TODO Issues to investigate
+# TODO Issues to investigate
 # 1. Duplicate unreachable statement
 # get_octopus_consumption_costs() contains a second return df after the first return. The second statement is unreachable and can safely be removed in a separate cleanup.
 # 2. Hard-coded export tariff
@@ -22,6 +22,7 @@ from datetime import datetime, timezone, time
 import pandas as pd
 
 from app.connections.connection import get_connection
+# from app.logging import logger
 
 
 class OctopusRepository:
@@ -486,6 +487,39 @@ class OctopusRepository:
 
         return rows_changed
 
+    def get_four_rate_tariffs(
+        self,
+        tariff_code: str,
+        period_from: str,
+        period_to: str,
+    ) -> pd.DataFrame:
+        """Return four-rate tariff periods overlapping the requested time range."""
+
+        conn = get_connection()
+
+        query = """
+            SELECT
+                rate_type,
+                value_exc_vat,
+                value_inc_vat,
+                valid_from,
+                valid_to
+        """
+
+        df = pd.read_sql_query(
+            query,
+            conn,
+            params=(tariff_code, period_to, period_from),
+        )
+
+        conn.close()
+
+        if not df.empty:
+            df["valid_from"] = pd.to_datetime(df["valid_from"], utc=True)
+            df["valid_to"] = pd.to_datetime(df["valid_to"], utc=True)
+
+        return df
+
     def upsert_agreements(
         self,
         agreements,
@@ -773,6 +807,8 @@ class OctopusRepository:
                 "rate_p_per_kwh": (
                     row["value_inc_vat"] if include_vat else row["value_exc_vat"]
                 ),
+                "rate_inc_vat_p_per_kwh": row["value_inc_vat"],
+                "rate_exc_vat_p_per_kwh": row["value_exc_vat"],
                 "valid_from": row["valid_from"],
                 "valid_to": row["valid_to"],
             }
@@ -914,7 +950,7 @@ class OctopusRepository:
         now = pd.Timestamp.now(tz="Europe/London")
         current_time = now.time()
 
-        if time(22, 30) <= current_time or current_time < time(4, 30):
+        if time(23, 30) <= current_time or current_time < time(5, 30):
             rate_type = "NIGHT"
         else:
             rate_type = "DAY"

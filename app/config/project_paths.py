@@ -82,6 +82,6 @@ def resolve_paths(project_root, platform_name=None, environ=None, home=None):
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR, LOG_DIR, DB_PATH = resolve_paths(PROJECT_ROOT)
-
+print(f"ENERGY DASHBOARD DB_PATH: {DB_PATH}")
 if platform.system() not in {"Windows", "Linux", "Darwin"}:
     raise RuntimeError(f"Unsupported operating system: {platform.system()}")

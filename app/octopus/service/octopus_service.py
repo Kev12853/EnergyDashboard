@@ -1,5 +1,5 @@
-from datetime import datetime
-import time
+from datetime import datetime, time
+import time as sleep_time
 
 import pandas as pd
 
@@ -105,17 +105,7 @@ def update_prices(
         export_rows,
     )
 
-    # print("IMPORT TARIFF CODE:", import_tariff_code)
-    # print("IMPORT PRICE ROWS:", len(import_prices))
 
-    if not import_prices.empty:
-        print("FIRST IMPORT PRICE:", import_prices.iloc[0].to_dict() if not import_prices.empty else "No import prices returned")
-        print(
-            "LAST IMPORT PRICE:",
-            import_prices.iloc[-1].to_dict()
-            if not import_prices.empty
-            else "No import prices returned",
-        )
 
 def update_dispatches(repository: OctopusRepository) -> None:
 
@@ -155,23 +145,74 @@ def update_consumption_costs(
 ) -> None:
 
     logger.info("Downloading Octopus consumption costs")
-    now = pd.Timestamp.now(tz="UTC")
 
-    period_from = (
-        now - pd.Timedelta(hours=24)
-    ).isoformat()
-
-    period_to = now.isoformat()
+    period_from = "2026-11-01T00:00:00Z"
+    period_to = "2026-11-03T00:00:00Z"
 
     consumption = get_device_consumption_breakdown(
         period_from,
         period_to,
     )
 
-
     if consumption.empty:
-        logger.info("No consumption cost data returned")
+        logger.info("No consumption readings returned")
         return
+
+    tariff_code = repository.get_current_import_tariff()
+
+    tariffs = repository.get_four_rate_tariffs_for_period(
+        tariff_code,
+        datetime.fromisoformat(period_from),
+        datetime.fromisoformat(period_to),
+    )
+
+    tariffs = [tariff for tariff in tariffs if tariff["rate_type"] in ("DAY", "NIGHT")]
+
+    if not tariffs:
+        logger.warning("No applicable import tariff periods found")
+        return
+
+    tariff_rates = {tariff["rate_type"]: tariff for tariff in tariffs}
+
+    for index, row in consumption.iterrows():
+        local_start = pd.Timestamp(row["interval_start"])
+
+        if local_start.tzinfo is None:
+            local_start = local_start.tz_localize("Europe/London")
+        else:
+            local_start = local_start.tz_convert("Europe/London")
+
+        current_time = local_start.time()
+
+        if current_time >= time(23, 30) or current_time < time(5, 30):
+            rate_type = "NIGHT"
+        else:
+            rate_type = "DAY"
+
+        tariff = tariff_rates.get(rate_type)
+
+        if tariff is None:
+            logger.warning("Missing %s tariff rate", rate_type)
+            continue
+
+        consumption_kwh = row["consumption_kwh"]
+
+        consumption.loc[index, "tou_bucket"] = rate_type
+
+        consumption.loc[index, "rate_p_per_kwh"] = tariff["rate_inc_vat_p_per_kwh"]
+
+        consumption.loc[index, "cost_excl_vat_p"] = (
+            consumption_kwh * tariff["rate_exc_vat_p_per_kwh"]
+        )
+
+        consumption.loc[index, "cost_incl_vat_p"] = (
+            consumption_kwh * tariff["rate_inc_vat_p_per_kwh"]
+        )
+
+    consumption = consumption.dropna(
+        subset=["rate_p_per_kwh"]
+    )
+
 
     rows_changed = repository.upsert_consumption_costs(
         consumption
@@ -276,7 +317,7 @@ def main() -> None:
         except Exception:
             logger.exception("Unhandled exception in Octopus Service")
 
-        time.sleep(300)
+        sleep_time.sleep(300)
 
 
 if __name__ == "__main__":
