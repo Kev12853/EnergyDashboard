@@ -27,6 +27,7 @@ can be reviewed separately during the project audit.
 from datetime import date, timedelta, datetime
 from zoneinfo import ZoneInfo
 
+import pandas as pd
 from nicegui import ui
 
 from app.config.octopus_config import TIMEZONE
@@ -208,23 +209,57 @@ class OverviewPage:
 
             # Summary figures populated by refresh().
             with ui.row().classes("w-full gap-4 wrap mt-4"):
-                with ui.card().classes("flex-1"):
+                with (
+                    ui.card()
+                    .classes("flex-1")
+                    .tooltip(
+                        "Total electricity imported from the grid during the selected period, "
+                        "including household consumption and EV charging."
+                    )
+                ):
                     ui.label("Imported").classes("text-caption")
                     self.imported_label = ui.label("—").classes("text-h6")
 
-                with ui.card().classes("flex-1"):
+                with (
+                    ui.card()
+                    .classes("flex-1")
+                    .tooltip(
+                        "Actual Octopus electricity cost for the selected period, "
+                        "excluding VAT and using the applicable tariff rates."
+                    )
+                ):
                     ui.label("Actual cost").classes("text-caption")
                     self.actual_cost_label = ui.label("—").classes("text-h6")
 
-                with ui.card().classes("flex-1"):
+                with (
+                    ui.card()
+                    .classes("flex-1")
+                    .tooltip(
+                        "Estimated cost if all imported electricity had been charged "
+                        "at the current standard DAY rate."
+                    )
+                ):
                     ui.label("Normal tariff").classes("text-caption")
                     self.normal_cost_label = ui.label("—").classes("text-h6")
 
-                with ui.card().classes("flex-1"):
-                    ui.label("Smart Flex saving").classes("text-caption")
+                with (
+                    ui.card()
+                    .classes("flex-1")
+                    .tooltip(
+                        "Difference between the normal DAY-rate estimate and actual cost. "
+                        "A positive figure means a saving."
+                    )
+                ):
+                    ui.label("Compared with day rate").classes("text-caption")
                     self.saving_label = ui.label("—").classes("text-h6")
 
-                with ui.card().classes("flex-1"):
+                with (
+                    ui.card()
+                    .classes("flex-1")
+                    .tooltip(
+                        "The difference expressed as a percentage of the normal DAY-rate cost."
+                    )
+                ):
                     ui.label("Saving").classes("text-caption")
                     self.saving_percentage_label = ui.label("—").classes("text-h6")
 
@@ -520,6 +555,27 @@ class OverviewPage:
         actual_costs = calculate_octopus_actual_costs(costs)
         total = summarise_octopus_actual_costs(actual_costs)
 
+        # Calculate the hypothetical flat DAY-rate comparison.
+        day_rate = self.octopus_repo.get_current_import_day_rate()
+
+        if day_rate is not None:
+            normal_cost = total["consumption_kwh"] * day_rate / 100
+            actual_cost = total["cost_excl_vat_gbp"]
+
+            saving = normal_cost - actual_cost
+
+            saving_percentage = saving / normal_cost * 100 if normal_cost > 0 else 0
+
+            print(f"Current DAY rate: {day_rate:.4f} p/kWh")
+            print(f"Normal tariff cost: £{normal_cost:.2f}")
+            print(f"Actual cost: £{actual_cost:.2f}")
+            print(f"Difference: £{saving:.2f} ({saving_percentage:.1f}%)")
+        else:
+            normal_cost = None
+            saving = None
+            saving_percentage = None
+            print("No current DAY tariff rate found.")
+
         # Calculate today's energy and costs using the 30-minute aggregates.
         energy_summary = self.energy_cost_service.get_daily_summary()
 
@@ -573,5 +629,44 @@ class OverviewPage:
 
         # Update the summary cards.
         self.imported_label.set_text(f"{total['consumption_kwh']:.1f} kWh")
-
         self.actual_cost_label.set_text(f"£{total['cost_excl_vat_gbp']:.2f}")
+
+        if normal_cost is not None:
+            self.normal_cost_label.set_text(f"£{normal_cost:.2f}")
+            self.saving_label.set_text(f"£{saving:.2f}")
+            self.saving_percentage_label.set_text(f"{saving_percentage:.1f}%")
+        else:
+            self.normal_cost_label.set_text("Unavailable")
+            self.saving_label.set_text("—")
+            self.saving_percentage_label.set_text("—")
+
+        # Update the daily cost comparison chart.
+        if not actual_costs.empty and day_rate is not None:
+            daily = actual_costs.copy()
+
+            daily["date"] = pd.to_datetime(daily["interval_start"]).dt.date
+
+            daily_summary = (
+                daily.groupby("date")
+                .agg(
+                    actual_cost=("cost_excl_vat_gbp", "sum"),
+                    consumption=("consumption_kwh", "sum"),
+                )
+                .reset_index()
+            )
+
+            dates = [d.strftime("%d %b") for d in daily_summary["date"]]
+            actual_daily = daily_summary["actual_cost"].round(2).tolist()
+            normal_daily = (
+                (daily_summary["consumption"] * day_rate / 100).round(2).tolist()
+            )
+
+            self.cost_chart.options["xAxis"]["data"] = dates
+            self.cost_chart.options["series"][0]["data"] = actual_daily
+            self.cost_chart.options["series"][1]["data"] = normal_daily
+            self.cost_chart.update()
+        else:
+            self.cost_chart.options["xAxis"]["data"] = []
+            self.cost_chart.options["series"][0]["data"] = []
+            self.cost_chart.options["series"][1]["data"] = []
+            self.cost_chart.update()

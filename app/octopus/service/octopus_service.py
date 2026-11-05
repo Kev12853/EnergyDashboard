@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, timezone
 import time as sleep_time
 
 import pandas as pd
@@ -53,13 +53,9 @@ def update_prices(
 
     now = pd.Timestamp.now(tz="UTC")
 
-    period_from = (
-        now - pd.Timedelta(hours=24)
-    ).isoformat()
+    period_from = (now - pd.Timedelta(hours=24)).isoformat()
 
-    period_to = (
-        now + pd.Timedelta(hours=48)
-    ).isoformat()
+    period_to = (now + pd.Timedelta(hours=48)).isoformat()
 
     # -------------------------------------------------
     # Import tariff
@@ -106,7 +102,6 @@ def update_prices(
     )
 
 
-
 def update_dispatches(repository: OctopusRepository) -> None:
 
     logger.info("Downloading Intelligent planned dispatches")
@@ -140,19 +135,34 @@ def update_dispatches(repository: OctopusRepository) -> None:
 
     logger.info("Processed %d dispatches", len(dispatches))
 
+
 def update_consumption_costs(
     repository: OctopusRepository,
 ) -> None:
 
     logger.info("Downloading Octopus consumption costs")
 
-    period_from = "2026-11-01T00:00:00Z"
-    period_to = "2026-11-03T00:00:00Z"
+    period_to = datetime.now(timezone.utc)
+    period_from = period_to - timedelta(hours=48)
+
+    period_from = period_from.isoformat().replace("+00:00", "Z")
+    period_to = period_to.isoformat().replace("+00:00", "Z")
 
     consumption = get_device_consumption_breakdown(
         period_from,
         period_to,
     )
+
+    print("CONSUMPTION PERIOD:", period_from, "to", period_to)
+    print("ROWS RETURNED:", len(consumption))
+
+    if not consumption.empty:
+        print(
+            "FIRST READING:",
+            consumption["interval_start"].min(),
+            "| LAST READING:",
+            consumption["interval_start"].max(),
+        )
 
     if consumption.empty:
         logger.info("No consumption readings returned")
@@ -209,20 +219,16 @@ def update_consumption_costs(
             consumption_kwh * tariff["rate_inc_vat_p_per_kwh"]
         )
 
-    consumption = consumption.dropna(
-        subset=["rate_p_per_kwh"]
-    )
+    consumption = consumption.dropna(subset=["rate_p_per_kwh"])
 
-
-    rows_changed = repository.upsert_consumption_costs(
-        consumption
-    )
+    rows_changed = repository.upsert_consumption_costs(consumption)
 
     logger.info(
         "Synchronised %d consumption cost rows",
         rows_changed,
     )
-    
+
+
 def save_heartbeat() -> None:
 
     connection = get_connection()
@@ -256,7 +262,11 @@ def save_heartbeat() -> None:
 def update_vehicle_status() -> None:
     """Persist vehicle inputs so SolaX control never calls Octopus directly."""
     status = get_smartflex_vehicle_status()
-    if not isinstance(status, dict) or "connected" not in status or "charging" not in status:
+    if (
+        not isinstance(status, dict)
+        or "connected" not in status
+        or "charging" not in status
+    ):
         return
     connection = get_connection()
     try:
@@ -265,7 +275,11 @@ def update_vehicle_status() -> None:
                VALUES (1, ?, ?, ?)
                ON CONFLICT(id) DO UPDATE SET connected=excluded.connected,
                    charging=excluded.charging, observed_at=excluded.observed_at""",
-            (int(bool(status["connected"])), int(bool(status["charging"])), datetime.now().astimezone().isoformat()),
+            (
+                int(bool(status["connected"])),
+                int(bool(status["charging"])),
+                datetime.now().astimezone().isoformat(),
+            ),
         )
         connection.commit()
     finally:

@@ -632,6 +632,42 @@ class OctopusRepository:
 
         return row["tariff_code"]
 
+    def get_current_import_day_rate(self) -> float | None:
+        """Return the current DAY import rate excluding VAT."""
+
+        conn = get_connection()
+
+        now = pd.Timestamp.now(tz="Europe/London")
+        now_iso = now.tz_convert("UTC").isoformat().replace("+00:00", "Z")
+
+        query = """
+        SELECT value_exc_vat
+        FROM octopus_four_rate_tariffs
+        WHERE tariff_code = ?
+          AND rate_type = 'DAY'
+          AND valid_from <= ?
+          AND (valid_to IS NULL OR valid_to > ?)
+        ORDER BY valid_from DESC
+        LIMIT 1
+        """
+
+        try:
+            row = conn.execute(
+                query,
+                (
+                    self.get_current_import_tariff(),
+                    now_iso,
+                    now_iso,
+                ),
+            ).fetchone()
+        finally:
+            conn.close()
+
+        if row is None:
+            return None
+
+        return row["value_exc_vat"]
+
     def get_comparison_import_tariff(self) -> str:
         """Find a different import tariff that overlaps the current Intelligent Octopus Go agreement and return its tariff code."""
         conn = get_connection()

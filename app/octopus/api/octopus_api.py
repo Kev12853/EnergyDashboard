@@ -90,12 +90,16 @@ def get_graphql_token():
 def to_local_time(series):
     return pd.to_datetime(series, utc=True).dt.tz_convert(TIMEZONE).dt.tz_localize(None)
 
-
 def fetch_all_pages(url, params):
     results = []
+    page = 1
 
     while url:
         try:
+            print(f"OCTOPUS PAGE {page}")
+            print("REQUEST URL:", url)
+            print("REQUEST PARAMS:", params)
+
             response = requests.get(
                 url, params=params, auth=(OCTOPUS_API_KEY, ""), timeout=10
             )
@@ -104,10 +108,14 @@ def fetch_all_pages(url, params):
 
             data = response.json()
 
+            print("RESULT COUNT:", len(data.get("results", [])))
+            print("NEXT URL:", data.get("next"))
+
             results.extend(data.get("results", []))
 
             url = data.get("next")
             params = None
+            page += 1
 
         except requests.HTTPError as e:
             raise RuntimeError(f"Octopus API Error: {e}") from e
@@ -116,6 +124,33 @@ def fetch_all_pages(url, params):
             raise RuntimeError(f"Connection Error: {e}") from e
 
     return results
+
+
+# def fetch_all_pages(url, params):
+#     results = []
+#
+#     while url:
+#         try:
+#             response = requests.get(
+#                 url, params=params, auth=(OCTOPUS_API_KEY, ""), timeout=10
+#             )
+#
+#             response.raise_for_status()
+#
+#             data = response.json()
+#
+#             results.extend(data.get("results", []))
+#
+#             url = data.get("next")
+#             params = None
+#
+#         except requests.HTTPError as e:
+#             raise RuntimeError(f"Octopus API Error: {e}") from e
+#
+#         except Exception as e:
+#             raise RuntimeError(f"Connection Error: {e}") from e
+#
+#     return results
 
 
 def test_rest_consumption():
@@ -701,8 +736,8 @@ def get_device_consumption_breakdown(
     )
 
     params = {
-        "period_from": "2026-11-01T00:00:00Z",
-        "period_to": "2026-11-03T00:00:00Z",
+        "period_from": start_at,
+        "period_to": end_at,
         "page_size": 25000,
     }
 

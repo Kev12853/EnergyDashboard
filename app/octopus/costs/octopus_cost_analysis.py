@@ -433,6 +433,8 @@ def get_smart_flex_summary(
     Smart Flex analysis.
     """
 
+    print("### SMART FLEX SUMMARY FUNCTION CALLED ###")
+
     tz = ZoneInfo(TIMEZONE)
 
     day_start = datetime.combine(
@@ -454,9 +456,6 @@ def get_smart_flex_summary(
         period_from=day_start.replace(tzinfo=None).isoformat(),
         period_to=day_end.replace(tzinfo=None).isoformat(),
     )
-
-    print(f"Octopus records returned: {len(costs)}")
-    print(costs.head())
 
     if costs.empty:
         return {
@@ -489,6 +488,12 @@ def get_smart_flex_summary(
         period_end=day_end,
         include_vat=False,
     )
+    print("TARIFF CODE:", tariff_code)
+    print("TARIFF PERIODS RETURNED:", len(tariffs))
+
+    if tariffs:
+        print("FIRST TARIFF:", tariffs[0])
+        print("LAST TARIFF:", tariffs[-1])
 
     result = actual_costs.copy()
 
@@ -512,6 +517,11 @@ def get_smart_flex_summary(
             * tariff["rate_p_per_kwh"]
             / 100
         )
+
+    print("CONSUMPTION INTERVALS:", len(result))
+    print("MATCHED TARIFF INTERVALS:", sum(pd.notna(x) for x in normal_costs))
+    print("UNMATCHED TARIFF INTERVALS:", sum(pd.isna(x) for x in normal_costs))
+    print("NORMAL COST TOTAL:", sum(x for x in normal_costs if pd.notna(x)))
 
     result["normal_cost_gbp"] = normal_costs
     result["actual_cost_gbp"] = result["cost_excl_vat_gbp"]
