@@ -199,13 +199,48 @@ class OverviewPage:
         with ui.card().classes("w-full"):
             ui.label("Octopus Energy").classes("text-h6")
 
-            # Date selection for the reporting period.
-            with ui.row().classes("items-end gap-4"):
-                self.from_picker = ui.date(value=self.start_date.isoformat())
-                self.to_picker = ui.date(value=self.end_date.isoformat())
+ 
+            # Floating date-selection dialog.
+            with ui.dialog() as self.date_dialog, ui.card().classes("p-4").style(
+                    "width: 760px; max-width: 95vw;"
+            ):
+                ui.label("Select reporting period").classes("text-subtitle1")
+
+                with ui.row().classes("flex-nowrap items-start gap-4"):
+                    with (
+                        ui.column().classes("gap-1").style("width: 280px; flex: none;")
+                    ):
+                        ui.label("From").classes("text-caption")
+                        self.from_picker = ui.date(
+                            value=self.start_date.isoformat()
+                        ).props("minimal")
+
+                    with (
+                        ui.column().classes("gap-1").style("width: 280px; flex: none;")
+                    ):
+                        ui.label("To").classes("text-caption")
+                        self.to_picker = ui.date(value=self.end_date.isoformat()).props(
+                            "minimal"
+                        )
+
+                with ui.row().classes("justify-end w-full"):
+                    ui.button("Cancel", on_click=self.date_dialog.close).props("flat")
+                    ui.button("Apply", on_click=self._apply_dates)
+
+            # Compact date selection.
+            with ui.row().classes("items-center gap-3"):
+                self.date_range_label = ui.label(
+                    f"{self.start_date.strftime('%d %b %Y')} – "
+                    f"{self.end_date.strftime('%d %b %Y')}"
+                ).classes("text-subtitle1")
+
+                ui.button(
+                    "Edit dates",
+                    icon="edit",
+                    on_click=self.date_dialog.open,
+                )
 
                 ui.button("Today", on_click=self._set_today)
-                ui.button("Apply", on_click=self._apply_dates)
 
             # Summary figures populated by refresh().
             with ui.row().classes("w-full gap-4 wrap mt-4"):
@@ -290,14 +325,34 @@ class OverviewPage:
 
     def _set_today(self) -> None:
         """Set both date controls to today and refresh the summary."""
+
         today = date.today()
+
         self.from_picker.value = today.isoformat()
         self.to_picker.value = today.isoformat()
+
+        self.date_range_label.set_text(
+            f"{today.strftime('%d %b %Y')} – {today.strftime('%d %b %Y')}"
+        )
+
         self.refresh()
+        self.date_dialog.close()
 
     def _apply_dates(self) -> None:
         """Apply the dates currently selected in the date controls."""
+
+        start = date.fromisoformat(self.from_picker.value)
+        end = date.fromisoformat(self.to_picker.value)
+
+        if start > end:
+            return
+
+        self.date_range_label.set_text(
+            f"{start.strftime('%d %b %Y')} – {end.strftime('%d %b %Y')}"
+        )
+
         self.refresh()
+        self.date_dialog.close()
 
     def refresh_live_energy(self) -> None:
         """Refresh the live telemetry cards and current energy-cost estimate.
@@ -538,19 +593,11 @@ class OverviewPage:
 
         all_costs = self.octopus_repo.get_octopus_consumption_costs()
 
-        print(f"Total stored Octopus records: {len(all_costs)}")
-
         if not all_costs.empty:
-            print("First record:", all_costs["interval_start"].min())
-            print("Last record:", all_costs["interval_start"].max())
-
-        costs = self.octopus_repo.get_octopus_consumption_costs(
-            period_from=period_start.replace(tzinfo=None).isoformat(),
-            period_to=period_end.replace(tzinfo=None).isoformat(),
-        )
-
-        print(f"Octopus records returned: {len(costs)}")
-        print(costs.head())
+            costs = self.octopus_repo.get_octopus_consumption_costs(
+                period_from=period_start.replace(tzinfo=None).isoformat(),
+                period_to=period_end.replace(tzinfo=None).isoformat(),
+            )
 
         actual_costs = calculate_octopus_actual_costs(costs)
         total = summarise_octopus_actual_costs(actual_costs)
@@ -565,16 +612,6 @@ class OverviewPage:
             saving = normal_cost - actual_cost
 
             saving_percentage = saving / normal_cost * 100 if normal_cost > 0 else 0
-
-            print(f"Current DAY rate: {day_rate:.4f} p/kWh")
-            print(f"Normal tariff cost: £{normal_cost:.2f}")
-            print(f"Actual cost: £{actual_cost:.2f}")
-            print(f"Difference: £{saving:.2f} ({saving_percentage:.1f}%)")
-        else:
-            normal_cost = None
-            saving = None
-            saving_percentage = None
-            print("No current DAY tariff rate found.")
 
         # Calculate today's energy and costs using the 30-minute aggregates.
         energy_summary = self.energy_cost_service.get_daily_summary()

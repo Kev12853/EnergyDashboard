@@ -17,6 +17,7 @@ this file does not explicitly start them.
 """
 
 from nicegui import ui
+from app.nicegui.api import energy
 
 # DashboardShell owns the shared application layout, navigation and page area.
 from app.nicegui.shell import DashboardShell

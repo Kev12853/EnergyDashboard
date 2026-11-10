@@ -153,17 +153,6 @@ def update_consumption_costs(
         period_to,
     )
 
-    print("CONSUMPTION PERIOD:", period_from, "to", period_to)
-    print("ROWS RETURNED:", len(consumption))
-
-    if not consumption.empty:
-        print(
-            "FIRST READING:",
-            consumption["interval_start"].min(),
-            "| LAST READING:",
-            consumption["interval_start"].max(),
-        )
-
     if consumption.empty:
         logger.info("No consumption readings returned")
         return
