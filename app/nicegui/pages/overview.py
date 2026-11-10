@@ -593,6 +593,8 @@ class OverviewPage:
 
         all_costs = self.octopus_repo.get_octopus_consumption_costs()
 
+        costs = all_costs
+
         if not all_costs.empty:
             costs = self.octopus_repo.get_octopus_consumption_costs(
                 period_from=period_start.replace(tzinfo=None).isoformat(),
@@ -604,6 +606,17 @@ class OverviewPage:
 
         # Calculate the hypothetical flat DAY-rate comparison.
         day_rate = self.octopus_repo.get_current_import_day_rate()
+
+        normal_cost = None
+        saving = None
+        saving_percentage = None
+
+        if day_rate is not None:
+            normal_cost = total["consumption_kwh"] * day_rate / 100
+            actual_cost = total["cost_excl_vat_gbp"]
+
+            saving = normal_cost - actual_cost
+            saving_percentage = saving / normal_cost * 100 if normal_cost > 0 else 0
 
         if day_rate is not None:
             normal_cost = total["consumption_kwh"] * day_rate / 100
